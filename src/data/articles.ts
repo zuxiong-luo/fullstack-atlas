@@ -1,3 +1,4 @@
+import {offlineArticle} from './offlineArticle';
 import {expandedArticles} from './expandedArticles';
 export type ArticleSection={id:string;title:string;paragraphs:string[];code?:string;language?:string;takeaway?:string};
 export type Article={id:string;topic:string;title:string;description:string;minutes:number;tags:string[];scope:string;prerequisites:string[];sections:ArticleSection[];questionIds:string[];references:{title:string;url:string}[];experiment?:'js'|'ts'|'react'};
@@ -16,6 +17,7 @@ export const articleTopics=[
 {id:'ai',name:'AI / Agent 工程',description:'从模型调用到工具、RAG、评测与可靠部署。'}
 ];
 export const articles:Article[]=[
+offlineArticle,
 {id:'oauth-login',topic:'identity',title:'从一次第三方登录，理解 OAuth、OIDC 与 PKCE',description:'沿着浏览器跳转和服务端校验，区分授权、身份与网站自己的会话。',minutes:14,tags:['OAuth 2.0','OIDC','PKCE','HTTPS'],scope:'协议原理与授权码流程；具体参数以身份提供商文档为准。',prerequisites:['HTTP 请求与重定向','Cookie 与浏览器存储'],questionIds:['oauth','session-jwt','https','http-cache','cache-isolation'],sections:[
 {id:'boundaries',title:'先把三个问题分开',paragraphs:['用户点击“第三方登录”，看起来只有一次操作，实际涉及三件事：通信对端是否可信、第三方是否确认了用户身份、本站是否建立了自己的会话。HTTPS、身份协议和本站会话分别承担不同责任。','OAuth 2.0 解决的是委托授权：应用获得访问受保护资源的能力。OIDC 在其上增加身份层，使用 ID Token 等机制表达认证结果。不能因为拿到了某个 access token，就把它当成适用于任意系统的身份证。','本站最终仍需把外部身份映射到内部用户。绑定键应围绕身份提供商及稳定的 subject 设计，不应仅凭一个未经确认的邮箱把两个账号自动合并。']},
 {id:'journey',title:'沿着授权码走一遍',paragraphs:['以支持 OIDC 的提供商为例：浏览器前往授权端点，用户完成登录与授权，提供商将浏览器重定向到预先注册的回调地址，并附带授权码。这个 code 是短期的交换凭据，不是用户资料。','客户端把 code 交给令牌端点兑换，随后验证返回的身份声明。服务端应用和浏览器公开客户端的能力不同：浏览器无法保守 client secret，不能把密钥放在前端环境变量后就认为安全。','验证通过后，本站可以建立自己的会话。身份提供商的会话、本站 Cookie 和访问外部 API 的 token 各自有有效期与退出机制，应分别设计。'],code:'浏览器 → 授权端点：发起授权请求\n提供商 → 回调地址：返回 code + state\n客户端 → 令牌端点：code + code_verifier\n客户端：验证身份声明、匹配内部用户\n本站：建立自己的会话',language:'流程'},
