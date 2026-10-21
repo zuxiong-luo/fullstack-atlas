@@ -1,0 +1,4 @@
+import {useState} from 'react';
+import Comments from './Comments';
+import {contactEmail} from '../data/community';
+export default function Contact(){const [message,setMessage]=useState('');return <><div className="page-intro"><div><span className="eyebrow">LET’S CONNECT</span><h1>留言与联系</h1><p>聊聊工程实践、合作机会，或你正在探索的技术问题。</p></div></div><section className="contact-panel"><h2>你好，我是罗祖雄。</h2><p>公开交流可以写在留言板；希望单独沟通，欢迎发邮件。</p><a className="button primary" href={'mailto:'+contactEmail+'?subject='+encodeURIComponent('来自 Fullstack Atlas 的问候')}>给我发邮件 ↗</a><button className="button secondary" onClick={async()=>{try{await navigator.clipboard.writeText(contactEmail);setMessage('邮箱已复制')}catch{setMessage('复制未成功，请手动复制下方邮箱')}}}>复制邮箱</button><p>{contactEmail}</p>{message&&<p role="status">{message}</p>}</section><Comments topic="guestbook"/></>}

@@ -1,0 +1,13 @@
+import {it,expect} from 'vitest';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+function setup(){const handlers:Record<string,Function>={};const store=new Map<string,Map<string,Response>>();let online=true;let version='one';let broken=false;
+ const cacheApi={keys:async()=>[...store.keys()],delete:async(k:string)=>store.delete(k),open:async(k:string)=>{if(!store.has(k))store.set(k,new Map());const m=store.get(k)!;return {match:async(r:any)=>m.get(typeof r==='string'?r:(r.url||r.href))?.clone(),put:async(r:any,v:Response)=>{m.set(typeof r==='string'?r:(r.url||r.href),v.clone())}}}};
+ const scope='https://example.test/atlas/';
+ const network=async(input:any)=>{if(!online)throw new Error('offline');const url=String(input);if(url.endsWith('offline-manifest.json'))return new Response(JSON.stringify({version,bytes:12,files:['./index.html','./assets/lazy.js']}));if(broken&&url.endsWith('lazy.js'))return new Response('',{status:503});return new Response(url.endsWith('index.html')?'site-'+version:'lazy-'+version)};
+ vm.runInNewContext(readFileSync('scripts/sw.js','utf8'),{self:{registration:{scope},location:{origin:'https://example.test'},addEventListener:(n:string,fn:Function)=>{handlers[n]=fn},skipWaiting(){},clients:{claim(){}}},caches:cacheApi,fetch:network,URL,Response,Date});
+ return {store,setOffline(){online=false},breakUpdate(){version='two';broken=true},async message(type:string){const messages:any[]=[];let promise:Promise<any>=Promise.resolve();handlers.message({data:{type},ports:[{postMessage:(m:any)=>messages.push(m)}],waitUntil:(p:Promise<any>)=>{promise=p}});await promise;return messages},async get(path:string,mode='cors'){let result:any;handlers.fetch({request:{url:scope+path,method:'GET',mode},respondWith:(p:any)=>{result=p}});return (await result).text()}};
+}
+it('downloads unopened lazy assets and serves navigation and code offline under a project subpath',async()=>{const env=setup();expect((await env.message('DOWNLOAD')).at(-1).installed.count).toBe(2);env.setOffline();expect(await env.get('','navigate')).toBe('site-one');expect(await env.get('assets/lazy.js')).toBe('lazy-one')});
+it('discards incomplete updates and retains the last usable snapshot',async()=>{const env=setup();await env.message('DOWNLOAD');env.breakUpdate();expect((await env.message('DOWNLOAD')).at(-1).error).toContain('下载失败');expect(env.store.size).toBe(1);env.setOffline();expect(await env.get('','navigate')).toBe('site-one')});
+it('only clears this app caches',async()=>{const env=setup();env.store.set('another-site',new Map());await env.message('DOWNLOAD');await env.message('CLEAR');expect([...env.store.keys()]).toEqual(['another-site'])});
