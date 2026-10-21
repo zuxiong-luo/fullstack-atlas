@@ -66,7 +66,7 @@ npm run preview
 1. 在你的 GitHub 账户新建 `fullstack-atlas` 仓库，并将本地项目推送到 main。
 2. 在仓库 Settings → Pages → Build and deployment 中选择 GitHub Actions。
 3. 推送 main 或手动执行 Deploy GitHub Pages workflow。
-4. 部署成功后，以 Actions 返回的实际地址为准；通常为 `https://lzxdanny-debug.github.io/fullstack-atlas/`。
+4. 部署成功后，以 Actions 返回的实际地址为准；通常为 `https://zuxiong-luo.github.io/fullstack-atlas/`。
 
 免费 GitHub Pages 的仓库可见性支持受账户套餐限制。公开仓库会公开源码与学习资料；私有仓库是否可发布 Pages 请核对你的账户权益。私有源码仓库也不等于 Pages 内容私有。
 
@@ -92,7 +92,7 @@ npm run preview
 
 ## GitHub Discussions 评论接入
 
-已接入 lzxdanny-debug/fullstack-atlas 仓库的 Announcements 分类。留言板为 #guestbook，联系我为 #contact，两者为独立页面。以下为重新配置步骤。
+已接入 zuxiong-luo/fullstack-atlas 仓库的 Announcements 分类。留言板为 #guestbook，联系我为 #contact，两者为独立页面。以下为重新配置步骤。
 
 1. 创建公开 GitHub 仓库，在 Settings → General 开启 Discussions。
 2. 在 https://github.com/apps/giscus 给该仓库安装 giscus。
