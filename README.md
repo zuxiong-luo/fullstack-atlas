@@ -92,7 +92,7 @@ npm run preview
 
 ## GitHub Discussions 评论接入
 
-目前尚无 GitHub 仓库，组件显示「公开讨论尚未启用」，没有模拟提交成功。
+已接入 lzxdanny-debug/fullstack-atlas 仓库的 Announcements 分类。留言板为 #guestbook，联系我为 #contact，两者为独立页面。以下为重新配置步骤。
 
 1. 创建公开 GitHub 仓库，在 Settings → General 开启 Discussions。
 2. 在 https://github.com/apps/giscus 给该仓库安装 giscus。
