@@ -1,12 +1,19 @@
+import {expandedArticles} from './expandedArticles';
 export type ArticleSection={id:string;title:string;paragraphs:string[];code?:string;language?:string;takeaway?:string};
 export type Article={id:string;topic:string;title:string;description:string;minutes:number;tags:string[];scope:string;prerequisites:string[];sections:ArticleSection[];questionIds:string[];references:{title:string;url:string}[];experiment?:'js'|'ts'|'react'};
 export const articleTopics=[
 {id:'identity',name:'身份认证与安全',description:'从安全连接到可信身份，厘清每一层的责任。'},
-{id:'react',name:'前端运行机制',description:'用状态快照与生命周期解释真实交互。'},
+{id:'react',name:'React 核心原理',description:'从状态与闭包，深入 Fiber、调度、Hooks 与事件。'},
 {id:'data',name:'数据与并发',description:'从业务不变量理解事务、锁与数据库约束。'},
 {id:'tasks',name:'可靠的异步系统',description:'把超时、重复与失联纳入设计，而不是例外。'},
 {id:'operations',name:'部署与故障排查',description:'沿请求链路，用证据逐层缩小问题范围。'},
-{id:'flutter',name:'跨端应用实践',description:'连接 UI、状态与设备通信，理解跨端交付。'}
+{id:'flutter',name:'跨平台工程',description:'Flutter、React Native 与 Electron 的渲染、通信和交付。'},
+{id:'nextjs',name:'Next.js 全栈',description:'理解服务端组件、渲染与缓存边界。'},
+{id:'nodejs',name:'Node.js 工程',description:'事件循环、流、背压和服务容量。'},
+{id:'python',name:'Python 工程',description:'类型边界、异步任务与服务生命周期。'},
+{id:'algorithms',name:'算法与数据结构',description:'用不变量、复杂度和反例推导正确性。'},
+{id:'webgl',name:'WebGL 与图形',description:'从坐标变换到 GPU 流水线与帧预算。'},
+{id:'ai',name:'AI / Agent 工程',description:'从模型调用到工具、RAG、评测与可靠部署。'}
 ];
 export const articles:Article[]=[
 {id:'oauth-login',topic:'identity',title:'从一次第三方登录，理解 OAuth、OIDC 与 PKCE',description:'沿着浏览器跳转和服务端校验，区分授权、身份与网站自己的会话。',minutes:14,tags:['OAuth 2.0','OIDC','PKCE','HTTPS'],scope:'协议原理与授权码流程；具体参数以身份提供商文档为准。',prerequisites:['HTTP 请求与重定向','Cookie 与浏览器存储'],questionIds:['oauth','session-jwt','https','http-cache','cache-isolation'],sections:[
@@ -38,13 +45,14 @@ export const articles:Article[]=[
 {id:'probes',title:'探针不是同一项检查复制三次',paragraphs:['readiness 决定应用是否适合接收流量；liveness 用于识别需要重启恢复的情况；startup 为初始化较慢的应用提供启动阶段的保护。三者回答的问题不同。','如果短暂的数据库不可用直接导致所有应用存活检查失败，集体重启可能使恢复更困难。就绪检查同样需要权衡：是否某个非核心依赖失败就应该移除整个实例？','健康端点正常也不保证每条业务路径正确。还需要实际请求的错误率、延迟和关键业务监控来判断发布是否健康。']},
 {id:'resources',title:'CPU 不高，也可能是资源问题',paragraphs:['连接池、文件描述符、数据库锁和磁盘 I/O 等待都可能让接口慢，而 CPU 使用率并不高。应对齐同一故障时间窗口，检查应用和下游的等待。','容器的资源限制与宿主机整体资源不同。宿主空闲时，容器仍可能受到 CPU 限流或内存限制。查看 OOM、退出码、事件和实际限制，比只看一张宿主 CPU 图更可靠。','大文件、媒体处理和日志写入还可能争用磁盘。定位时要区分事件循环执行慢、外部进程抢资源和依赖服务慢，解决方式并不相同。']},
 {id:'release',title:'把排障结果变成发布改进',paragraphs:['若故障与发布相关，检查新副本就绪、旧副本排空、代理超时和终止宽限期。长任务与普通 HTTP 请求需要不同的退出策略。','回滚应用镜像不等于回滚数据库。迁移要考虑新旧版本短时间并存，采用兼容性演进并保留验证步骤。','恢复后，记录触发条件、关键证据、处理动作和预防措施。好的复盘能让下一次相似故障更快定位，而不只是留下“重启恢复”四个字。']}],references:[{title:'Kubernetes：探针',url:'https://kubernetes.io/docs/concepts/workloads/pods/probes/'},{title:'Kubernetes：Service 排障',url:'https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/'}]},
-{id:'flutter-engineering',topic:'flutter',title:'从 Flutter 界面到设备通信：跨端应用的工程边界',description:'结合机器人终端与 App 场景，连接状态、渲染、通信生命周期和性能诊断。',minutes:14,tags:['Flutter','GetX','gRPC','跨端'],scope:'Flutter 工程方法与教学示例；不包含公司源码或未验证的性能成果。',prerequisites:['Dart 异步基础','Widget 与 State 基础'],questionIds:[],sections:[
+{id:'flutter-engineering',topic:'flutter',title:'从 Flutter 界面到设备通信：跨端应用的工程边界',description:'结合机器人终端与 App 场景，连接状态、渲染、通信生命周期和性能诊断。',minutes:14,tags:['Flutter','GetX','gRPC','跨端'],scope:'Flutter 工程方法与教学示例；不包含公司源码或未验证的性能成果。',prerequisites:['Dart 异步基础','Widget 与 State 基础'],questionIds:['cross-platform-models-render','cross-platform-models-stream'],sections:[
 {id:'context',title:'跨端交付不只是把页面画出来',paragraphs:['在机器人终端、旅游 App 和保单服务等场景中，UI 都只是用户看到的表面。设备状态、网络连接、业务权限和操作结果如何映射到界面，决定了应用是否容易理解和维护。','机器人终端定制涉及多语言、定制 UI、实时雷达图以及与硬件的通信；旅游 App 则更关注首页、产品与预约入口。两者都使用 Flutter，但状态来源、刷新节奏和错误处理并不相同。','因此，技术方案先从业务链路出发：哪些状态来自服务端，哪些是设备遥测，哪些仅属于当前页面？哪些操作可以重试，哪些操作重复执行会造成真实副作用？']},
 {id:'state',title:'把连接、业务与视图状态拆开',paragraphs:['把所有值塞进一个全局控制器，短期方便，长期会使页面与连接管理紧密耦合。更稳妥的方式是明确职责：通信层解析数据，业务层维护状态与规则，视图层订阅需要展示的部分。','GetX 或其他状态方案是实现手段。真正重要的是所有权与生命周期：由谁创建订阅、由谁取消，离开页面以后连接是否继续，重新进入时如何取得当前状态。','连接已建立不代表设备可执行任务；命令已发送也不代表设备执行成功。界面应区分连接状态、业务状态和单次操作状态，而不是共享一个 loading。'],code:'设备 / 服务端\n    ↓ 协议解析、时间戳、错误分类\n通信层：连接与订阅生命周期\n    ↓ 领域数据\n业务层：状态转换、命令确认、重试策略\n    ↓ 视图所需状态\nUI：局部刷新、状态提示、用户操作',language:'职责示意'},
 {id:'render',title:'先测量卡在哪里，再减少开销',paragraphs:['Flutter 的界面更新并不意味着每个 Widget 重建都会执行同等规模的布局与绘制。优化时要区分构建、布局、绘制与栅格化的成本，避免看到 rebuild 就立即重写架构。','高频遥测不一定需要以相同频率刷新全部页面。对实时图形可以考虑合并更新、限制无意义的数据变化和缩小重建范围，但展示频率不能破坏业务对实时性的要求。','在合适的 profile 模式和目标设备上观察性能。Debug 模式下的表现不能直接当成最终性能结论；目标设备、屏幕刷新率和绘制复杂度也会影响帧预算。']},
 {id:'communication',title:'通信排障要给每一段计时',paragraphs:['用户说“点击后卡住”，问题可能在主 isolate 的同步计算，也可能在网络请求、设备响应或 UI 等待错误的状态。先记录操作发起、请求发送、响应收到与界面更新的时间点。','gRPC 调用要按具体客户端能力设置 deadline，管理流订阅的取消与重连。断线后继续保留旧订阅，可能造成重复回调和资源泄漏；取消旧订阅后也要处理迟到结果。','对于有副作用的设备命令，重试前需要知道是否支持命令 ID、幂等或查询执行结果。不能因为超时就断言设备没有执行，更不能无限重试。']},
 {id:'delivery',title:'让维护和交付成为实现的一部分',paragraphs:['多语言不仅是字符串替换，还包括长度变化、字体、布局和必要的方向适配。Android 与不同终端环境也可能出现交互、动画和系统集成差异，需要在实际设备上验证。','对重复业务模块先识别稳定部分，再抽取可配置组件。过早把所有差异抽象成大量开关，反而会让组件比重复实现更难维护。','跨端经验的价值，在于能说明如何把业务、设备与界面连接起来，以及遇到异常时如何定位和恢复。它应通过具体责任和案例表达，而不是只列出框架名称。']}],references:[{title:'Flutter：性能最佳实践',url:'https://docs.flutter.dev/perf/best-practices'},{title:'Flutter：性能视图',url:'https://docs.flutter.dev/tools/devtools/performance'},{title:'gRPC：Deadlines',url:'https://grpc.io/docs/guides/deadlines/'}]}
 ];
+articles.push(...expandedArticles);
 export const readingPaths=[
 {id:'request',name:'从身份到数据',description:'理解一次请求如何建立信任，再保证数据变更正确。',articleIds:['oauth-login','transactions-locks'],prerequisites:'HTTP 与 SQL 基础'},
 {id:'interface',name:'从状态到交互',description:'对照 Web 与 Flutter，理解状态、生命周期与通信。',articleIds:['react-state-effects','flutter-engineering'],prerequisites:'JavaScript / Dart 基础'},

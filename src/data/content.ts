@@ -1,3 +1,4 @@
+import {expandedQuestions} from './expandedQuestions';
 export type Topic = {id:string;name:string;label:string;description:string;color:string};
 export const topics: Topic[] = [
 {id:'frontend',name:'前端与浏览器',label:'01 / INTERFACE',description:'从状态与渲染，到用户真正感受到的性能。',color:'#497c61'},
@@ -7,6 +8,13 @@ export const topics: Topic[] = [
 {id:'distributed',name:'分布式系统',label:'05 / SYSTEM',description:'当超时、重试和失联成为日常，如何保持可靠。',color:'#b07a55'},
 {id:'infra',name:'Linux / Docker / K8s',label:'06 / INFRASTRUCTURE',description:'从进程到集群，理解部署，也能定位故障。',color:'#5c8984'},
 ];
+topics.push(
+{id:'crossplatform',name:'跨平台工程',label:'07 / CROSS PLATFORM',description:'RN、Flutter 与 Electron 的运行与通信边界。',color:'#497c61'},
+{id:'graphics',name:'WebGL 与图形',label:'08 / GRAPHICS',description:'坐标空间、GPU 渲染与帧预算。',color:'#537e95'},
+{id:'algorithms',name:'算法与数据结构',label:'09 / ALGORITHMS',description:'复杂度、不变量与正确性验证。',color:'#8e7746'},
+{id:'python',name:'Python 工程',label:'10 / PYTHON',description:'异步、类型与可靠服务。',color:'#8373a1'},
+{id:'ai',name:'AI / Agent 工程',label:'11 / AI ENGINEERING',description:'模型、检索、工具、记忆与评测。',color:'#5c8984'}
+);
 export type Question = {id:string;topic:string;title:string;level:'基础进阶'|'工程实践'|'系统设计';minutes:number;tags:string[];summary:string;principles:string[];pitfalls:string[];followups:string[];scenario:string;related:string[];source:string;experiment?:'js'|'ts'|'react'};
 export const questions:Question[] = [
 {id:'react-snapshot',topic:'frontend',title:'React 状态快照与闭包：为什么读到的还是旧值？',level:'基础进阶',minutes:12,tags:['React','闭包','Hooks'],summary:'一次渲染中的 state 是那次渲染的快照。setState 请求下一次渲染，不会改写当前函数闭包里的变量。依赖旧状态计算新状态时，用函数式更新；需要读取最新值但不触发渲染时，可以考虑 ref。',principles:['事件处理器、定时器和 Effect 都可能持有创建它们时的闭包。先判断代码属于哪一次渲染，再分析它读到的状态。','连续执行 setCount(count + 1) 会重复提交相同的计算值；setCount(c => c + 1) 则把更新函数放进队列，按顺序计算。','ref 是可变容器，但绕开了渲染数据流。UI 需要展示的状态应由 state 驱动，不能为消除闭包问题把所有状态改成 ref。'],pitfalls:['把问题简单归结为“setState 是异步的”，却解释不了闭包。','为了拿到新值，把每个变量都改为 ref。'],followups:['异步请求完成后，如何判断结果仍属于当前页面？','函数式更新能解决读取其他 props 的旧值问题吗？'],scenario:'MV 任务轮询：切换 taskId 后，旧任务回调不能覆盖新任务的界面。先处理请求归属，再处理状态更新。',related:['effect-race','event-loop'],source:'https://react.dev/learn/state-as-a-snapshot',experiment:'react'},
@@ -34,6 +42,7 @@ export const questions:Question[] = [
 {id:'k8s-release',topic:'infra',title:'滚动发布如何避免中断请求和长任务？',level:'系统设计',minutes:18,tags:['Kubernetes','发布','优雅退出'],summary:'滚动更新的可用性依赖副本、就绪检查、发布参数与应用退出行为共同保证。HTTP 请求和长任务需要不同的排空策略，数据库变更还要考虑前后版本兼容。',principles:['maxSurge 和 maxUnavailable 控制更新期间的副本变化，但不能代替真实的就绪检查与容量评估。','接收到终止信号后停止领取新任务，处理或安全移交在途工作，在宽限期内退出。不能假设无限延长终止时间就可靠。','数据库迁移采用兼容式演进：先扩展，再迁移使用方，最后删除旧字段。回滚应用镜像不会自动回滚数据库。'],pitfalls:['把 Deployment 回滚等同于所有系统状态回滚。','Worker 被终止后没有租约恢复路径。'],followups:['一个任务需要 30 分钟，发布时应该怎么做？','新版本探针正常但业务错误如何发现？'],scenario:'媒体 Worker 发布时停止认领并续租在途任务；无法完成的任务通过既定超时与重试机制恢复。',related:['worker-lease','docker','k8s-probes'],source:'https://kubernetes.io/docs/concepts/workloads/controllers/deployment/'},
 {id:'system-design',topic:'distributed',title:'系统设计如何回答：从需求到失败路径',level:'系统设计',minutes:25,tags:['架构','容量','可观测性'],summary:'先澄清需求和约束，估算规模，再定义数据模型、关键流程与系统边界。最后分析失败路径、可观测性和演进方向。架构图中组件多，不等于设计完整。',principles:['区分功能需求与非功能需求：一致性、延迟、吞吐、可用性、成本和数据保留。数字不明确时说明假设。','从一条关键业务链路展开，解释每个存储或队列为什么存在，先给能运行的简单方案，再说明扩展触发条件。','逐项分析部分成功、超时、重复请求、依赖失败和恢复过程。用指标与日志解释如何知道系统是否正常。'],pitfalls:['需求还没明确就列出 Redis、Kafka、K8s。','没有容量依据却承诺高并发和高可用。'],followups:['流量增长十倍，哪个组件先成为瓶颈？','如果只能保留一半基础设施，如何简化？'],scenario:'以 MV 平台为主线：创建任务 → 额度预占 → 编排 → 执行 → 产物发布 → 结算 → 失败恢复。',related:['worker-lease','idempotency','redis-cache'],source:'https://aws.amazon.com/architecture/well-architected/'}
 ];
+questions.push(...expandedQuestions);
 export const paths = [
 {id:'request',name:'一次请求的完整旅程',description:'从浏览器到身份认证，再到数据与缓存。',ids:['https','oauth','session-jwt','cache-isolation','http-cache']},
 {id:'task',name:'一个可靠的异步任务系统',description:'结合 MV 项目，把并发、重试和一致性串起来。',ids:['ts-model','db-transactions','worker-lease','distributed-lock','idempotency','retry']},

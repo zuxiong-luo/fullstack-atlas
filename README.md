@@ -100,3 +100,20 @@ npm run preview
 4. 填入 `src/data/community.ts` 的公开配置并重新构建发布，不需要前端访问令牌。
 
 文章以 `article/<固定ID>` 映射独立讨论，留言板使用 `guestbook`，不依赖 hash URL 的 pathname，避免所有文章共用评论。数据保存在 GitHub Discussions，可通过 GitHub GraphQL API 导出 JSON，但本站尚未实现评论导出工具；不直接改写静态站点文件。邮件联系与公开讨论独立，邮箱按钮现在即可使用。
+
+## 系统学习内容（2026-10-21 扩充）
+
+当前共有 24 篇公开文章、60 道登录后可见的深度研习题。新增内容位于
+`src/data/expandedArticles.ts` 和 `src/data/expandedQuestions.ts`，现有文章与题目 ID 保持兼容。
+
+- React：状态与竞态、Fiber 与调度、节点身份 / Hooks / 事件。
+- Next.js：服务端组件、渲染、缓存与写操作边界。
+- Node.js / Python：背压、容量、协程、取消与任务生命周期。
+- 跨平台：Flutter、React Native 架构与设备通信、Electron IPC 和权限。
+- 算法 / WebGL / 安全：不变量与边界测试、渲染流水线、XSS / CSRF / 越权 / SSRF。
+- `#ai`：AI / Agent 工程独立专栏，8 篇正文、16 道配套题。章节顺序在 `src/data/series.ts` 中维护。
+
+Agent 系列以知识库助手为教学案例，覆盖模型基础、工具与 MCP、RAG、执行循环、记忆、评测、安全与部署。
+这是学习材料，不表示本站已经运行真实模型服务。Node.js、Python、Electron 和 Next.js 示例需在对应环境中实践；只有明确标注的浏览器 JS / React 示例可在本站实验室使用。
+
+新增文章进入构建产物与离线清单。已保存旧离线版本的用户需登录后到「离线阅读」下载最新版并刷新。
