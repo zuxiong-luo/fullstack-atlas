@@ -5,7 +5,7 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {articles} from '../data/articles';
 import {reactSeries} from '../data/reactSeries';
 import ReactSeriesNav from '../components/ReactSeriesNav';
-const ids=['react-double-buffer','react-root-scheduling','react-bailout-memo','react-hook-memoization'];
+const ids=['react-fiber-structure','react-double-buffer','react-root-scheduling','react-bailout-memo','react-hook-memoization'];
 it('keeps inline primary-source excerpts equal to pinned offline source lines',()=>{
  const manifest=JSON.parse(fs.readFileSync('public/sources/react-v18.3.1/manifest.json','utf8'));
  for(const [path,hash] of Object.entries(manifest.files))expect(createHash('sha256').update(fs.readFileSync('public/sources/react-v18.3.1/'+path)).digest('hex')).toBe(hash);

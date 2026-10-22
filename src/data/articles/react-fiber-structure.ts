@@ -2,9 +2,9 @@ import type {Article} from '../articleTypes';
 export const reactFiberStructureArticle: Article = {
   "id": "react-fiber-structure",
   "topic": "react",
-  "title": "React 18.3.1 源码专题：Fiber 怎样保存身份、状态与工作树",
-  "description": "从列表重排后计数跟错人的现象出发，读懂元素、Fiber、DOM、树指针和alternate，再用真实React验证状态保留与重置。",
-  "minutes": 40,
+  "title": "Fiber 是什么：从概念、作用和结构理解 React 的更新",
+  "description": "先认识 Fiber 这个内部节点对象，再理解它的作用、树结构、状态和双缓冲；沿一次计数更新串起工作过程，最后通过列表实验和 React 18.3.1 源码验证。",
+  "minutes": 48,
   "labMinutes": 20,
   "tags": [
     "React 18.3.1",
@@ -21,10 +21,10 @@ export const reactFiberStructureArticle: Article = {
     "Node.js 22"
   ],
   "verifiedAt": "2026-10-22",
-  "scope": "普通函数组件与客户端同级协调；不展开SSR、hydration、Suspense和热更新特殊路径。",
+  "scope": "Fiber入门与结构专题；以React DOM 18.3.1普通函数组件为例，讲清对象、树、状态与更新过程。协调源码作为后半篇进阶阅读；完整调度与双缓冲另有配套章节。",
   "prerequisites": [
-    "useState与列表key",
-    "JavaScript对象引用与函数身份"
+    "会写函数组件、props和useState",
+    "理解JavaScript对象引用；无需预先了解Fiber或调度源码"
   ],
   "questionIds": [
     "react-fiber-scheduling-interrupt"
@@ -33,16 +33,24 @@ export const reactFiberStructureArticle: Article = {
   "sections": [
     {
       "id": "question",
-      "title": "同一行数据换了位置，为什么计数跟错人了？",
+      "title": "Fiber 的概念：它首先是一个内部节点对象",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "假设页面上有 A、B 两个计数器。你给 A 加了一次，随后把列表顺序反过来。如果 A 仍显示 1，符合直觉；如果变成 B 显示 1，你可能以为 setState 的异步时机出了问题。但这一次，更值得检查的是：React 认为更新前后哪些节点还是“同一个”。"
+          "text": "Fiber 是 React 内部用来表示节点、保存状态和渲染工作信息的一种数据结构。在 React 18.3.1 的实现里，一个 Fiber 就是一个 JavaScript 对象。先记住这个具体形态：它有字段，字段里保存值或者指向其他对象的引用；它不是一个浏览器线程，也不是你需要在业务代码里手动创建的组件。"
         },
         {
           "type": "paragraph",
-          "text": "这个问题把我们带到 Fiber 的结构。元素描述下一版想要什么界面，Fiber 则在协调过程中保存节点身份、状态和待处理工作。只背 child、sibling、return 三个字段，很难解释计数为什么会跟错对象。我们沿这个小列表，从元素到工作树，再回到状态保留与重置，把结构与真实行为连起来。"
+          "text": "为什么资料有时又把 Fiber 叫作“工作单元”或“架构”？因为 React 的更新计算会围绕这些节点推进，一个节点承载一部分待处理工作；以这些节点组织协调与渲染的实现，也常被统称为 Fiber 架构。本篇先从最容易看见的“节点对象”讲起，再解释它如何参与工作。不要把这三个说法当成三种互不相关的东西。"
+        },
+        {
+          "type": "paragraph",
+          "text": "例如你写了一个 Counter 计数器。React 要知道它属于哪个父节点、这次收到什么 props、之前的状态是什么、还有没有更新需要处理。函数组件对应的 Fiber 参与保存这些信息。多个 Fiber 通过父子、兄弟引用连接起来，形成 Fiber 树。后面说的“树”就是这些对象之间的关系，不是一张额外的页面截图。"
+        },
+        {
+          "type": "paragraph",
+          "text": "阅读顺序是：先分清它与元素、DOM的关系，再看为什么需要它、它有什么作用和特性；然后认识字段和一次更新，最后运行计数器实验、对照源码。前半篇建立认识，后半篇核对实现。你不需要一开始就读懂整段协调函数。"
         },
         {
           "type": "paragraph",
@@ -52,12 +60,6 @@ export const reactFiberStructureArticle: Article = {
           "type": "reference",
           "title": "React 18.3.1：old/new reconciler 选择开关",
           "url": "https://github.com/facebook/react/blob/v18.3.1/packages/shared/ReactFeatureFlags.js#L72-L75"
-        },
-        {
-          "type": "experiment",
-          "id": "react-fiber-structure",
-          "title": "先观察四种身份变化",
-          "description": "给A加一后重排、切换key策略、更换父级key、更换组件函数。每次都先预测状态会留在哪里。"
         }
       ]
     },
@@ -111,6 +113,82 @@ export const reactFiberStructureArticle: Article = {
       ]
     },
     {
+      "id": "why-fiber",
+      "title": "为什么需要 Fiber：函数执行完，信息还要留下来",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "先看一个最小计数器。点击按钮会请求把 count 加一。组件函数执行时可以产生本次输出，但函数调用结束以后，下一次更新仍然需要找到这个组件之前的状态。单靠本次函数调用的局部变量，无法承担这种跨更新的记录。React 必须在组件函数之外管理这些信息。"
+        },
+        {
+          "type": "code",
+          "code": "function Counter() {\n  const [count, setCount] = useState(0);\n  return <button onClick={() => setCount(n => n + 1)}>{count}</button>;\n}",
+          "purpose": "普通函数组件片段；放在已导入useState的React项目中。点击只负责发起更新，状态由React管理。",
+          "kind": "excerpt",
+          "filename": "Counter.tsx",
+          "language": "tsx"
+        },
+        {
+          "type": "paragraph",
+          "text": "如果页面还有列表、表单和侧栏，React 还需要知道这些部分怎样连接：处理完当前组件，该去哪个孩子，孩子完成后又回到哪里。同时，本次更新可能只影响其中一部分，需要记录哪些节点和子树有工作。Fiber 把这些信息组织到节点对象上，工作循环再负责读取和更新它们。"
+        },
+        {
+          "type": "paragraph",
+          "text": "另一个需求是控制一大段渲染计算。依赖普通递归调用连续完成整棵树时，JavaScript调用栈中的执行不能由React随意暂停并在任意一行恢复。将节点与进度显式保存在对象中，能让工作循环按单元推进，并在允许让出的边界把控制权还给宿主环境。稍后继续或重新开始时，React有可用的工作记录。"
+        },
+        {
+          "type": "paragraph",
+          "text": "这里有两个前提：不是每次渲染都会让出；Fiber也不会把一个组件函数中的长循环自动切开。同步渲染仍然连续执行。并发渲染可以在工作单元之间检查是否让出，但正在执行的普通JavaScript函数要先返回。结构提供了组织工作的基础，是否让出还需要调度与工作循环共同决定。"
+        }
+      ]
+    },
+    {
+      "id": "responsibilities",
+      "title": "Fiber 的作用与特性：记录信息，让工作有迹可循",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "可以从三个作用认识Fiber。第一，关联一个节点的类型、输入和状态。第二，把节点连接成可以遍历的树。第三，记录更新与提交相关工作，让后续阶段知道哪里要继续处理。这些作用解释的是“React需要保留什么”；下面的特性解释“这种组织方式允许怎样处理”。"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "特性",
+            "具体含义",
+            "不能据此推出什么"
+          ],
+          "rows": [
+            [
+              "信息保存在节点对象上",
+              "函数返回后仍能通过React内部结构找到状态与树关系",
+              "业务代码不应读取或修改私有Fiber字段"
+            ],
+            [
+              "工作按节点推进",
+              "工作循环可以找到下一个节点，并在允许时让出",
+              "不能中断组件函数内部正在执行的同步代码"
+            ],
+            [
+              "当前版本与工作版本分开组织",
+              "alternate关联同一逻辑节点的两份对应工作记录",
+              "不是每轮深拷贝整棵树，也不是两套DOM"
+            ],
+            [
+              "可复用匹配的身份与工作节点",
+              "协调时判断哪些旧身份可以延续，下一版从已有信息开始",
+              "复用不等于组件函数不执行，更不等于没有DOM变化"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "因此，“有了Fiber就一定更快”不是准确结论。它为可调度的渲染和信息复用提供结构，但真正的耗时仍取决于组件计算量、更新范围和提交工作量。把大量同步计算写进一个组件，不能指望换成Fiber以后自动消失。本文的实验也只验证身份和状态，不宣称测出了性能收益。"
+        }
+      ]
+    },
+    {
       "id": "links",
       "title": "child、sibling、return 怎样表示一棵树",
       "paragraphs": [],
@@ -154,6 +232,10 @@ export const reactFiberStructureArticle: Article = {
       "title": "状态在哪里？先看节点类别，再读字段",
       "paragraphs": [],
       "blocks": [
+        {
+          "type": "paragraph",
+          "text": "看完树的连接方式，再看每个节点内部保存什么。字段不必一次背下来，先按用途分类：身份决定它是谁，输入与状态参与计算，工作标记告诉后续阶段要处理哪里。下面提到的Lane先理解为用位集合表达的工作分类；本篇不要求掌握选择算法。"
+        },
         {
           "type": "paragraph",
           "text": "同一个字段名，在不同节点类型上可能保存不同结构。例如函数组件 Fiber 的 memoizedState 常是 Hook 链表的入口，而不是你传给 useState 的那个值本身。多个 useState 对应多个 Hook 节点，各个 Hook 再有自己的状态和更新队列。把 Fiber.memoizedState 直接等同于一个 count，会在阅读第二个 Hook 时马上走不通。"
@@ -205,6 +287,14 @@ export const reactFiberStructureArticle: Article = {
           "type": "reference",
           "title": "Hooks 的 Hook 类型与函数组件更新队列定义",
           "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactFiberHooks.old.js#L132-L194"
+        },
+        {
+          "type": "code",
+          "code": "  this.tag = tag;\n  this.key = key;\n  this.elementType = null;\n  this.type = null;\n  this.stateNode = null;\n\n  // Fiber\n  this.return = null;\n  this.child = null;\n  this.sibling = null;\n  this.index = 0;\n\n  this.ref = null;\n\n  this.pendingProps = pendingProps;\n  this.memoizedProps = null;\n  this.updateQueue = null;\n  this.memoizedState = null;\n  this.dependencies = null;\n\n  this.mode = mode;\n\n  // Effects\n  this.flags = NoFlags;\n  this.subtreeFlags = NoFlags;\n  this.deletions = null;\n\n  this.lanes = NoLanes;\n  this.childLanes = NoLanes;\n\n  this.alternate = null;",
+          "purpose": "React v18.3.1 FiberNode构造函数的字段初始化节选。结合上表看字段分组；null和0是创建时的初始值，不是更新后永远保持的值。",
+          "kind": "excerpt",
+          "filename": "ReactFiber.old.js:125–155",
+          "language": "javascript"
         }
       ]
     },
@@ -234,7 +324,7 @@ export const reactFiberStructureArticle: Article = {
         },
         {
           "type": "code",
-          "code": "workInProgress.child = current.child;\nworkInProgress.memoizedProps = current.memoizedProps;\nworkInProgress.memoizedState = current.memoizedState;\nworkInProgress.updateQueue = current.updateQueue;",
+          "code": "  workInProgress.child = current.child;\n  workInProgress.memoizedProps = current.memoizedProps;\n  workInProgress.memoizedState = current.memoizedState;\n  workInProgress.updateQueue = current.updateQueue;",
           "purpose": "React18.3.1 createWorkInProgress真实短节选；说明起始阶段沿用引用，不代表所有后续处理均共享。",
           "kind": "excerpt",
           "filename": "ReactFiber.old.js:306–309",
@@ -247,22 +337,88 @@ export const reactFiberStructureArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "提交完成后，根的 current 切换到完成的那棵树。DOM 可见内容仍需要由提交阶段应用相应变更，不能认为把一个 JavaScript 指针换掉就已经更新浏览器。双缓冲给计算下一版留出空间，提交边界保证完成结果才成为当前版本；具体中断与提交顺序在工作循环专题继续展开。"
+          "text": "提交阶段会应用需要的DOM变更，并在mutation阶段之后、layout阶段之前把root.current指向完成树。不能认为仅仅换一个JavaScript指针就已经更新了浏览器。这里先建立两份工作记录的概念；首次分配、后续字段重置与连续轮换在双缓冲专篇逐步展开。"
+        }
+      ]
+    },
+    {
+      "id": "update-walkthrough",
+      "title": "一次点击怎样经过这些结构",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "现在回到前面的单个Counter，初始按钮显示0。这里先不重排列表、不更换类型，只看一次普通的setCount(n => n + 1)。把过程分成下面几步，就能把前面的字段连起来。"
+        },
+        {
+          "type": "list",
+          "items": [
+            "请求更新：点击事件调用setter。React为这次更新建立记录，加入对应状态Hook的队列，并将相关待处理工作标记到节点和祖先路径。此时按钮不会因为队列里多了一条记录就直接变成1。",
+            "安排工作：根调度决定怎样安排这次待处理工作。Fiber保存节点与工作信息，但它本身不会像线程一样主动运行。",
+            "准备与计算：React从当前树准备工作版本。处理Counter时，根据本轮要处理的更新计算状态，组件函数这次读到count为1，返回描述按钮内容的新元素。",
+            "协调孩子：React比较新描述与已有孩子，判断按钮对应节点可以延续还是需要重建，并在工作树上准备必要的变更。",
+            "提交结果：这轮工作完成且进入提交路径后，React应用需要的DOM变更，切换当前树；浏览器绘制发生在自己的渲染流程里。组件计算、React提交和浏览器绘制不是同一个动作。"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "这里的memoizedState也需要结合“哪一份树”来看：current上的相关状态是当前依据；工作版本上的Hook状态会随着这轮计算更新。尚未提交的计算结果不能直接当作用户已经看到的页面。工作可能被重试或放弃，是否进入提交要看完整渲染结果。"
+        },
+        {
+          "type": "paragraph",
+          "text": "沿着这条过程，Fiber的作用就具体了：树引用让React找到要处理的节点，Hook相关结构支持状态计算，props记录输入，flags等字段记录后续工作，alternate帮助组织当前与工作版本。调度决定什么时候处理，协调决定如何对应节点，提交负责把完成的工作应用出去。"
         }
       ]
     },
     {
       "id": "identity",
-      "title": "key 相同，为什么仍然可能丢状态",
+      "title": "理解了结构，再看列表中的状态为什么会跟错位置",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "先把范围限定在同一个父节点的一组孩子中。在单元素协调路径里，reconcileSingleElement 会沿旧孩子检查 key；key匹配后还要检查元素类型。对于本篇使用的普通函数组件，可以先理解为组件函数身份必须兼容。真实源码还处理Fragment、lazy与开发热更新等分支，所以“key和type”是限定场景下的阅读入口，不是覆盖全部特殊节点的完整公式。"
+          "text": "下面才引入A、B计数器。A和B只是两条业务数据的标识；两行都使用同一个Counter组件，每行有各自的useState。初始顺序是A在上、B在下，两个数字都是0。你点击A一次，页面变成A为1、B为0；然后点击“交换顺序”，让B排在A前面。问题是：重排之后，哪个计数应该保留为1？"
+        },
+        {
+          "type": "code",
+          "code": "items.map((item, index) => (\n  <Counter key={item.id} id={item.id} />\n))\n// 对照实验只把key改成index，Counter组件类型不变。",
+          "purpose": "列表片段：items包含{id:\"A\"}和{id:\"B\"}，Counter内部保存count。先固定组件类型，只改变身份匹配策略。",
+          "kind": "excerpt",
+          "filename": "列表身份对照.tsx",
+          "language": "tsx"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "操作阶段",
+            "使用业务ID作为key",
+            "使用数组下标作为key"
+          ],
+          "rows": [
+            [
+              "初始",
+              "A:0，B:0",
+              "A:0，B:0"
+            ],
+            [
+              "给A加一",
+              "A:1，B:0",
+              "A:1，B:0"
+            ],
+            [
+              "反转数组顺序",
+              "B:0，A:1",
+              "B:1，A:0"
+            ]
+          ]
         },
         {
           "type": "paragraph",
-          "text": "在数组协调中，位置也参与没有显式key的匹配。用下标作为key，实际上告诉React“第0个位置还是第0个身份”。反转A/B后，第0行拿到的是B的props，但它可能延续此前属于第0行的局部状态。React没有把A的业务含义猜错；是我们把位置当成了身份。"
+          "text": "使用业务ID时，旧A和新A的key相同，组件类型也没变，在同一父级的这组孩子里可以延续原有身份。于是A移动到第二行，但自己的状态仍为1。使用下标时，旧第0行的key是0，新第0行的key仍是0，且两者都是Counter。React延续第0个身份的状态，而这一行收到的id已经从A变成B，所以它显示B:1。"
+        },
+        {
+          "type": "paragraph",
+          "text": "这不是数字从A的状态队列“跑进”了B的队列，而是我们用位置定义的组件身份，与用A/B定义的业务身份不一致。现在再读“React认为哪些节点是同一个”，就有了明确含义：哪些旧身份能在本轮协调中延续，而不是仅仅比较屏幕上的文字是否相同。"
         },
         {
           "type": "paragraph",
@@ -290,134 +446,12 @@ export const reactFiberStructureArticle: Article = {
           "type": "reference",
           "title": "未显式key时用index建立旧节点映射",
           "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L307-L325"
-        }
-      ]
-    },
-    {
-      "id": "single-source",
-      "title": "把单元素匹配读完：找到同名节点以后，还要做什么",
-      "paragraphs": [],
-      "blocks": [
-        {
-          "type": "paragraph",
-          "text": "上面的key和类型规则，现在直接放回源码里看。这里的“单元素”指新结果是一个元素，并不表示旧孩子链表只能有一个节点。假设同一父级的旧孩子是A、B，而新结果只有B，函数仍然要沿sibling寻找B。下面保留完整函数，避免省掉不匹配分支后，让人误以为key相同就一定复用。"
         },
         {
-          "type": "code",
-          "language": "javascript",
-          "filename": "ReactChildFiber.old.js:1137–1212",
-          "kind": "excerpt",
-          "purpose": "阅读顺序：取key → 遍历旧孩子 → 判断类型 → 复用或记录删除 → 必要时创建。 React v18.3.1 原函数，保留 Flow 类型和原注释；依赖 React 内部上下文，不能单独运行。",
-          "code": "function reconcileSingleElement(\n  returnFiber: Fiber,\n  currentFirstChild: Fiber | null,\n  element: ReactElement,\n  lanes: Lanes,\n): Fiber {\n  const key = element.key;\n  let child = currentFirstChild;\n  while (child !== null) {\n    // TODO: If key === null and child.key === null, then this only applies to\n    // the first item in the list.\n    if (child.key === key) {\n      const elementType = element.type;\n      if (elementType === REACT_FRAGMENT_TYPE) {\n        if (child.tag === Fragment) {\n          deleteRemainingChildren(returnFiber, child.sibling);\n          const existing = useFiber(child, element.props.children);\n          existing.return = returnFiber;\n          if (__DEV__) {\n            existing._debugSource = element._source;\n            existing._debugOwner = element._owner;\n          }\n          return existing;\n        }\n      } else {\n        if (\n          child.elementType === elementType ||\n          // Keep this check inline so it only runs on the false path:\n          (__DEV__\n            ? isCompatibleFamilyForHotReloading(child, element)\n            : false) ||\n          // Lazy types should reconcile their resolved type.\n          // We need to do this after the Hot Reloading check above,\n          // because hot reloading has different semantics than prod because\n          // it doesn't resuspend. So we can't let the call below suspend.\n          (typeof elementType === 'object' &&\n            elementType !== null &&\n            elementType.$$typeof === REACT_LAZY_TYPE &&\n            resolveLazy(elementType) === child.type)\n        ) {\n          deleteRemainingChildren(returnFiber, child.sibling);\n          const existing = useFiber(child, element.props);\n          existing.ref = coerceRef(returnFiber, child, element);\n          existing.return = returnFiber;\n          if (__DEV__) {\n            existing._debugSource = element._source;\n            existing._debugOwner = element._owner;\n          }\n          return existing;\n        }\n      }\n      // Didn't match.\n      deleteRemainingChildren(returnFiber, child);\n      break;\n    } else {\n      deleteChild(returnFiber, child);\n    }\n    child = child.sibling;\n  }\n\n  if (element.type === REACT_FRAGMENT_TYPE) {\n    const created = createFiberFromFragment(\n      element.props.children,\n      returnFiber.mode,\n      lanes,\n      element.key,\n    );\n    created.return = returnFiber;\n    return created;\n  } else {\n    const created = createFiberFromElement(element, returnFiber.mode, lanes);\n    created.ref = coerceRef(returnFiber, currentFirstChild, element);\n    created.return = returnFiber;\n    return created;\n  }\n}"
-        },
-        {
-          "type": "paragraph",
-          "text": "先看while里的两条路。child.key不等于目标key时，记录当前旧孩子的删除，再沿sibling继续找；因此旧A不匹配并不意味着找不到旧B。key相同后才检查类型：普通元素比较elementType，Fragment、热更新和lazy另有分支。本文的普通函数组件案例走child.elementType === elementType。"
-        },
-        {
-          "type": "paragraph",
-          "text": "如果B的key和类型都匹配，deleteRemainingChildren从B的下一个兄弟开始记录删除，useFiber则准备B的工作节点，并设置新的return。这里不会把匹配的B一起删除。如果key虽然相同，类型却不兼容，则从当前child开始记录剩余删除并break，随后走下面的新建路径；它不会继续寻找另一个相同key来尝试匹配。重复key本来也不应作为可依赖的身份设计。"
-        },
-        {
-          "type": "paragraph",
-          "text": "deleteChild和deleteRemainingChildren在这里记录协调结果，并不是马上把DOM移除。是否跟踪这些标记还受ChildReconciler的shouldTrackSideEffects控制。DOM删除由后续提交过程应用。这样才能把“决定哪一个旧节点不用了”与“真正修改页面”分开。"
-        },
-        {
-          "type": "reference",
-          "title": "reconcileSingleElement 原始源码（v18.3.1）",
-          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L1137-L1212"
-        },
-        {
-          "type": "reference",
-          "title": "删除标记的记录 原始源码（v18.3.1）",
-          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L276-L305"
-        }
-      ]
-    },
-    {
-      "id": "slot-source",
-      "title": "数组逐项匹配：返回null不等于直接删除",
-      "paragraphs": [],
-      "blocks": [
-        {
-          "type": "paragraph",
-          "text": "数组协调开头先按位置拿一个旧Fiber和一个新孩子，交给updateSlot。请注意，slot只是这一对候选的比较，并不是整个数组diff。下面看到return null时，先把它读成“这一次配对没有得到工作节点”，不要直接翻译成“旧节点已经被删掉”。"
-        },
-        {
-          "type": "code",
-          "language": "javascript",
-          "filename": "ReactChildFiber.old.js:566–630",
-          "kind": "excerpt",
-          "purpose": "重点看REACT_ELEMENT_TYPE分支：key相同才进入updateElement；key不同时返回null。 React v18.3.1 原函数，保留 Flow 类型和原注释；依赖 React 内部上下文，不能单独运行。",
-          "code": "function updateSlot(\n  returnFiber: Fiber,\n  oldFiber: Fiber | null,\n  newChild: any,\n  lanes: Lanes,\n): Fiber | null {\n  // Update the fiber if the keys match, otherwise return null.\n\n  const key = oldFiber !== null ? oldFiber.key : null;\n\n  if (\n    (typeof newChild === 'string' && newChild !== '') ||\n    typeof newChild === 'number'\n  ) {\n    // Text nodes don't have keys. If the previous node is implicitly keyed\n    // we can continue to replace it without aborting even if it is not a text\n    // node.\n    if (key !== null) {\n      return null;\n    }\n    return updateTextNode(returnFiber, oldFiber, '' + newChild, lanes);\n  }\n\n  if (typeof newChild === 'object' && newChild !== null) {\n    switch (newChild.$$typeof) {\n      case REACT_ELEMENT_TYPE: {\n        if (newChild.key === key) {\n          return updateElement(returnFiber, oldFiber, newChild, lanes);\n        } else {\n          return null;\n        }\n      }\n      case REACT_PORTAL_TYPE: {\n        if (newChild.key === key) {\n          return updatePortal(returnFiber, oldFiber, newChild, lanes);\n        } else {\n          return null;\n        }\n      }\n      case REACT_LAZY_TYPE: {\n        const payload = newChild._payload;\n        const init = newChild._init;\n        return updateSlot(returnFiber, oldFiber, init(payload), lanes);\n      }\n    }\n\n    if (isArray(newChild) || getIteratorFn(newChild)) {\n      if (key !== null) {\n        return null;\n      }\n\n      return updateFragment(returnFiber, oldFiber, newChild, lanes, null);\n    }\n\n    throwOnInvalidObjectType(returnFiber, newChild);\n  }\n\n  if (__DEV__) {\n    if (typeof newChild === 'function') {\n      warnOnFunctionType(returnFiber);\n    }\n  }\n\n  return null;\n}"
-        },
-        {
-          "type": "paragraph",
-          "text": "新数组为[B,A]、旧数组为[A,B]时，第一次拿旧A和新B比较。稳定业务key不匹配，updateSlot返回null，数组协调退出这段顺序扫描，后续通过剩余旧节点的映射继续找B。也就是说，A没有因为这一次返回null就被判定永远不能复用。文本、空值和其他分支也说明：返回null不能被简单等同于“key变了”。"
-        },
-        {
-          "type": "paragraph",
-          "text": "如果使用下标key，旧第0项和新第0项的key相同，就进入updateElement。此时还必须检查元素类型。两项都使用Counter时，原第0项的状态被延续，新props却变成B；这才是B拿到A原来计数的完整原因。key匹配只是进入下一步，不是最终复用承诺。"
-        },
-        {
-          "type": "code",
-          "language": "javascript",
-          "filename": "ReactChildFiber.old.js:395–443",
-          "kind": "excerpt",
-          "purpose": "接着读被updateSlot调用的函数：同key之后，类型兼容才useFiber，否则创建新Fiber。 React v18.3.1 原函数，保留 Flow 类型和原注释；依赖 React 内部上下文，不能单独运行。",
-          "code": "function updateElement(\n  returnFiber: Fiber,\n  current: Fiber | null,\n  element: ReactElement,\n  lanes: Lanes,\n): Fiber {\n  const elementType = element.type;\n  if (elementType === REACT_FRAGMENT_TYPE) {\n    return updateFragment(\n      returnFiber,\n      current,\n      element.props.children,\n      lanes,\n      element.key,\n    );\n  }\n  if (current !== null) {\n    if (\n      current.elementType === elementType ||\n      // Keep this check inline so it only runs on the false path:\n      (__DEV__\n        ? isCompatibleFamilyForHotReloading(current, element)\n        : false) ||\n      // Lazy types should reconcile their resolved type.\n      // We need to do this after the Hot Reloading check above,\n      // because hot reloading has different semantics than prod because\n      // it doesn't resuspend. So we can't let the call below suspend.\n      (typeof elementType === 'object' &&\n        elementType !== null &&\n        elementType.$$typeof === REACT_LAZY_TYPE &&\n        resolveLazy(elementType) === current.type)\n    ) {\n      // Move based on index\n      const existing = useFiber(current, element.props);\n      existing.ref = coerceRef(returnFiber, current, element);\n      existing.return = returnFiber;\n      if (__DEV__) {\n        existing._debugSource = element._source;\n        existing._debugOwner = element._owner;\n      }\n      return existing;\n    }\n  }\n  // Insert\n  const created = createFiberFromElement(element, returnFiber.mode, lanes);\n  created.ref = coerceRef(returnFiber, current, element);\n  created.return = returnFiber;\n  return created;\n}"
-        },
-        {
-          "type": "reference",
-          "title": "updateSlot 原始源码（v18.3.1）",
-          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L566-L630"
-        },
-        {
-          "type": "reference",
-          "title": "updateElement 原始源码（v18.3.1）",
-          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L395-L443"
-        },
-        {
-          "type": "reference",
-          "title": "数组顺序扫描与回退路径 原始源码（v18.3.1）",
-          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L744-L932"
-        }
-      ]
-    },
-    {
-      "id": "reuse-source",
-      "title": "useFiber把身份匹配接到双缓冲",
-      "paragraphs": [],
-      "blocks": [
-        {
-          "type": "paragraph",
-          "text": "现在还差最后一环：源码反复调用useFiber，但“复用”究竟是不是直接改current？下面这个短函数把身份匹配与前面的alternate连接起来。"
-        },
-        {
-          "type": "code",
-          "language": "javascript",
-          "filename": "ReactChildFiber.old.js:328–335",
-          "kind": "excerpt",
-          "purpose": "观察createWorkInProgress调用，以及index、sibling的重置。 React v18.3.1 原函数，保留 Flow 类型和原注释；依赖 React 内部上下文，不能单独运行。",
-          "code": "function useFiber(fiber: Fiber, pendingProps: mixed): Fiber {\n  // We currently set sibling to null and index to 0 here because it is easy\n  // to forget to do before returning it. E.g. for the single child case.\n  const clone = createWorkInProgress(fiber, pendingProps);\n  clone.index = 0;\n  clone.sibling = null;\n  return clone;\n}"
-        },
-        {
-          "type": "paragraph",
-          "text": "useFiber调用createWorkInProgress，而不是直接把旧Fiber当成新返回值。后者会创建或取回alternate，沿用当前状态等起始信息。随后index归零、sibling清空，是为了让新一轮协调重新组织位置和兄弟连接；不能因此推断Hook状态被清空。位置连接、组件状态、工作标记，各自有不同的处理方式。"
-        },
-        {
-          "type": "paragraph",
-          "text": "把这条链连起来：key和类型帮助确定谁可以延续身份，useFiber为该身份取得工作节点，createWorkInProgress建立下一轮计算的起点。它们解释了状态为什么有机会保留，却没有证明组件会跳过执行，也没有决定这轮何时获得CPU时间。跳过工作要继续看bailout路径，执行先后要看Lane和根调度。"
-        },
-        {
-          "type": "reference",
-          "title": "useFiber 原始源码（v18.3.1）",
-          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L328-L335"
-        },
-        {
-          "type": "callout",
-          "title": "源码许可与核验",
-          "text": "本节原函数来自Facebook React v18.3.1，按MIT许可使用。完整源文件和原始版权许可保存在示例source-notes目录，并随ZIP下载；保留原注释，解释写在代码块之外。"
+          "type": "experiment",
+          "id": "react-fiber-structure",
+          "title": "验证业务ID与位置身份的区别",
+          "description": "初始A:0/B:0，给A加一后交换。先用业务ID，再切到下标策略重新操作；观察哪一行保留1。"
         }
       ]
     },
@@ -461,13 +495,145 @@ export const reactFiberStructureArticle: Article = {
       ]
     },
     {
+      "id": "single-source",
+      "title": "把单元素匹配读完：找到同名节点以后，还要做什么",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "下面进入进阶源码阅读。刚才的实验是数组案例，但为了先看懂key与类型如何配合，我们先读更简单的单元素路径：假设同一父级原有A、B两个孩子，现在只返回B。单元素路径不是数组重排算法；下一节再回到数组。"
+        },
+        {
+          "type": "paragraph",
+          "text": "上面的key和类型规则，现在直接放回源码里看。这里的“单元素”指新结果是一个元素，并不表示旧孩子链表只能有一个节点。假设同一父级的旧孩子是A、B，而新结果只有B，函数仍然要沿sibling寻找B。下面保留完整函数，避免省掉不匹配分支后，让人误以为key相同就一定复用。"
+        },
+        {
+          "type": "code",
+          "language": "javascript",
+          "filename": "ReactChildFiber.old.js:1137–1212",
+          "kind": "excerpt",
+          "purpose": "阅读顺序：取key → 遍历旧孩子 → 判断类型 → 复用或记录删除 → 必要时创建。 React v18.3.1 原函数，保留 Flow 类型和原注释；依赖 React 内部上下文，不能单独运行。",
+          "code": "  function reconcileSingleElement(\n    returnFiber: Fiber,\n    currentFirstChild: Fiber | null,\n    element: ReactElement,\n    lanes: Lanes,\n  ): Fiber {\n    const key = element.key;\n    let child = currentFirstChild;\n    while (child !== null) {\n      // TODO: If key === null and child.key === null, then this only applies to\n      // the first item in the list.\n      if (child.key === key) {\n        const elementType = element.type;\n        if (elementType === REACT_FRAGMENT_TYPE) {\n          if (child.tag === Fragment) {\n            deleteRemainingChildren(returnFiber, child.sibling);\n            const existing = useFiber(child, element.props.children);\n            existing.return = returnFiber;\n            if (__DEV__) {\n              existing._debugSource = element._source;\n              existing._debugOwner = element._owner;\n            }\n            return existing;\n          }\n        } else {\n          if (\n            child.elementType === elementType ||\n            // Keep this check inline so it only runs on the false path:\n            (__DEV__\n              ? isCompatibleFamilyForHotReloading(child, element)\n              : false) ||\n            // Lazy types should reconcile their resolved type.\n            // We need to do this after the Hot Reloading check above,\n            // because hot reloading has different semantics than prod because\n            // it doesn't resuspend. So we can't let the call below suspend.\n            (typeof elementType === 'object' &&\n              elementType !== null &&\n              elementType.$$typeof === REACT_LAZY_TYPE &&\n              resolveLazy(elementType) === child.type)\n          ) {\n            deleteRemainingChildren(returnFiber, child.sibling);\n            const existing = useFiber(child, element.props);\n            existing.ref = coerceRef(returnFiber, child, element);\n            existing.return = returnFiber;\n            if (__DEV__) {\n              existing._debugSource = element._source;\n              existing._debugOwner = element._owner;\n            }\n            return existing;\n          }\n        }\n        // Didn't match.\n        deleteRemainingChildren(returnFiber, child);\n        break;\n      } else {\n        deleteChild(returnFiber, child);\n      }\n      child = child.sibling;\n    }\n\n    if (element.type === REACT_FRAGMENT_TYPE) {\n      const created = createFiberFromFragment(\n        element.props.children,\n        returnFiber.mode,\n        lanes,\n        element.key,\n      );\n      created.return = returnFiber;\n      return created;\n    } else {\n      const created = createFiberFromElement(element, returnFiber.mode, lanes);\n      created.ref = coerceRef(returnFiber, currentFirstChild, element);\n      created.return = returnFiber;\n      return created;\n    }\n  }"
+        },
+        {
+          "type": "paragraph",
+          "text": "先看while里的两条路。child.key不等于目标key时，记录当前旧孩子的删除，再沿sibling继续找；因此旧A不匹配并不意味着找不到旧B。key相同后才检查类型：普通元素比较elementType，Fragment、热更新和lazy另有分支。本文的普通函数组件案例走child.elementType === elementType。"
+        },
+        {
+          "type": "paragraph",
+          "text": "如果B的key和类型都匹配，deleteRemainingChildren从B的下一个兄弟开始记录删除，useFiber则准备B的工作节点，并设置新的return。这里不会把匹配的B一起删除。如果key虽然相同，类型却不兼容，则从当前child开始记录剩余删除并break，随后走下面的新建路径；它不会继续寻找另一个相同key来尝试匹配。重复key本来也不应作为可依赖的身份设计。"
+        },
+        {
+          "type": "paragraph",
+          "text": "deleteChild和deleteRemainingChildren在这里记录协调结果，并不是马上把DOM移除。是否跟踪这些标记还受ChildReconciler的shouldTrackSideEffects控制。DOM删除由后续提交过程应用。这样才能把“决定哪一个旧节点不用了”与“真正修改页面”分开。"
+        },
+        {
+          "type": "reference",
+          "title": "reconcileSingleElement 原始源码（v18.3.1）",
+          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L1137-L1212"
+        },
+        {
+          "type": "reference",
+          "title": "删除标记的记录 原始源码（v18.3.1）",
+          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L276-L305"
+        }
+      ]
+    },
+    {
+      "id": "slot-source",
+      "title": "数组逐项匹配：返回null不等于直接删除",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "数组协调开头先按位置拿一个旧Fiber和一个新孩子，交给updateSlot。请注意，slot只是这一对候选的比较，并不是整个数组diff。下面看到return null时，先把它读成“这一次配对没有得到工作节点”，不要直接翻译成“旧节点已经被删掉”。"
+        },
+        {
+          "type": "code",
+          "language": "javascript",
+          "filename": "ReactChildFiber.old.js:566–630",
+          "kind": "excerpt",
+          "purpose": "重点看REACT_ELEMENT_TYPE分支：key相同才进入updateElement；key不同时返回null。 React v18.3.1 原函数，保留 Flow 类型和原注释；依赖 React 内部上下文，不能单独运行。",
+          "code": "  function updateSlot(\n    returnFiber: Fiber,\n    oldFiber: Fiber | null,\n    newChild: any,\n    lanes: Lanes,\n  ): Fiber | null {\n    // Update the fiber if the keys match, otherwise return null.\n\n    const key = oldFiber !== null ? oldFiber.key : null;\n\n    if (\n      (typeof newChild === 'string' && newChild !== '') ||\n      typeof newChild === 'number'\n    ) {\n      // Text nodes don't have keys. If the previous node is implicitly keyed\n      // we can continue to replace it without aborting even if it is not a text\n      // node.\n      if (key !== null) {\n        return null;\n      }\n      return updateTextNode(returnFiber, oldFiber, '' + newChild, lanes);\n    }\n\n    if (typeof newChild === 'object' && newChild !== null) {\n      switch (newChild.$$typeof) {\n        case REACT_ELEMENT_TYPE: {\n          if (newChild.key === key) {\n            return updateElement(returnFiber, oldFiber, newChild, lanes);\n          } else {\n            return null;\n          }\n        }\n        case REACT_PORTAL_TYPE: {\n          if (newChild.key === key) {\n            return updatePortal(returnFiber, oldFiber, newChild, lanes);\n          } else {\n            return null;\n          }\n        }\n        case REACT_LAZY_TYPE: {\n          const payload = newChild._payload;\n          const init = newChild._init;\n          return updateSlot(returnFiber, oldFiber, init(payload), lanes);\n        }\n      }\n\n      if (isArray(newChild) || getIteratorFn(newChild)) {\n        if (key !== null) {\n          return null;\n        }\n\n        return updateFragment(returnFiber, oldFiber, newChild, lanes, null);\n      }\n\n      throwOnInvalidObjectType(returnFiber, newChild);\n    }\n\n    if (__DEV__) {\n      if (typeof newChild === 'function') {\n        warnOnFunctionType(returnFiber);\n      }\n    }\n\n    return null;\n  }"
+        },
+        {
+          "type": "paragraph",
+          "text": "新数组为[B,A]、旧数组为[A,B]时，第一次拿旧A和新B比较。稳定业务key不匹配，updateSlot返回null，数组协调退出这段顺序扫描，后续通过剩余旧节点的映射继续找B。也就是说，A没有因为这一次返回null就被判定永远不能复用。文本、空值和其他分支也说明：返回null不能被简单等同于“key变了”。"
+        },
+        {
+          "type": "paragraph",
+          "text": "如果使用下标key，旧第0项和新第0项的key相同，就进入updateElement。此时还必须检查元素类型。两项都使用Counter时，原第0项的状态被延续，新props却变成B；这才是B拿到A原来计数的完整原因。key匹配只是进入下一步，不是最终复用承诺。"
+        },
+        {
+          "type": "code",
+          "language": "javascript",
+          "filename": "ReactChildFiber.old.js:395–443",
+          "kind": "excerpt",
+          "purpose": "接着读被updateSlot调用的函数：同key之后，类型兼容才useFiber，否则创建新Fiber。 React v18.3.1 原函数，保留 Flow 类型和原注释；依赖 React 内部上下文，不能单独运行。",
+          "code": "  function updateElement(\n    returnFiber: Fiber,\n    current: Fiber | null,\n    element: ReactElement,\n    lanes: Lanes,\n  ): Fiber {\n    const elementType = element.type;\n    if (elementType === REACT_FRAGMENT_TYPE) {\n      return updateFragment(\n        returnFiber,\n        current,\n        element.props.children,\n        lanes,\n        element.key,\n      );\n    }\n    if (current !== null) {\n      if (\n        current.elementType === elementType ||\n        // Keep this check inline so it only runs on the false path:\n        (__DEV__\n          ? isCompatibleFamilyForHotReloading(current, element)\n          : false) ||\n        // Lazy types should reconcile their resolved type.\n        // We need to do this after the Hot Reloading check above,\n        // because hot reloading has different semantics than prod because\n        // it doesn't resuspend. So we can't let the call below suspend.\n        (typeof elementType === 'object' &&\n          elementType !== null &&\n          elementType.$$typeof === REACT_LAZY_TYPE &&\n          resolveLazy(elementType) === current.type)\n      ) {\n        // Move based on index\n        const existing = useFiber(current, element.props);\n        existing.ref = coerceRef(returnFiber, current, element);\n        existing.return = returnFiber;\n        if (__DEV__) {\n          existing._debugSource = element._source;\n          existing._debugOwner = element._owner;\n        }\n        return existing;\n      }\n    }\n    // Insert\n    const created = createFiberFromElement(element, returnFiber.mode, lanes);\n    created.ref = coerceRef(returnFiber, current, element);\n    created.return = returnFiber;\n    return created;\n  }"
+        },
+        {
+          "type": "reference",
+          "title": "updateSlot 原始源码（v18.3.1）",
+          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L566-L630"
+        },
+        {
+          "type": "reference",
+          "title": "updateElement 原始源码（v18.3.1）",
+          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L395-L443"
+        },
+        {
+          "type": "reference",
+          "title": "数组顺序扫描与回退路径 原始源码（v18.3.1）",
+          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L744-L932"
+        }
+      ]
+    },
+    {
+      "id": "reuse-source",
+      "title": "useFiber把身份匹配接到双缓冲",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "现在还差最后一环：源码反复调用useFiber，但“复用”究竟是不是直接改current？下面这个短函数把身份匹配与前面的alternate连接起来。"
+        },
+        {
+          "type": "code",
+          "language": "javascript",
+          "filename": "ReactChildFiber.old.js:328–335",
+          "kind": "excerpt",
+          "purpose": "观察createWorkInProgress调用，以及index、sibling的重置。 React v18.3.1 原函数，保留 Flow 类型和原注释；依赖 React 内部上下文，不能单独运行。",
+          "code": "  function useFiber(fiber: Fiber, pendingProps: mixed): Fiber {\n    // We currently set sibling to null and index to 0 here because it is easy\n    // to forget to do before returning it. E.g. for the single child case.\n    const clone = createWorkInProgress(fiber, pendingProps);\n    clone.index = 0;\n    clone.sibling = null;\n    return clone;\n  }"
+        },
+        {
+          "type": "paragraph",
+          "text": "useFiber调用createWorkInProgress，而不是直接把旧Fiber当成新返回值。后者会创建或取回alternate，沿用当前状态等起始信息。随后index归零、sibling清空，是为了让新一轮协调重新组织位置和兄弟连接；不能因此推断Hook状态被清空。位置连接、组件状态、工作标记，各自有不同的处理方式。"
+        },
+        {
+          "type": "paragraph",
+          "text": "把这条链连起来：key和类型帮助确定谁可以延续身份，useFiber为该身份取得工作节点，createWorkInProgress建立下一轮计算的起点。它们解释了状态为什么有机会保留，却没有证明组件会跳过执行，也没有决定这轮何时获得CPU时间。跳过工作要继续看bailout路径，执行先后要看Lane和根调度。"
+        },
+        {
+          "type": "reference",
+          "title": "useFiber 原始源码（v18.3.1）",
+          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L328-L335"
+        },
+        {
+          "type": "callout",
+          "title": "源码许可与核验",
+          "text": "本节原函数来自Facebook React v18.3.1，按MIT许可使用。完整源文件和原始版权许可保存在示例source-notes目录，并随ZIP下载；保留原注释，解释写在代码块之外。"
+        }
+      ]
+    },
+    {
       "id": "boundaries",
       "title": "结构解释到哪里，就把保证停在哪里",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "从计数器反例回头看，状态跟错人的直接原因是协调身份定义与业务身份不同。Fiber让这个身份能够关联状态和待处理工作；key帮助React在同级集合中找到匹配对象；alternate支持构建下一版时复用对应节点。三者连起来，才能解释“元素重建了，状态为什么还在”。"
+          "text": "回到本文开头，Fiber首先是一个节点对象。它把类型、输入、状态、树关系和待处理工作组织在一起；多个Fiber形成工作树，工作循环据此推进更新。双缓冲组织当前与工作版本，协调确定旧身份能否延续。计数器案例只是其中“身份与状态”这一条关系的验证，不是Fiber的全部用途。"
         },
         {
           "type": "paragraph",
