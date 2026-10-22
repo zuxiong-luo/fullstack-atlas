@@ -1,3 +1,8 @@
+import concurrencyLab from '../../examples/react-concurrency/App.tsx?raw';
+import performanceLab from '../../examples/react-performance/App.tsx?raw';
+import stateManagement from '../../examples/react-state-management/App.tsx?raw';
+import hooksInteractions from '../../examples/react-hooks-interactions/App.tsx?raw';
+import reconciliation from '../../examples/react-fiber-reconciliation/App.tsx?raw';
 import foundations from '../../examples/react-foundations/App.tsx?raw';
 import doubleBuffer from '../../examples/react-double-buffer/App.tsx?raw';
 import rootScheduling from '../../examples/react-root-scheduling/App.tsx?raw';
@@ -26,3 +31,13 @@ browserExamples['react-bailout-memo']={mode:'react',articleId:'react-bailout-mem
 browserExamples['react-hook-memoization']={mode:'react',articleId:'react-hook-memoization',title:'Hook记忆化与旧闭包',description:'对照依赖稳定、失效和缺失',task:'先做无关更新，再切换查询并观察结果。',code:hookMemo};
 
 browserExamples['react-foundations']={mode:'react',articleId:'react-foundations',title:'阅读清单与状态快照',description:'验证组件、数据流、状态和身份',task:'依正文步骤对照业务ID与下标key，再比较两种三次更新。',code:foundations};
+
+browserExamples['react-fiber-reconciliation']={mode:'react',articleId:'react-fiber-reconciliation',title:'协调、身份与提交',description:'用真实React观察状态、DOM和Effect',task:'给A加一，再重排；比较业务key、下标key和父级key替换。',code:reconciliation};
+
+browserExamples['react-hooks-interactions']={mode:'react',articleId:'react-hooks-interactions',title:'Hooks与交互',description:'状态快照、Effect和请求竞态',task:'按正文顺序比较更新快照、请求清理与旧响应。',code:hooksInteractions};
+
+browserExamples['react-state-management']={mode:'react',articleId:'react-state-management',title:'状态归属与请求缓存',description:'稳定Store快照与缓存版本仲裁',task:'比较标记已读、乱序请求与乐观回滚。',code:stateManagement};
+
+browserExamples['react-performance']={mode:'react',articleId:'react-performance',title:'清单性能对照',description:'稳定输入、窗口和错误比较',task:'比较不同模式，再验证窗口卸载后的选中状态。',code:performanceLab};
+
+browserExamples['react-concurrency']={mode:'react',articleId:'react-concurrency',title:'调度与输入反馈',description:'真实React的四组更新实验',task:'比较普通、Transition、减少工作量与同步计算反例。',code:concurrencyLab};
