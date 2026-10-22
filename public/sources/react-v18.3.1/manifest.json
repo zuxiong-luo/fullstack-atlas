@@ -1,0 +1,21 @@
+{
+  "tag": "v18.3.1",
+  "files": {
+    "packages/react-reconciler/src/ReactChildFiber.old.js": "8bfda4d5200c48a9215edcf2c36c0b20f2281bc2a3ccd2e48d098cfcf74a9688",
+    "packages/react-reconciler/src/ReactEventPriorities.old.js": "1bf5b62b048b8cf3234353be96a03f0d140b1f8ac4c0a61b1de5e15fd3136a91",
+    "packages/react-reconciler/src/ReactFiber.old.js": "700e7a6fca80752b99816e89a0c6cc2a92712a3ad7bec36fec57d693302d3158",
+    "packages/react-reconciler/src/ReactFiberBeginWork.old.js": "a2e3d3d18e61c8e7cc18af55b600a45160b73b390cdc56c8af621d86bad1c7cd",
+    "packages/react-reconciler/src/ReactFiberCommitWork.old.js": "06174bc1f27fda7ca05b3e6eefa0f9b0e355f2345ef21f622d4d650c778dbaeb",
+    "packages/react-reconciler/src/ReactFiberCompleteWork.old.js": "e90aff8610881f58e304918b70bfbcb7bf4952c40c2b9592a00b61094d6c1f9c",
+    "packages/react-reconciler/src/ReactFiberConcurrentUpdates.old.js": "3709b08bafe783d5443bbb129751a8ffa6395fce94226e20ac6121c2fcb7707e",
+    "packages/react-reconciler/src/ReactFiberHooks.old.js": "8599c76c057f9cab63d1d5a1c2404943123aede7b0a49d5fd35b38d8d28b9ad3",
+    "packages/react-reconciler/src/ReactFiberLane.old.js": "853884a0e4b5f0bb5fd907291e77854ddc1e1d2b0954986a242707749f2a4690",
+    "packages/react-reconciler/src/ReactFiberNewContext.old.js": "a90ddcb493786e1c9d1fc5d36d9258035485456a15dc1f74795ae35e90b27c6f",
+    "packages/react-reconciler/src/ReactFiberRoot.old.js": "6d663a8834a43f7b915802d3c832d46382ecb1251d82b6e9962622e038429001",
+    "packages/react-reconciler/src/ReactFiberSyncTaskQueue.old.js": "bc97fb6bfd87c4cbd3766e2b95b431dd8e252b0dd272e32f28944ddbfaf63c10",
+    "packages/react-reconciler/src/ReactFiberWorkLoop.old.js": "aec9b17bd6ace7f470aacedd126e20d3eefed30fe1ff351224667777346c95ec",
+    "packages/scheduler/src/forks/Scheduler.js": "0390c1ed9da228b5eed0fd2b5b2b34e1674a6b17bd6edca86458633351dd1638",
+    "packages/shared/ReactFeatureFlags.js": "ef8d91cdbb42a01120ac672858c86f8685535672781fadb7bc42085d5d8d028a",
+    "packages/shared/shallowEqual.js": "a216bd9b8164766ee9d99c972319813ff24c451b2b5134f8e35d03e54c428416"
+  }
+}

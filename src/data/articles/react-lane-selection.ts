@@ -1,0 +1,113 @@
+import type { Article, ArticleBlock, ArticleSection } from '../articleTypes';
+const p = (text: string): ArticleBlock => ({ type: 'paragraph', text });
+const section = (id: string, title: string, blocks: ArticleBlock[]): ArticleSection => ({ id, title, paragraphs: [], blocks });
+const ref = (title: string, file: string, lines: string): ArticleBlock => ({ type: 'reference', title, url: `https://github.com/facebook/react/blob/v18.3.1/packages/${file}#${lines}` });
+const laneRef = (title: string, lines: string) => ref(title, 'react-reconciler/src/ReactFiberLane.old.js', lines);
+const code = (code: string, purpose: string, filename = '位运算实验'): ArticleBlock => ({ type: 'code', code, language: 'javascript', filename, purpose, kind: 'runnable' });
+export const reactLaneSelectionArticle: Article = {
+  id: 'react-lane-selection', topic: 'react', title: 'React 18.3.1 的 Lane 选择：有工作在等，为什么不先做它？',
+  description: '从输入、列表和后台刷新同时等待的根状态出发，手算 pending、suspended、pinged、WIP 和纠缠关系，再区分选择工作与选择渲染路径。',
+  minutes: 37, labMinutes: 25, kind: 'tutorial', status: 'review', verifiedAt: '2026-10-22',
+  versions: ['React / React DOM 18.3.1', '源码 ReactFiberLane.old.js / ReactFiberWorkLoop.old.js', 'Node 22.12.0 / TypeScript 5.7.2'],
+  tags: ['React 18', 'Lane', '优先级', 'Suspense', '源码'],
+  scope: '固定 v18.3.1 的 old reconciler 与稳定版默认 feature flags；讨论根级选择，不实现完整更新队列、Suspense UI、Hydration 或 Scheduler。六类 Lane 实验是子集教学模型。',
+  prerequisites: ['知道 render 与 commit 的区别', '能读简单 JavaScript 位运算', '知道 transition 可以让更新采用不同优先级'], questionIds: [], experiment: 'react',
+  examples: [{ label: '下载 Lane 选择实验', path: 'react-lane-selection.zip' }, { label: '实验说明与核验方法', path: 'react-lane-selection/README.md' }, { label: '源码证据与验证记录', path: 'react-lane-selection/VERIFICATION.md' }],
+  sections: [
+    section('problem', '先把问题写成一张根状态快照', [
+      p('搜索页面里，输入框正在接收新字符，结果列表在计算，后台又通知你更新一块普通状态。如果只记住“React 优先做紧急任务”，遇到真实源码很快就会卡住：为什么 Default 的位比 Transition 小，React 有时却继续做 Transition？为什么后台还有 Idle 工作，一组列表更新挂起后，根却没有安排任何工作？'),
+      p('这不是优先级规则失效，而是“优先级最高”只回答了一部分问题。React 还要知道：哪些工作仍在等，哪些目前做不下去，哪些收到可重试信号，是否已经为一棵工作树付出了计算，以及哪些更新希望一起处理。我们沿着同一个根来拆开这些判断。'),
+      p('为了能手算，先给更新起几个短名字：S 是输入对应的同步更新，D 是一项 Default 更新，A 和 B 是两条 Transition Lane，I 是 Idle。这里是在分析已经分配好 Lane 的根状态，不是在承诺“所有输入永远是 S、所有后台回调永远是 D”。Lane 的分配受事件优先级、transition 上下文等影响；本文从分配结束的地方开始。'),
+      p('全文固定 React 18.3.1 的 ReactFiberLane.old.js。不要把 React 19 或 main 分支中的同名函数拿来拼接解释。选择阶段、调度回调阶段和执行 render 阶段分开读，许多看似矛盾的说法就能对上位置。配套实验允许你编辑状态快照，展示选择依据，不访问 React 私有对象，也不伪装成性能测试。'),
+      { type: 'experiment', id: 'react-lane-selection', title: '打开 Lane 选择器', description: '先选内置案例，再逐项调整 pending / suspended / pinged / WIP / expired。结果列出实际走过的教学分支。' },
+    ]),
+    section('bits', 'Lane 是一位，Lanes 是一组；先别把它当任务编号', [
+      p('一个 Lane 用一个二进制位标识，一组 Lanes 则把多个位合在一个整数里。它不是“第几个任务”，也不是队列长度。十次更新可以落在同一条 Lane，一次 render 也可以选中多条 Lane。位集合的好处是，合并、求交和排除都可以用很少的运算表达。'),
+      { type: 'table', headers: ['本文名字', '18.3.1 位值', '说明'], rows: [['S / Sync', '1', '最低有效位'], ['C / InputContinuous', '4', '中间的2是另一个Lane，本文不建模'], ['D / Default', '16', '不是Scheduler的Normal编号'], ['A / TransitionLane1', '64', 'Transition组中的第一位'], ['B / TransitionLane2', '128', 'Transition组中的第二位'], ['I / Idle', '536870912', '1 << 29；图形不会画出全部空白位']] },
+      p('看一个很小的集合：D | A 等于 80。这不表示“优先级80”，而是16和64两个位置都置了1。对非空集合，lanes & -lanes 提取最低有效位；在这份源码的位布局中，这一位代表集合里最高的优先级。比较的是提取出来的单一 Lane，不是拿两个 Lanes 整数直接比较大小。空集合0要单独处理。'),
+      code('const D = 16, A = 64;\nconst pending = D | A;\nconsole.log(pending);            // 80\nconsole.log(pending & A);        // 64：包含A\nconsole.log(pending & ~A);       // 16：排除A\nconsole.log(pending & -pending); // 16：最高位优先级代表', '在 Node 或浏览器控制台直接运行，理解后面每一步集合变化。'),
+      p('源码共安排31个位，本文只展示六类。真实实现还区分 Hydration、Retry、Offscreen 等情况。JavaScript 位运算按32位整数进行，这也是不能任意把示例扩成几十个位、再期待原运算不变的原因。业务代码不应该导入这些内部常量；它们是理解版本行为的材料，不是公共 API。'),
+      laneRef('位布局与最高类别选择：注意 Transition 返回的是组内集合', 'L30-L184'),
+    ]),
+    section('root-sets', '四个字段描述的是不同事实，不是四条独立队列', [
+      { type: 'figure', src: 'figures/react-lane-selection/sets.svg', title: '同一条 Lane 可以出现在多个集合里', alt: 'A仍在pending，同时出现在suspended和pinged中。pending表示未完成，suspended表示此前受阻，pinged表示收到重试信号；它们不是互斥队列。', caption: '示意快照，没有时间比例。ping不会自动把A从suspended集合删除。' },
+      p('root.pendingLanes 是尚未完成的工作集合。它告诉你“还有什么”，但不能单独回答“现在能做什么”。root.suspendedLanes 记录此前渲染遇到挂起的 Lane；它们并没有完成，所以仍在 pending 里。root.pingedLanes 记录挂起工作收到唤醒信号，可以再试。ping 是允许尝试，不保证下一次 render 一定成功，也不等于此刻已经从 suspended 删除。'),
+      p('例如 A 等待一个尚未满足的依赖。根可以是 pending={A,I}、suspended={A}、pinged={}。依赖通知之后，变成 pinged={A}，而 suspended 暂时仍包含 A。源码 markRootPinged 做的是将传入 Lane 与 suspended 求交，再并入 pinged；它不会把任意无关 Lane 都标成可重试。'),
+      p('这些集合会被生命周期操作调整。markRootSuspended 会清除对应 ping 与过期时间；markRootFinished 会保留剩余 pending，并重置挂起与唤醒状态。markRootUpdated 对非 Idle 的新更新还可能清空根的 suspended/pinged，使后续 render 重新尝试。因此，不能只想象“挂起一次后，直到网络回来它永远待在原集合”。'),
+      p('实验中的复选框是快照编辑器，不模拟上述事件链。它约束 suspended 是 pending 的子集、pinged 是 suspended 的子集，避免最明显的无效输入；它仍不代表任意勾选组合都能由某段应用代码自然产生。读源码时要同时看“谁读字段”和“谁改字段”，这是理解调度状态的基本方法。'),
+      laneRef('根状态如何更新、挂起、ping与完成', 'L574-L664'),
+    ]),
+    section('candidate', '第一轮：先找可尝试的组，别急着抢占', [
+      p('getNextLanes 首先检查 pending 是否为空。空就结束，不需要往下讨论 Scheduler。非空时先把非 Idle 工作取出来。如果还存在非 Idle，它只在这个池子里找；只有完全没有非 Idle 时，才进入 Idle 分支。这意味着“非 Idle 都挂起了”不等价于“现在可以顺手做 Idle”。'),
+      p('在选定池子里，先排除 suspended，寻找未挂起工作。只要这样的工作存在，就从它们中选最高优先级类别；只有未挂起集合为空，才尝试 pinged。顺序很重要：假设 D 挂起且已 ping，A 没挂起，候选仍先选 A。不能把未挂起和已 ping 全部合起来，再直接取最高位。'),
+      { type: 'table', headers: ['pending', 'suspended', 'pinged', '首轮候选', '原因'], rows: [['S,A', '空', '空', 'S', '非idle未挂起，Sync最高'], ['A,I', 'A', '空', '空', '非idle仍存在，没有未挂起或ping，暂不进入idle'], ['A,I', 'A', 'A', 'A', '允许重试非idle A'], ['D,A', 'D', 'D', 'A', '先使用未挂起的A，不先选已ping的D'], ['A,B', '空', '空', 'A,B', 'Transition类别整体选取候选中的transition位']] },
+      p('最后一行值得停一下。函数名 getHighestPriorityLanes 末尾有 s：发现最高位属于 Transition 后，它返回输入集合中的 TransitionLanes，而不是只返回 A。Retry 也有自己的分组处理。于是“每次只处理最低的一位”不是这份源码的完整结论。分组不会把原候选里不存在的所有 Transition 位凭空加入；它是对当前候选做掩码。'),
+      p('还没有进入 WIP 比较时，nextLanes 只是本轮候选。选择结果不会直接把那些位从 pending 清掉，也没有承诺这轮已经提交。把选择和完成混在一起，就会误以为没被选中的更新丢了。更新队列怎样跳过、保留和重放，是下一层机制。'),
+      laneRef('getNextLanes：nonIdle、unblocked、pinged 的分支次序', 'L187-L228'),
+    ]),
+    section('wip', '第二轮：新候选值得丢下做到一半的工作吗？', [
+      p('假设列表已经在渲染 A，随后根上出现 D。只看位值，16小于64，似乎一定该中断 A。但中断有成本：已经做的部分工作可能需要放弃或重做。getNextLanes 会把候选与 wipLanes 比较。这里 WIP 表示当前进行中的 render 所使用的 Lane 集合，不是又一份 root.pendingLanes。'),
+      p('比较有三个前提：WIP 非空、它与候选不同、WIP 没与 suspended 相交。若进行中的工作已经挂起，源码不再用这个条件保护它。进入比较之后，候选最高位优先级等于或低于 WIP 时，函数直接返回 WIP；没有必要为了同级或者更低级工作主动丢下已有进度。'),
+      p('还有一个容易漏掉的特例：候选最高位是 Default，WIP 最高位属于 Transition 时，也继续 WIP。它覆盖了数值比较的直觉。你不必把源码注释中的刷新语义推广成所有版本的原则，但在18.3.1.old里必须承认这条明确分支。本文“Default不打断Transition”总带着前面的非挂起等条件，不是无条件口号。'),
+      { type: 'table', headers: ['进行中的WIP', '新候选', 'WIP是否挂起', '返回'], rows: [['A', 'D', '否', 'A：Default特例'], ['A', 'C', '否', 'C，随后可能带上D'], ['A', 'S', '否', 'S'], ['A', 'D', '是', 'D：不进入保护WIP的比较'], ['A', 'A,B', '否', 'A：最高位同级，提前返回']] },
+      p('最后一行再次提醒我们，位集合不是一个简单排序队列。候选多了 B，不一定立刻扩展当前 render。在这一分支提前返回后，后面的连续事件合批与 entanglement 扩展根本不会执行。读源码时不能先把所有注释概括成规则，再忽略 return 的位置。'),
+      laneRef('WIP优先级比较、Default例外和提前返回', 'L230-L254'),
+    ]),
+    section('entangle', '第三轮：选好主组后，哪些 Lane 要一起带上？', [
+      p('没有在 WIP 分支提前返回，才进入后续扩展。稳定版默认 feature flag 下，如果候选包含 InputContinuousLane，会把 pending 中的 DefaultLane 一起并入。于是 C 和 D 可以在这一批一起渲染。这里也解释了为什么 C 与 D 不能干脆合成同一个 Lane：C 能打断 Transition，而上一节的 D 特例不能。'),
+      p('再往后是 entanglement，本文译成“纠缠关系”：某条 Lane 与另外一些 Lane 有合批联系。root.entangledLanes 指出哪些位参与，root.entanglements 按位索引存储关联集合。选择器从本次候选中找参与者，把它们的关联集合并入 nextLanes。关系并不是在这个循环里靠业务字段猜出来的，而是更早由更新处理路径建立。'),
+      p('用实验中的 A↔B 关系观察一次：pending={A,B}，A挂起，B没挂起，首轮候选是B。若没有WIP，开启纠缠后选中A,B。你可能会问，A不是刚被排除了吗？是的，第一轮是在找优先推进的组，随后关联扩展可以带回别的Lane；不能把第一轮过滤误读成最后集合永远不含挂起位的保证。这也不保证这轮一定顺利完成。'),
+      { type: 'figure', src: 'figures/react-lane-selection/order.svg', title: 'return 的位置，会改变本轮是否扩展纠缠', alt: '候选选择之后先比较WIP。保留WIP则立即返回；否则先合并连续与默认工作，再扩展预先建立的纠缠关系，最后返回集合。', caption: '左侧提前返回不是遗漏。18.3.1.old 注释明确说明：普通纠缠尽力合批，不为每次中途建立的关系都抛弃已有进度。' },
+      p('如果改成 WIP={A}、A/B都没挂起，候选会是A,B，WIP比较却先返回A。即使勾着纠缠，结果仍是A。源码把普通纠缠描述为尽力而为，不能据此向业务承诺“A、B无论何时都原子提交”。真正需要跨状态的一致性，应先设计好状态关系，而不是依赖一个私有调度细节。'),
+      p('关系还存在传递性。markRootEntangled 会考虑已有关系：C和A有关系，再把A和B关联时，要把相关联系传播到已有条目。本文编辑器只建模两条Transition间预先建立的对称关系，不实现通用关系维护。固定源码对照测试也只检验这个已声明的子集，不把两个复选框称为完整React纠缠算法。'),
+      laneRef('候选扩展与纠缠顺序', 'L256-L306'),
+      laneRef('markRootEntangled：关联关系在写入时维护', 'L666-L700'),
+      ref('稳定版默认关闭 allowConcurrentByDefault', 'shared/ReactFeatureFlags.js', 'L145-L154'),
+    ]),
+    section('expired', '过期不等于改成 SyncLane，也不等于直接跳过选择', [
+      p('工作等太久，React需要降低持续让出的机会。root.expiredLanes 保存过期标记，但请重新检查 getNextLanes：这份18.3.1.old函数没有“先返回expired”这个分支。把其他版本实现、另一篇文章的伪代码直接套进来，会在这里得到错误答案。'),
+      p('ensureRootIsScheduled 会先调用 markStarvedLanesAsExpired，再调用 getNextLanes。标记过期并不意味着把原来64的Transition位变成1，也不会凭空让不存在的工作进入pending。选择结束后，在 performConcurrentWorkOnRoot 里，React检查所选集合是否包含 expired，从而决定走并发 render 还是同步 render。过期主要影响这里的执行路径。'),
+      p('因此，pending={A}时，不管expired为空还是A，选择结果都可以是A；区别是，A没有过期且满足其他条件时允许并发render，A过期后该路径转为同步render。再给pending加上S，S仍可先被选中；给A标过期不是宣告“所有更高优先级工作都不能再先做”。'),
+      p('过期时间也不是任意任务创建后统一倒数。markStarvedLanesAsExpired 遍历pending：尚无过期时间的Lane，如果没挂起或已经ping，才计算新的过期时间；已经设置时间且达到期限，则标记expired。markRootSuspended又会清空对应过期时间。源码对不同类别给出不同策略：Sync/连续类为250ms，Default/Transition类为5000ms，Retry和Idle等在此函数里不设有效期限。它们是该版本防饥饿策略，不是公共API时限。'),
+      p('用户能感受到的等待还包含浏览器任务排队、执行和绘制。不能把5000ms当作“transition一定在5秒内显示”，更不能把expired理解成“React已经完成这次更新”。悬挂依赖未满足时，换同步执行也不会替你制造缺失的数据。'),
+      laneRef('过期时间计算与防饥饿标记', 'L327-L431'),
+      ref('先标记过期，再选择Lane', 'react-reconciler/src/ReactFiberWorkLoop.old.js', 'L691-L705'),
+      ref('所选Lane的过期状态参与render路径选择', 'react-reconciler/src/ReactFiberWorkLoop.old.js', 'L866-L878'),
+    ]),
+    section('scheduler', 'Lane 与 Scheduler Priority：两套标尺，中间有映射', [
+      p('到这里，我们得到了“本轮要做哪些更新”。接下来才问“怎样安排根的执行回调”。root.callbackPriority 使用所选集合最高位代表回调优先级；Scheduler 接收的则是 Immediate、UserBlocking、Normal、Idle 这些类别。它们服务于不同层级，不能把Lane值64传给Scheduler后声称得到了Transition调度。'),
+      p('稳定版这条路径里，SyncLane是特殊情况：它进入React内部同步回调队列，并在支持时安排微任务刷新；不能概括成所有Lane都会创建普通Scheduler任务。非Sync路径先经 lanesToEventPriority，再映射到Scheduler类别。Default和Transition在这个映射中都可能落到Normal，但React仍保留各自的Lane，用于根内选择、WIP比较和更新筛选。'),
+      p('这是个很有用的反证：如果两者是同一优先级系统，Default与Transition映射成Normal以后，前面的差异就会丢失。实际没有，因为Scheduler决定什么时候有机会回调，React的Lane系统决定回调里选择哪些更新。即便回调名叫 performConcurrentWorkOnRoot，内部也可能因为blocking、expired或者Scheduler的didTimeout而调用renderRootSync。'),
+      { type: 'table', headers: ['已选择的集合（本文子集）', '安排入口', '稳定默认路径的典型判断'], rows: [['S', 'React同步回调队列', '同步render'], ['C或C,D', 'Scheduler UserBlocking', 'blocking，走同步render'], ['D', 'Scheduler Normal', 'blocking，走同步render'], ['A或A,B', 'Scheduler Normal', '没有expired、didTimeout等阻碍时允许并发render'], ['I', 'Scheduler Idle', '满足条件时允许并发render']] },
+      p('这里的“同步render”描述不在工作循环中主动让出，并不意味着调用setState那一行一定立刻写DOM。调度回调什么时候运行、render是否中断、commit什么时候发生，是相关但不同的问题。把它们都缩成“同步更新”四个字，经常会把解释带偏。'),
+      ref('Lane到事件优先级的映射', 'react-reconciler/src/ReactEventPriorities.old.js', 'L70-L82'),
+      ref('根回调的Sync特殊路径与Scheduler映射', 'react-reconciler/src/ReactFiberWorkLoop.old.js', 'L717-L821'),
+      laneRef('includesBlockingLane 与 includesExpiredLane 是分开的判断', 'L465-L486'),
+    ]),
+    section('slice', '允许让出，不是每5ms强制掐断', [
+      p('并发render需要执行到检查让出的地方，才有机会把主线程交回宿主环境。一个组件函数里的长同步循环不会因为选中了Transition Lane就被强行截断；选择器也不运行计时器，更不会把六个位转换成六个线程。实验页面显示“允许让出”，故意没有显示“一定切成几段”。'),
+      p('Scheduler的预算和shouldYield判断需要结合版本、宿主配置与当次执行情况理解。常见的5ms描述是一种实现策略的简写，不是保证每过5ms就出现一次可见切片。单位工作自身耗时、是否已经超时、是否走同步render，都会改变观察结果。Lane选择实验回答的是集合与分支，不是实时系统的抢占定理。'),
+      p('如果你的目标是解释输入卡顿，应回到真实页面测事件处理、render和提交，而不是拿这里的mask当性能分数。本篇没有毫秒提升数据：不同集合的结果是确定性逻辑输出，不代表某台手机会更快或更慢。理解机制可以指导实验，但不能替代实验。'),
+      ref('并发工作循环只在工作单位之间检查shouldYield', 'react-reconciler/src/ReactFiberWorkLoop.old.js', 'L1824-L1831'),
+    ]),
+    section('run', '七个案例，按顺序验证自己的理解', [
+      p('先在站内打开实验。预设“初始：输入和列表”会选S；切到“全部挂起也不选Idle”会返回空。不要一上来同时改所有勾选：先勾上A的pinged，观察从空变成A；再去掉A的pending，观察只剩I时才能选Idle。这个顺序能区分“没有可尝试的非idle工作”和“完全没有非idle工作”。'),
+      p('继续选“Default不打断Transition”，观察WIP提前返回A。把Default换成Continuous，结果应变成C，若保留pending D还会带上D。再选“纠缠扩展候选”与“WIP提前返回”对照：前者能扩展到A,B，后者在到达纠缠循环之前就返回A。最后切换expired，确认它改变执行说明，而没有把选中的mask从64改为1。'),
+      { type: 'code', language: 'sh', filename: '终端', kind: 'runnable', purpose: '从完整仓库根目录运行。独立ZIP解压后进入react-lane-selection即可，从npm ci开始。', code: 'cd examples/react-lane-selection\nnvm use\nnpm ci\nnpm test\nnpm run build\nnpm run dev' },
+      p('Node固定22.12.0；不用nvm时手动切换对应Node版本，跳过nvm use。安装依赖需要网络。独立项目有lockfile、main.tsx与index.html，启动后打开终端打印的地址；站内实验室直接载入同一份App.tsx，不要求浏览器下载Node依赖。手机表格允许横向滚动，每个复选框都有明确的Lane和字段标签。'),
+      p('测试不是只检查“结果包含某个词”。它读取仓库内保存的v18.3.1源码快照，验证SHA-256，再取出getHighestPriorityLanes与getNextLanes的原函数体，仅移除Flow签名，提供固定常量与辅助函数。教学选择器与这两段原逻辑在声明的六Lane子集上比较：遍历4^6个可用性快照，组合选定WIP与两种纠缠开关，并保留具体反例断言。'),
+      p('这里的对照提供比“我看起来写对了”更强的证据，但仍有边界：它只验证选择函数在模型输入范围内的结果，不证明完整React生命周期，也不证明每个快照都能由真实组件事件产生。测试中的4^6来自每条Lane四种状态：不存在、未挂起、挂起未ping、挂起且ping，不是四种业务更新类型。'),
+      { type: 'callout', title: '验证口径', text: '自动测试验证位运算、已知分支、源码子集对照和服务端初始渲染；TypeScript与生产构建另行验证。交互点击与手机视觉效果需在集成页面验收，不能用SSR字符串检查替代。详细环境、命令与证据表见VERIFICATION.md。' },
+    ]),
+    section('debug', '以后看到“不先做它”，沿着这五步排查', [
+      { type: 'list', ordered: true, items: ['确认对应版本与源码分支，先找到pending中的实际Lane，不从业务名字猜。', '检查非idle池、suspended与pinged，分清未挂起优先和已ping兜底。', '检查是否已有WIP、WIP是否挂起，尤其注意Default例外与提前return。', '查看连续事件合批和预先建立的纠缠关系，别把初始候选当最终集合。', '最后再看回调映射、blocking、expired和didTimeout，解释执行方式。'] },
+      p('开头的两个疑问现在可以具体回答：Default有时不先做，是因为进行中的Transition受到了明确的保留分支保护；Idle有时不做，是因为根上仍然存在非idle工作，即使那些工作暂时全部挂起。它们都不是“React随便调度”，而是有输入条件的选择策略。'),
+      p('你也获得了一个更可靠的阅读习惯：先问某函数返回的是什么，再问返回值由谁消费。getNextLanes返回工作集合；ensureRootIsScheduled安排根回调；performConcurrentWorkOnRoot进一步决定render路径。把这些层次分清之后，Lane不再是一串需要背诵的二进制数字，而是一组可以推导、实验和核验的状态。'),
+    ]),
+  ],
+  references: [
+    { title: 'React 18.3.1 — ReactFiberLane.old.js', url: 'https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactFiberLane.old.js' },
+    { title: 'React 18.3.1 — ReactFiberWorkLoop.old.js', url: 'https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactFiberWorkLoop.old.js' },
+    { title: 'React 18.3.1 — ReactEventPriorities.old.js', url: 'https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactEventPriorities.old.js' },
+  ],
+};

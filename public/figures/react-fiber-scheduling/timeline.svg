@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 580" role="img" aria-labelledby="title desc">
+<title id="title">输入与列表更新的调度顺序示意</title><desc id="desc">输入a提交后开始计算列表，列表让出后响应输入ab，再处理最新列表并提交。时间宽度不表示真实耗时。</desc>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#385b50"/></marker></defs>
+<rect width="1080" height="580" rx="16" fill="#f6f8f3"/>
+<g font-family="system-ui,sans-serif" fill="#183c31" font-size="18"><text x="35" y="44" font-size="25" font-weight="bold">让出之后，新的输入有机会先完成</text><text x="35" y="78">教学时间线：宽度没有毫秒含义，也不保证每次输入都发生中断。</text>
+<path d="M170 112 L1030 112" stroke="#385b50" marker-end="url(#arrow)"/><text x="960" y="100">时间 →</text>
+<text x="32" y="174">输入事件</text><text x="32" y="265">紧急更新</text><text x="32" y="365">列表 render</text><text x="32" y="464">可见结果</text>
+<g stroke="#a2b8ac" stroke-dasharray="5 5"><path d="M170 195 H1030"/><path d="M170 290 H1030"/><path d="M170 394 H1030"/></g>
+<g fill="#d4e9dd" stroke="#557f6e"><rect x="180" y="144" width="115" height="48" rx="6"/><rect x="535" y="144" width="125" height="48" rx="6"/><rect x="180" y="230" width="170" height="48" rx="6"/><rect x="535" y="230" width="175" height="48" rx="6"/></g>
+<text x="198" y="175">输入 a</text><text x="552" y="175">输入 ab</text><text x="197" y="261">提交输入 a</text><text x="550" y="261">提交输入 ab</text>
+<g fill="#f5e9c5" stroke="#9a8051"><rect x="355" y="326" width="165" height="52" rx="6"/><rect x="720" y="326" width="110" height="52" rx="6"/></g><text x="370" y="358">准备列表 a</text><text x="730" y="348" font-size="15">协调最新状态</text><text x="730" y="369" font-size="15">完成 ab</text>
+<path d="M520 348 L535 194" stroke="#385b50" fill="none" marker-end="url(#arrow)"/><text x="542" y="355">让出</text>
+<g fill="#fff" stroke="#76988b"><rect x="180" y="425" width="670" height="65" rx="6"/><rect x="850" y="425" width="160" height="65" rx="6"/></g><text x="220" y="465">旧列表仍可见，输入框已经可以显示新内容</text><text x="868" y="465">提交列表 ab</text>
+<text x="35" y="542">render 可被放弃；DOM 变更在 commit 阶段发生。继续或重做的范围由具体更新决定。</text>
+</g></svg>

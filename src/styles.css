@@ -23,3 +23,53 @@
 .public-article-grid{grid-template-columns:minmax(0,1fr)}.offline-panel,.contact-panel,.comments-panel{padding:28px;border:1px solid var(--border,#ddd);border-radius:18px;margin:24px 0;min-width:0}.offline-panel p,.contact-panel p,.comments-panel p{line-height:1.8}.offline-actions{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0}.offline-panel progress{width:100%;accent-color:#40634e}.comments-panel iframe{width:100%}.contact-panel a{overflow-wrap:anywhere}.contact-panel .button{margin:12px 12px 12px 0}@media(max-width:760px){.offline-panel,.contact-panel,.comments-panel{padding:18px}}
 
 .agent-banner{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:22px 26px;background:var(--hero);border:1px solid var(--line);border-radius:16px;margin-bottom:22px}.agent-banner strong,.agent-banner small{display:block}.agent-banner small{margin-top:8px;color:var(--secondary);line-height:1.7}.agent-intro{padding:26px;background:var(--surface);border:1px solid var(--line);border-radius:18px;margin:24px 0}.agent-intro h2{margin-bottom:14px}.agent-intro p{margin-top:12px}.agent-prereqs{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}.agent-prereqs a{padding:10px 14px;background:var(--pale);border-radius:8px;font-size:13px}.agent-chapters{display:grid;gap:14px}.agent-chapter{display:flex;align-items:start;gap:22px;padding:26px;background:var(--surface);border:1px solid var(--line);border-radius:16px}.agent-chapter:hover{border-color:var(--green)}.chapter-number{font-size:26px;font-weight:700;color:var(--green);min-width:38px}.agent-chapter>div{flex:1;min-width:0}.agent-chapter h2{font-size:20px;margin:10px 0}.agent-chapter p{color:var(--secondary);font-size:14px}.agent-chapter .chapter-outcome{margin-top:12px;color:var(--green)}.series-back{display:block;color:var(--green);font-size:13px;margin-bottom:20px}.series-pagination{display:flex;gap:20px;justify-content:space-between;flex-wrap:wrap;margin:28px 0;color:var(--green);font-size:14px}.sidebar nav{overflow-y:auto;min-height:0}.sidebar-note{flex-shrink:0}@media(max-width:760px){.agent-chapter{gap:12px;padding:18px}.agent-chapter h2{font-size:18px}.agent-chapter>svg{display:none}.agent-intro,.agent-banner{padding:20px}.chapter-number{font-size:22px;min-width:30px}}
+
+/* Ordered article blocks keep code and diagrams within the reading column. */
+.article-layout > article,.public-prose {min-width:0}
+.public-prose p {line-height:1.9}
+.public-prose li {line-height:1.85;margin:.55rem 0}
+.article-code {max-width:100%;min-width:0}
+.article-code .code-caption {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;flex-wrap:wrap}
+.article-code .code-caption span {padding:0}
+.code-caption button {color:inherit;border:1px solid currentColor;border-radius:6px;background:transparent;padding:4px 10px;cursor:pointer}
+.article-code .code-purpose {padding:0 16px;color:inherit;font-size:13px;margin:0;opacity:.85}
+.article-code pre {overflow-x:auto;white-space:pre;max-width:100%;line-height:1.65;tab-size:2}
+.article-figure {margin:28px 0;border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--surface)}
+.figure-scroll {overflow-x:auto;max-width:100%;overscroll-behavior-x:contain}
+.figure-scroll img {display:block;width:100%;min-width:640px;height:auto}
+.article-figure figcaption {font-size:14px;line-height:1.8;margin-top:14px}
+.article-figure figcaption p {margin:8px 0}
+.figure-dialog {width:min(1400px,94vw);max-height:92vh;box-sizing:border-box;padding:20px;background:var(--surface,#fff);color:var(--ink,#223);border:1px solid var(--line);border-radius:14px}
+.figure-dialog::backdrop {background:#10271eb0}
+.figure-dialog .figure-scroll {margin-top:16px}
+.figure-dialog img {min-width:1000px}
+.article-table {overflow-x:auto;margin:24px 0}
+.article-table table {border-collapse:collapse;min-width:560px;width:100%;font-size:14px;line-height:1.7}
+.article-table td,.article-table th {border:1px solid var(--line);padding:12px;text-align:left;vertical-align:top}
+.article-table caption {text-align:left;font-weight:600;padding:10px 0}
+.inline-reference {font-size:13px;color:var(--muted)}
+.inline-reference a {text-decoration:underline;text-underline-offset:3px}
+.article-callout {margin:24px 0}
+@media(max-width:760px){.article-figure{padding:10px}.code-caption{font-size:12px}}
+.public-article-layout .article-aside {position:sticky;top:20px;align-self:start}
+.public-article-layout .article-toc {position:static;max-height:72vh;overflow-y:auto}
+@media(max-width:1000px){.public-article-layout .article-aside{position:static}.public-article-layout .article-toc{display:flex;max-height:180px;padding:15px;border:1px solid var(--line);border-radius:8px;margin-bottom:12px}}
+
+.source-series{margin:24px 0}.source-series a[aria-current="page"]{font-weight:700;background:var(--pale)}
+
+/* Local syntax tokens: source text remains selectable and is copied verbatim. */
+.article-code .token.comment,.article-code .token.prolog{color:#a8bbb5;font-style:italic}
+.article-code .token.keyword,.article-code .token.atrule{color:#d6b4ff}
+.article-code .token.string,.article-code .token.attr-value{color:#c2e697}
+.article-code .token.function,.article-code .token.function-variable{color:#ffda96}
+.article-code .token.number,.article-code .token.boolean,.article-code .token.constant{color:#ffb5a0}
+.article-code .token.class-name,.article-code .token.builtin{color:#8cdfe2}
+.article-code .token.operator,.article-code .token.punctuation{color:#c9d9d5}
+.article-code .token.tag,.article-code .token.property,.article-code .token.attr-name{color:#9dc9ff}
+.source-reference{margin:18px 0;min-width:0}
+.source-reference-heading{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.source-reference-heading button{font:inherit;color:var(--accent,#427c64);border:1px solid #91aa9b66;border-radius:8px;background:transparent;padding:8px 12px;text-align:left;cursor:pointer;overflow-wrap:anywhere}
+.source-reference-heading a{font-size:13px}
+.source-reference .article-code{margin-top:12px}
+
+.react-series-nav details{border-top:1px solid #91aa9b44;padding:12px 0}.react-series-nav summary{cursor:pointer;line-height:1.8}.react-series-nav .related-links{margin:10px 0}.react-series-nav details p{margin-bottom:0}

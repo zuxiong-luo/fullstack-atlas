@@ -6,3 +6,14 @@ public/react-runtime.js
 !.env.example
 *.tsbuildinfo
 .DS_Store
+
+# Generated offline example source mirrors
+public/examples/
+work/
+examples/**/.venv/
+examples/**/__pycache__/
+examples/**/.pytest_cache/
+examples/**/node_modules/
+examples/**/dist/
+public/downloads/
+examples/**/.test/

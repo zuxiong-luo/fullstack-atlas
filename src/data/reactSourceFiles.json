@@ -1,0 +1,18 @@
+[
+  "packages/react-reconciler/src/ReactChildFiber.old.js",
+  "packages/react-reconciler/src/ReactEventPriorities.old.js",
+  "packages/react-reconciler/src/ReactFiber.old.js",
+  "packages/react-reconciler/src/ReactFiberBeginWork.old.js",
+  "packages/react-reconciler/src/ReactFiberCommitWork.old.js",
+  "packages/react-reconciler/src/ReactFiberCompleteWork.old.js",
+  "packages/react-reconciler/src/ReactFiberConcurrentUpdates.old.js",
+  "packages/react-reconciler/src/ReactFiberHooks.old.js",
+  "packages/react-reconciler/src/ReactFiberLane.old.js",
+  "packages/react-reconciler/src/ReactFiberNewContext.old.js",
+  "packages/react-reconciler/src/ReactFiberRoot.old.js",
+  "packages/react-reconciler/src/ReactFiberSyncTaskQueue.old.js",
+  "packages/react-reconciler/src/ReactFiberWorkLoop.old.js",
+  "packages/scheduler/src/forks/Scheduler.js",
+  "packages/shared/ReactFeatureFlags.js",
+  "packages/shared/shallowEqual.js"
+]

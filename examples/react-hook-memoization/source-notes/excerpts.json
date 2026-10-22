@@ -1,0 +1,26 @@
+{
+  "mount": {
+    "file": "ReactFiberHooks.old.js",
+    "start": 1904,
+    "end": 1913,
+    "code": "function mountMemo<T>(\n  nextCreate: () => T,\n  deps: Array<mixed> | void | null,\n): T {\n  const hook = mountWorkInProgressHook();\n  const nextDeps = deps === undefined ? null : deps;\n  const nextValue = nextCreate();\n  hook.memoizedState = [nextValue, nextDeps];\n  return nextValue;\n}"
+  },
+  "update": {
+    "file": "ReactFiberHooks.old.js",
+    "start": 1915,
+    "end": 1934,
+    "code": "function updateMemo<T>(\n  nextCreate: () => T,\n  deps: Array<mixed> | void | null,\n): T {\n  const hook = updateWorkInProgressHook();\n  const nextDeps = deps === undefined ? null : deps;\n  const prevState = hook.memoizedState;\n  if (prevState !== null) {\n    // Assume these are defined. If they're not, areHookInputsEqual will warn.\n    if (nextDeps !== null) {\n      const prevDeps: Array<mixed> | null = prevState[1];\n      if (areHookInputsEqual(nextDeps, prevDeps)) {\n        return prevState[0];\n      }\n    }\n  }\n  const nextValue = nextCreate();\n  hook.memoizedState = [nextValue, nextDeps];\n  return nextValue;\n}"
+  },
+  "callback": {
+    "file": "ReactFiberHooks.old.js",
+    "start": 1881,
+    "end": 1902,
+    "code": "function mountCallback<T>(callback: T, deps: Array<mixed> | void | null): T {\n  const hook = mountWorkInProgressHook();\n  const nextDeps = deps === undefined ? null : deps;\n  hook.memoizedState = [callback, nextDeps];\n  return callback;\n}\n\nfunction updateCallback<T>(callback: T, deps: Array<mixed> | void | null): T {\n  const hook = updateWorkInProgressHook();\n  const nextDeps = deps === undefined ? null : deps;\n  const prevState = hook.memoizedState;\n  if (prevState !== null) {\n    if (nextDeps !== null) {\n      const prevDeps: Array<mixed> | null = prevState[1];\n      if (areHookInputsEqual(nextDeps, prevDeps)) {\n        return prevState[0];\n      }\n    }\n  }\n  hook.memoizedState = [callback, nextDeps];\n  return callback;\n}"
+  },
+  "deps": {
+    "file": "ReactFiberHooks.old.js",
+    "start": 326,
+    "end": 371,
+    "code": "function areHookInputsEqual(\n  nextDeps: Array<mixed>,\n  prevDeps: Array<mixed> | null,\n) {\n  if (__DEV__) {\n    if (ignorePreviousDependencies) {\n      // Only true when this component is being hot reloaded.\n      return false;\n    }\n  }\n\n  if (prevDeps === null) {\n    if (__DEV__) {\n      console.error(\n        '%s received a final argument during this render, but not during ' +\n          'the previous render. Even though the final argument is optional, ' +\n          'its type cannot change between renders.',\n        currentHookNameInDev,\n      );\n    }\n    return false;\n  }\n\n  if (__DEV__) {\n    // Don't bother comparing lengths in prod because these arrays should be\n    // passed inline.\n    if (nextDeps.length !== prevDeps.length) {\n      console.error(\n        'The final argument passed to %s changed size between renders. The ' +\n          'order and size of this array must remain constant.\\n\\n' +\n          'Previous: %s\\n' +\n          'Incoming: %s',\n        currentHookNameInDev,\n        `[${prevDeps.join(', ')}]`,\n        `[${nextDeps.join(', ')}]`,\n      );\n    }\n  }\n  for (let i = 0; i < prevDeps.length && i < nextDeps.length; i++) {\n    if (is(nextDeps[i], prevDeps[i])) {\n      continue;\n    }\n    return false;\n  }\n  return true;\n}"
+  }
+}

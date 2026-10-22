@@ -1,0 +1,14 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {build} from 'esbuild';
+import {unlink} from 'node:fs/promises';
+const output=new URL('./.compiled-test.mjs',import.meta.url);
+await build({entryPoints:['App.tsx'],outfile:output.pathname,bundle:true,platform:'node',format:'esm',external:['react']});
+const {append,entries,rebase}=await import(output.href);await unlink(output);
+const add={label:'+10',lane:2,apply:n=>n+10},multiply={label:'×2',lane:1,apply:n=>n*2};
+test('ring tail preserves insertion order and closes back to first',()=>{let tail=null;tail=append(tail,add);assert.equal(tail.next,tail);tail=append(tail,multiply);assert.deepEqual(entries(tail),[add,multiply]);assert.equal(tail.next.next,tail);});
+test('skip then replay preserves 1→22 rather than 2→12',()=>{const first=rebase(1,[add,multiply],1);assert.equal(first.state,2);assert.equal(first.baseState,1);assert.deepEqual(first.queue.map(x=>x.lane),[2,0]);const final=rebase(first.baseState,first.queue,2);assert.equal(final.state,22);assert.equal(final.baseState,22);assert.equal(final.queue.length,0);});
+test('state before first skipped update becomes base',()=>{const first=rebase(1,[multiply,add,multiply],1);assert.equal(first.state,4);assert.equal(first.baseState,2);assert.equal(rebase(first.baseState,first.queue,2).state,24);});
+test('all eligible and empty queues',()=>{assert.equal(rebase(1,[add,multiply],3).state,22);assert.equal(rebase(7,[],1).baseState,7);});
+test('replacement and updater ordering differ',()=>{const replace={label:'replace2',lane:1,apply:()=>2},inc={label:'+1',lane:1,apply:n=>n+1};assert.equal(rebase(1,[replace,replace,replace],1).state,2);assert.equal(rebase(1,[inc,inc,inc],1).state,4);assert.equal(rebase(1,[inc,replace],1).state,2);});
+test('retained updates run in original order after repeated skips',()=>{const first=rebase(1,[add,multiply,add],1);const second=rebase(first.baseState,first.queue,1);assert.equal(second.state,2);assert.equal(rebase(second.baseState,second.queue,2).state,32);});

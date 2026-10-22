@@ -1,0 +1,12 @@
+[
+ {"name":"success","scenario":"success","request":{"question":"怎么读取配置？","documents":[{"id":"guide","text":"配置从环境变量读取。"}]},"status":200,"citations":["guide"]},
+ {"name":"empty question","scenario":"success","request":{"question":"  ","documents":[{"id":"guide","text":"正文"}]},"status":400,"code":"INVALID_REQUEST"},
+ {"name":"duplicate ids","scenario":"success","request":{"question":"问题","documents":[{"id":"a","text":"一"},{"id":"a","text":"二"}]},"status":400,"code":"INVALID_REQUEST"},
+ {"name":"extra field","scenario":"success","request":{"question":"问题","documents":[{"id":"a","text":"正文"}],"scenario":"success"},"status":400,"code":"INVALID_REQUEST"},
+ {"name":"empty documents","scenario":"success","request":{"question":"问题","documents":[]},"status":400,"code":"INVALID_REQUEST"},
+ {"name":"invalid JSON","scenario":"invalid_json","request":{"question":"问题","documents":[{"id":"a","text":"正文"}]},"status":502,"code":"MODEL_FORMAT_ERROR"},
+ {"name":"invalid schema","scenario":"invalid_schema","request":{"question":"问题","documents":[{"id":"a","text":"正文"}]},"status":502,"code":"MODEL_SCHEMA_ERROR"},
+ {"name":"invented citation","scenario":"unsupported_citation","request":{"question":"问题","documents":[{"id":"a","text":"正文"}]},"status":502,"code":"UNSUPPORTED_CITATION"},
+ {"name":"timeout","scenario":"timeout","request":{"question":"问题","documents":[{"id":"a","text":"正文"}]},"status":504,"code":"UPSTREAM_TIMEOUT"},
+ {"name":"upstream unavailable","scenario":"upstream_error","request":{"question":"问题","documents":[{"id":"a","text":"正文"}]},"status":502,"code":"UPSTREAM_ERROR"}
+]

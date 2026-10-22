@@ -1,0 +1,12 @@
+{
+  "version": "chapter-01-v1",
+  "article": "agent-foundations",
+  "contract": "CONTRACT.md",
+  "schema": "schema.json",
+  "cases": "cases.json",
+  "implementations": [
+    "../python",
+    "../typescript"
+  ],
+  "scope": "validated model-call boundary; deterministic mock; no tools, retrieval, persistence or model quality claims"
+}
