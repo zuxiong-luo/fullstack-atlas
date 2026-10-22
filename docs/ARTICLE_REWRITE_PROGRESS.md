@@ -71,3 +71,7 @@
 共享交付：按A～G组织现有正文阅读入口；源码快照同步脚本保持固定tag并校验已存文件hash；正常构建不联网下载源码。
 
 本批统一验收记录：`REACT_BATCH_01_VALIDATION.md`。页面保留review便于读者反馈，不表示整个系列已完成。
+
+## 七篇系列标杆（2026-10-22）
+
+最新目录采用REACT_SEVEN_ARTICLE_PLAN.md。本次仅交付react-foundations第一篇本地审阅稿：12个递进小节、三张本地图、完整阅读清单实验；七项示例测试与28项主站测试通过，浏览器及390px阅读已检查。暂不批量合并或重定向旧专题，待读者确认表达与深度。实验记录见examples/react-foundations/VERIFICATION.md。

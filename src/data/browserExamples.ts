@@ -1,3 +1,4 @@
+import foundations from '../../examples/react-foundations/App.tsx?raw';
 import doubleBuffer from '../../examples/react-double-buffer/App.tsx?raw';
 import rootScheduling from '../../examples/react-root-scheduling/App.tsx?raw';
 import bailoutMemo from '../../examples/react-bailout-memo/App.tsx?raw';
@@ -23,3 +24,5 @@ browserExamples['react-root-scheduling']={mode:'react',articleId:'react-root-sch
 browserExamples['react-bailout-memo']={mode:'react',articleId:'react-bailout-memo',title:'React.memo与子树更新',description:'真实React的父子更新对照',task:'比较父更新、子state与Context更新。',code:bailoutMemo};
 
 browserExamples['react-hook-memoization']={mode:'react',articleId:'react-hook-memoization',title:'Hook记忆化与旧闭包',description:'对照依赖稳定、失效和缺失',task:'先做无关更新，再切换查询并观察结果。',code:hookMemo};
+
+browserExamples['react-foundations']={mode:'react',articleId:'react-foundations',title:'阅读清单与状态快照',description:'验证组件、数据流、状态和身份',task:'依正文步骤对照业务ID与下标key，再比较两种三次更新。',code:foundations};

@@ -1,0 +1,24 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {JSDOM} from 'jsdom';
+import {build} from 'esbuild';
+import {mkdir} from 'node:fs/promises';
+const dom=new JSDOM('<!doctype html><div id="root"></div>');
+globalThis.window=dom.window;globalThis.document=dom.window.document;
+globalThis.IS_REACT_ACT_ENVIRONMENT=true;
+const React=await import('react');const {createRoot}=await import('react-dom/client');
+await mkdir('.test',{recursive:true});
+await build({entryPoints:['App.tsx'],bundle:true,format:'esm',platform:'node',external:['react'],outfile:'.test/app.mjs'});
+const {default:App}=await import('./.test/app.mjs');
+const text=s=>document.querySelector(s)?.textContent;
+async function fixture(run){const root=createRoot(document.getElementById('root'));await React.act(async()=>root.render(React.createElement(App)));
+ const click=async name=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent===name);assert.ok(b,name);await React.act(async()=>b.dispatchEvent(new window.MouseEvent('click',{bubbles:true})))};
+ const fill=async(label,value)=>{const input=document.querySelector(`input[aria-label="${label}"]`);assert.ok(input);await React.act(async()=>{Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set.call(input,value);input.dispatchEvent(new window.Event('input',{bubbles:true}))})};
+ try{await run({click,fill})}finally{await React.act(async()=>root.unmount())}}
+test('snapshot value updates replace with 1; updater functions accumulate to 3',()=>fixture(async({click})=>{await click('三次值更新');assert.equal(text('[data-count]'),'1');assert.match(text('[data-report]'),/count=0/);await click('重置计数');await click('三次函数更新');assert.equal(text('[data-count]'),'3');assert.match(text('[data-report]'),/count=0/)}));
+test('controlled search derives count and clearing restores rows',()=>fixture(async({fill})=>{await fill('搜索书名','React');assert.match(text('[data-summary]'),/当前显示 1 本/);assert.equal(document.querySelector('[data-row="B"]'),null);await fill('搜索书名','');assert.equal(document.querySelectorAll('[data-row]').length,2)}));
+test('child callback updates parent data and derived completed count',()=>fixture(async({click})=>{await click('标为已读 A');assert.match(text('[data-summary]'),/已读 1 本/);assert.equal(text('[data-done="A"]'),'已读');assert.equal(text('[data-done="B"]'),'未读')}));
+test('stable IDs preserve row draft and existing DOM node during reorder',()=>fixture(async({click,fill})=>{await fill('临时笔记 A','先读这一章');const input=document.querySelector('input[aria-label="临时笔记 A"]');await click('反转顺序');assert.equal(text('[data-note="A"]'),'先读这一章');assert.equal(text('[data-note="B"]'),'（空）');assert.equal(document.querySelector('input[aria-label="临时笔记 A"]'),input)}));
+test('index key counterexample associates draft with new item at same position',()=>fixture(async({click,fill})=>{await click('切换 key 策略并重置');await fill('临时笔记 A','A的草稿');await click('反转顺序');assert.equal(text('[data-note="B"]'),'A的草稿');assert.equal(text('[data-note="A"]'),'（空）')}));
+test('filter unmount loses local draft but parent read status survives',()=>fixture(async({click,fill})=>{await click('标为已读 A');await fill('临时笔记 A','暂存');await fill('搜索书名','TypeScript');await fill('搜索书名','');assert.equal(text('[data-note="A"]'),'（空）');assert.equal(text('[data-done="A"]'),'已读')}));
+test('changing parent key resets child draft without resetting parent data',()=>fixture(async({click,fill})=>{await click('标为已读 A');await fill('临时笔记 A','暂存');await click('只重建列表');assert.equal(text('[data-note="A"]'),'（空）');assert.equal(text('[data-done="A"]'),'已读')}));

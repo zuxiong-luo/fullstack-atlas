@@ -1,3 +1,4 @@
+import {reactFoundationsArticle} from './articles/react-foundations';
 import {reactDoubleBufferArticle} from './articles/react-double-buffer';
 import {reactRootSchedulingArticle} from './articles/react-root-scheduling';
 import {reactBailoutMemoArticle} from './articles/react-bailout-memo';
@@ -28,7 +29,7 @@ export const articleTopics=[
 
 const rewritten = [reactFiberArticle,agentFoundationsArticle];
 export const reactSourceArticles = [reactFiberStructureArticle,reactHooksQueueArticle,reactLaneSelectionArticle,reactWorkLoopArticle,reactDoubleBufferArticle,reactRootSchedulingArticle,reactBailoutMemoArticle,reactHookMemoizationArticle];
-export const articles = [...legacyArticles.map(a=>rewritten.find(r=>r.id===a.id)??a),...reactSourceArticles];
+export const articles = [reactFoundationsArticle,...legacyArticles.map(a=>rewritten.find(r=>r.id===a.id)??a),...reactSourceArticles];
 export const readingPaths=[
 {id:'request',name:'从身份到数据',description:'理解一次请求如何建立信任，再保证数据变更正确。',articleIds:['oauth-login','transactions-locks'],prerequisites:'HTTP 与 SQL 基础'},
 {id:'interface',name:'从状态到交互',description:'对照 Web 与 Flutter，理解状态、生命周期与通信。',articleIds:['react-state-effects','flutter-engineering'],prerequisites:'JavaScript / Dart 基础'},
