@@ -17,6 +17,7 @@ import {reactFiberArticle} from './articles/react-fiber-scheduling';
 import {agentFoundationsArticle} from './articles/agent-foundations';
 import {legacyArticles} from './articles/legacy';
 import {sectionBlocks,blockText} from './articleTypes';
+import {curriculumRank} from './topicCurricula';
 export type {Article,ArticleSection} from './articleTypes';
 export const articleTopics=[
 {id:'identity',name:'身份认证与安全',description:'从安全连接到可信身份，厘清每一层的责任。'},
@@ -42,4 +43,4 @@ export const readingPaths=[
 {id:'delivery',name:'从任务到可靠交付',description:'先保证并发正确，再设计恢复，并沿链路定位问题。',articleIds:['transactions-locks','reliable-tasks','k8s-debugging'],prerequisites:'服务端与容器基础'}
 ];
 
-export function findArticles(query:string,topic='all'){const words=query.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);return articles.filter(a=>(topic==='all'||a.topic===topic)&&words.every(w=>[a.title,a.description,...a.tags,...a.sections.flatMap(s=>[s.title,...sectionBlocks(s).map(blockText)])].join(' ').toLocaleLowerCase().includes(w)))}
+export function findArticles(query:string,topic='all'){const words=query.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);const matches=articles.filter(a=>(topic==='all'||a.topic===topic)&&words.every(w=>[a.title,a.description,...a.tags,...a.sections.flatMap(s=>[s.title,...sectionBlocks(s).map(blockText)])].join(' ').toLocaleLowerCase().includes(w)));return topic==='all'?matches:matches.sort((a,b)=>curriculumRank(topic,a.id)-curriculumRank(topic,b.id));}

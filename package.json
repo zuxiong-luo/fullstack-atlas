@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "predev": "node scripts/runtime.mjs && node scripts/example-assets.mjs",
-    "build": "node scripts/runtime.mjs && node scripts/example-assets.mjs && tsc -b && vite build && node scripts/offline.mjs",
+    "build": "node scripts/runtime.mjs && node scripts/example-assets.mjs && tsc -b && vite build && node scripts/offline.mjs && node scripts/verify-content-assets.mjs",
+    "verify:content-assets": "node scripts/verify-content-assets.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
     "sources:sync": "node scripts/react-sources.mjs"
