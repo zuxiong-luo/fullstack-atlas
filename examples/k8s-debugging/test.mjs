@@ -1,0 +1,8 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {createApp} from './app.mjs';import {inspect} from './inspect.mjs';
+const load=async f=>JSON.parse(await readFile(new URL('./'+f+'.json',import.meta.url),'utf8'));const deployment=await load('deployment'),service=await load('service');
+test('selector and named targetPort connect declared workload',()=>assert.deepEqual(inspect(deployment,service),[]));
+test('wrong selector is detected separately from named port',()=>{const s=structuredClone(service);s.spec.selector.app='wrong';assert.deepEqual(inspect(deployment,s),['SELECTOR_MISMATCH'])});
+test('unknown named port is detected but a numeric port needs runtime observation',()=>{const s=structuredClone(service);s.spec.ports[0].targetPort='missing';assert.deepEqual(inspect(deployment,s),['NAMED_PORT_MISSING']);s.spec.ports[0].targetPort=9999;assert.deepEqual(inspect(deployment,s),[])});
+async function http(ready,run){const app=createApp({ready});await new Promise(r=>app.listen(0,'127.0.0.1',r));try{await run('http://127.0.0.1:'+app.address().port)}finally{await new Promise(r=>app.close(r))}}
+test('real local app separates readiness and liveness success',()=>http(true,async base=>{assert.equal((await fetch(base+'/ready')).status,200);assert.equal((await fetch(base+'/health')).status,200);assert.equal((await (await fetch(base+'/')).json()).service,'atlas-debug')}));
+test('not ready remains alive and returns503 on readiness',()=>http(false,async base=>{assert.equal((await fetch(base+'/ready')).status,503);assert.equal((await fetch(base+'/health')).status,200)}));

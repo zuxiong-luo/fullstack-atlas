@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="610" viewBox="0 0 1000 610" role="img" aria-labelledby="title desc">
+<title id="title">账户页的模块边界与数据发送边界</title><desc id="desc">服务器中认证模块读取签名cookie，存储模块返回筛选后的账户DTO，页面组件把初始笔记与编辑权限发送给客户端Editor。服务端模块的实现与内部token留在服务器，但公开返回的数据到达浏览器。客户端提交POST后由Route Handler重新校验，再写入存储。</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10" fill="none" stroke="#315d4a" stroke-width="1.5"/></marker></defs>
+<rect width="1000" height="610" rx="24" fill="#f4f7f3"/>
+<g font-family="system-ui, sans-serif" fill="#203d31"><text x="35" y="46" font-size="25" font-weight="700">账户页：代码留在哪，与数据发到哪，分别检查</text>
+<rect x="30" y="75" width="550" height="495" rx="18" fill="#e4eee6" stroke="#5f826e"/><rect x="610" y="75" width="360" height="495" rx="18" fill="#fff" stroke="#5f826e"/>
+<text x="50" y="110" font-size="22" font-weight="700">服务器 · Node / App Router</text><text x="630" y="110" font-size="22" font-weight="700">浏览器</text>
+<g fill="#fff" stroke="#6a8e79" stroke-width="2"><rect x="55" y="140" width="235" height="105" rx="10"/><rect x="320" y="140" width="230" height="105" rx="10"/><rect x="110" y="300" width="390" height="95" rx="10"/><rect x="655" y="300" width="275" height="95" rx="10"/><rect x="110" y="465" width="390" height="75" rx="10"/></g>
+<g font-size="18"><text x="70" y="171">auth.ts</text><text x="70" y="199">验签、过期、身份</text><text x="335" y="171">store.ts</text><text x="335" y="199">账户行 → DTO</text><text x="335" y="226">不返回 internalToken</text><text x="130" y="330">account/page.tsx · Server</text><text x="130" y="361">返回页面与 Editor 的必要 props</text><text x="673" y="330">Editor.tsx · Client</text><text x="673" y="361">状态、事件、表单输入</text><text x="130" y="494">Route Handler</text><text x="130" y="522">重验身份 / Origin / 输入，再写入</text></g>
+<g stroke="#315d4a" stroke-width="2.5" fill="none" marker-end="url(#arrow)"><path d="M170 245L250 299"/><path d="M430 245L350 299"/><path d="M500 347L654 347"/><path d="M790 395L790 502L500 502"/></g>
+<text x="530" y="290" font-size="16">HTML / RSC</text><text x="580" y="333" font-size="15">初始笔记</text><text x="540" y="474" font-size="17">POST：客户端输入需要重新验证</text>
+<text x="644" y="165" font-size="18">首次：HTML 显示预览</text><text x="644" y="197" font-size="18">RSC 描述服务端结果</text><text x="644" y="229" font-size="18">JS hydration 绑定交互</text>
+</g></svg>

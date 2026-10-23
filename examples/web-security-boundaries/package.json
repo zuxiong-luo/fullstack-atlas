@@ -1,0 +1,13 @@
+{
+  "name": "atlas-web-security-local-lab",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test.mjs",
+    "smoke": "node smoke.mjs"
+  }
+}

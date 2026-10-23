@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+const start=await fetch('http://127.0.0.1:4311/login',{redirect:'manual'});
+assert.equal(start.status,302); const cookie=start.headers.get('set-cookie').split(';')[0];
+const authorize=await fetch(start.headers.get('location'),{redirect:'manual'});assert.equal(authorize.status,302);
+const callback=await fetch(authorize.headers.get('location'),{headers:{cookie},redirect:'manual'});assert.equal(callback.status,200);
+const result=await callback.json();assert.equal(result.user.sub,'demo-user-1');
+const nextCookie=callback.headers.get('set-cookie').split(';')[0];assert.notEqual(cookie,nextCookie);
+assert.equal((await fetch('http://127.0.0.1:4311/me',{headers:{cookie:nextCookie}})).status,200);
+assert.equal((await fetch(authorize.headers.get('location'),{headers:{cookie},redirect:'manual'})).status,400);
+console.log('OAuth HTTP smoke passed: login302 → authorize302 → callback200 → me200; replay400.');
