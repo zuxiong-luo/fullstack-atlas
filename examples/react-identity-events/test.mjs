@@ -1,0 +1,25 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {JSDOM} from 'jsdom';
+import {build} from 'esbuild';
+import {mkdir} from 'node:fs/promises';
+const dom=new JSDOM('<!doctype html><div id="root"></div>',{url:'http://localhost/'});
+globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.Element=dom.window.Element;globalThis.Event=dom.window.Event;
+globalThis.IS_REACT_ACT_ENVIRONMENT=true;
+const React=await import('react');const {createRoot}=await import('react-dom/client');
+await mkdir('.test',{recursive:true});
+await build({entryPoints:['App.tsx'],bundle:true,format:'esm',platform:'node',external:['react','react-dom'],outfile:'.test/app.mjs'});
+const lib=await import('./.test/app.mjs');
+const text=label=>document.querySelector(`[aria-label="${label}"]`)?.textContent;
+async function fixture(run){const root=createRoot(document.getElementById('root'));await React.act(async()=>root.render(React.createElement(lib.default)));
+ const click=async name=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent===name);assert.ok(b,name);await React.act(async()=>b.dispatchEvent(new window.MouseEvent('click',{bubbles:true,cancelable:true})))};
+ const fill=async(label,value)=>{const input=document.querySelector(`input[aria-label="${label}"]`);assert.ok(input);await React.act(async()=>{Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set.call(input,value);input.dispatchEvent(new window.Event('input',{bubbles:true}))})};
+ try{await run({root,click,fill})}finally{await React.act(async()=>root.unmount())}}
+test('business key preserves B draft and DOM after deleting A',()=>fixture(async({click,fill})=>{await fill('草稿 A','A笔记');await fill('草稿 B','B笔记');const b=document.querySelector('[aria-label="草稿 B"]');await click('删除首项');assert.equal(text('内容 B'),'B笔记');assert.equal(document.querySelector('[aria-label="草稿 B"]'),b)}));
+test('index key counterexample transfers former A draft to B',()=>fixture(async({click,fill})=>{await click('切换 key 并重置');await fill('草稿 A','A笔记');await fill('草稿 B','B笔记');await click('删除首项');assert.equal(text('内容 B'),'A笔记');assert.equal(text('内容 C'),'B笔记')}));
+test('portal DOM is outside owner, React capture and bubble still reach owner',()=>fixture(async({click})=>{await click('打开 Portal');const portal=document.querySelector('[data-backdrop]');assert.equal(document.querySelector('[data-owner]').contains(portal),false);await click('Portal 点击');assert.equal(text('传播记录'),'owner-capture → button → owner-bubble');assert.ok(document.querySelector('[data-backdrop]'))}));
+test('stopPropagation blocks later bubble but does not undo capture',()=>fixture(async({click})=>{await React.act(async()=>document.querySelector('input[type="checkbox"]').click());await click('打开 Portal');await click('Portal 点击');assert.equal(text('传播记录'),'owner-capture → button')}));
+test('backdrop target guard keeps child clicks open and closes backdrop click',()=>fixture(async({click})=>{await click('打开 Portal');await click('Portal 点击');assert.ok(document.querySelector('[data-backdrop]'));await React.act(async()=>document.querySelector('[data-backdrop]').dispatchEvent(new window.MouseEvent('click',{bubbles:true})));assert.equal(document.querySelector('[data-backdrop]'),null)}));
+test('explicit button type avoids submitting; submit handler cancels default',()=>fixture(async({click})=>{await click('普通按钮');assert.equal(text('提交次数'),'0');const event=new window.Event('submit',{bubbles:true,cancelable:true});await React.act(async()=>document.querySelector('form').dispatchEvent(event));assert.equal(text('提交次数'),'1');assert.equal(event.defaultPrevented,true)}));
+test('effect renews subscription closure and removes listeners when unmounted',()=>fixture(async({click})=>{await click('发送 ping');assert.equal(text('监听读数'),'0');await click('增加订阅版本');await click('发送 ping');assert.equal(text('监听读数'),'1')}));
+test('Escape closes panel and restores previous focus',()=>fixture(async({click})=>{const opener=[...document.querySelectorAll('button')].find(b=>b.textContent==='打开 Portal');opener.focus();await click('打开 Portal');assert.equal(document.activeElement.textContent,'Portal 点击');await React.act(async()=>window.dispatchEvent(new window.KeyboardEvent('keydown',{key:'Escape',bubbles:true})));assert.equal(document.querySelector('[data-backdrop]'),null);assert.equal(document.activeElement,opener)}));

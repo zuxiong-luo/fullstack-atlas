@@ -27,5 +27,6 @@ it('keeps source attribution without a duplicate viewer when the excerpt is alre
  const excerpt={type:'code' as const,code:'this.tag = tag;',filename:'ReactFiber.old.js:125–155',language:'flow',kind:'excerpt' as const,purpose:'test excerpt'};
  const html=renderToStaticMarkup(<ArticleBlocks blocks={[excerpt,{type:'paragraph',text:'字段带读'},reference]}/>);
  expect(html).toContain(reference.url);expect(html).toContain('代码出处');expect(html).not.toContain('展开源码');
+ expect(renderToStaticMarkup(<ArticleBlocks blocks={[{...excerpt,filename:'React 18.3.1 · '+excerpt.filename+' · MIT'},reference]}/>)).not.toContain('展开源码');
  expect(renderToStaticMarkup(<ArticleBlocks blocks={[reference]}/>)).toContain('展开源码');
 });

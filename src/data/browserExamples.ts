@@ -1,3 +1,5 @@
+import stateEffects from '../../examples/react-state-effects/App.tsx?raw';
+import identityEvents from '../../examples/react-identity-events/App.tsx?raw';
 import concurrencyLab from '../../examples/react-concurrency/App.tsx?raw';
 import performanceLab from '../../examples/react-performance/App.tsx?raw';
 import stateManagement from '../../examples/react-state-management/App.tsx?raw';
@@ -41,3 +43,6 @@ browserExamples['react-state-management']={mode:'react',articleId:'react-state-m
 browserExamples['react-performance']={mode:'react',articleId:'react-performance',title:'清单性能对照',description:'稳定输入、窗口和错误比较',task:'比较不同模式，再验证窗口卸载后的选中状态。',code:performanceLab};
 
 browserExamples['react-concurrency']={mode:'react',articleId:'react-concurrency',title:'调度与输入反馈',description:'真实React的四组更新实验',task:'比较普通、Transition、减少工作量与同步计算反例。',code:concurrencyLab};
+
+browserExamples['react-state-effects']={mode:'react',articleId:'react-state-effects',title:'请求归属与Effect清理',description:'手动改变请求返回顺序',task:'先A再B，先完成B再完成A，确认旧结果与旧错误不覆盖当前界面。',code:stateEffects};
+browserExamples['react-identity-events']={mode:'react',articleId:'react-identity-events',title:'节点身份与Portal传播',description:'对照React关系、DOM关系和事件职责',task:'分别验证稳定key、下标key和Portal捕获冒泡，再检查表单与订阅。',code:identityEvents};

@@ -1,10 +1,10 @@
 import type {Article} from '../articleTypes';
-export const reactDoubleBufferArticle:Article={
+export const reactDoubleBufferArticle: Article = {
   "id": "react-double-buffer",
   "topic": "react",
   "title": "current 与 work-in-progress 怎样轮换：沿三轮更新读懂双缓冲",
   "description": "从任务标题编辑出发，逐段读 createWorkInProgress、useFiber 和 root.current 切换，区分新建节点、复用对象、沿用引用与提交结果。",
-  "minutes": 32,
+  "minutes": 43,
   "labMinutes": 25,
   "tags": [
     "React 18.3.1",
@@ -19,7 +19,7 @@ export const reactDoubleBufferArticle:Article={
     "TypeScript 5.7.2",
     "Node.js 22"
   ],
-  "verifiedAt": "2026-10-22",
+  "verifiedAt": "2026-10-23",
   "scope": "C2；普通客户端任务节点的首次挂载与身份稳定更新。教学模型从已挂载任务开始，不模拟HostRoot、调度、Hook重放、Suspense或异常恢复。",
   "prerequisites": [
     "已读Fiber结构专题",
@@ -41,20 +41,20 @@ export const reactDoubleBufferArticle:Article={
   "sections": [
     {
       "id": "problem",
-      "title": "编辑任务时，React 为什么不直接改当前树",
+      "title": "双缓冲是什么：保存当前依据，准备下一版工作",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "任务看板上有一张卡片，标题是“任务 A”。你输入新标题，React 开始计算新的组件输出，但用户仍然需要看到一个完整的旧界面。如果计算中途出现更紧急的更新，尚未完成的结果还可能被放弃。此时要保存两件不同的东西：已经提交、可以作为当前依据的状态，以及正在尝试计算的下一版工作。"
+          "text": "React 的双缓冲，是让同一逻辑节点的两份 Fiber 记录交替承担 current 与 work-in-progress。current 是已提交版本所在的一侧，work-in-progress 是本轮正在准备的一侧；alternate 让两者互相找到。root.current 是根的当前入口，普通节点没有一个统一的 current 布尔字段，它属于哪一侧要结合从根出发的树关系判断。"
         },
         {
           "type": "paragraph",
-          "text": "双缓冲解决的是这个组织问题。它不是在内存里保存两张屏幕截图，也不意味着每次更新把整个对象图深拷贝一遍。React 为同一逻辑节点保留 current 与 work-in-progress 的对应关系，在需要时创建另一份工作节点，后续又能复用它。读完本文，你应该能沿着三轮操作回答：哪一个对象新建了、哪些引用沿用了、什么时候真正成为 current。"
+          "text": "它的作用是把“已经采用的结果”和“正在尝试的结果”组织开，同时复用已有工作对象。任务卡片目前显示“任务 A”，输入“任务 B”后，计算可以先在工作侧完成，提交前页面仍按旧结果显示。本文从一个已挂载的任务节点出发，连续推演创建伙伴、复用伙伴、放弃准备三轮操作。"
         },
         {
           "type": "paragraph",
-          "text": "本篇接着 C1 的节点结构往下走，固定 React 18.3.1 的 old reconciler。我们只追一个身份稳定的任务节点，不把 key 改变后的重建混进“复用”实验。源码节选是实际版本内容；页面步进器则明确是教学模型，两种证据分开使用。"
+          "text": "本文固定 React 18.3.1 的 old reconciler。先解释结构和普通轮换，再看实际源码如何沿用和重置字段，最后用完整教学模型验证引用关系。模型只表达本篇的对象规则，真实 React 的根初始化、协调与提交另用原码核对；下载和实验入口只是运行便利。"
         },
         {
           "type": "experiment",
@@ -114,6 +114,10 @@ export const reactDoubleBufferArticle:Article={
       "title": "第一次更新：找到旧节点，按需建立伙伴",
       "paragraphs": [],
       "blocks": [
+        {
+          "type": "paragraph",
+          "text": "固定输入：F1 是已挂载任务的当前节点，key=\"A\"，memoizedProps.title=\"任务 A\"，alternate=null；本轮 pendingProps.title=\"任务 B\"。我们已经确认类型和 key 匹配，所以现在回答的是“如何准备对应节点”，身份匹配自身不在这个函数里重复进行。"
+        },
         {
           "type": "code",
           "language": "javascript",
@@ -203,6 +207,45 @@ export const reactDoubleBufferArticle:Article={
         {
           "type": "paragraph",
           "text": "pendingProps 是这轮准备处理的输入，memoizedProps 起初沿用当前版本已处理输入。两者暂时不同非常正常。一个工作对象刚准备好，并不意味着新输入已经计算完成；从“准备”跳到“提交”的错误模型会把这两个时刻揉成一个。"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "准备第二轮前后",
+            "当前 F2",
+            "复用的 F1"
+          ],
+          "rows": [
+            [
+              "对象职责",
+              "当前依据：任务 B",
+              "待处理任务 C"
+            ],
+            [
+              "pendingProps.title",
+              "任务 B",
+              "覆盖为任务 C"
+            ],
+            [
+              "memoizedProps.title",
+              "任务 B",
+              "先沿用任务 B，等待处理"
+            ],
+            [
+              "动态 flags / deletions",
+              "当前已提交记录",
+              "重新准备，保留静态位"
+            ],
+            [
+              "memoizedState / child",
+              "当前引用",
+              "先沿用同一引用"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "这张表的时间点是 createWorkInProgress 返回时。等组件和子树计算完成，工作侧的 memoizedProps、状态与工作标记还会继续改变。把时间点写清楚，才能避免把初始化关系误当成整个 render 的永恒关系。"
         }
       ]
     },
@@ -344,6 +387,31 @@ export const reactDoubleBufferArticle:Article={
           "type": "reference",
           "title": "cloneChildFibers重建直接孩子的工作连接",
           "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L1372-L1386"
+        },
+        {
+          "type": "paragraph",
+          "text": "再代入一个 bailout 情况：父组件本身没有新输入，但其 childLanes 包含本轮 renderLanes。includesSomeLane 返回 true，代码不直接返回 null，而是 cloneChildFibers。若第一层旧孩子是 A→B，它先为 A 取得工作伙伴，令 workParent.child 指向它，再逐个连接 B 的伙伴，两个伙伴的 return 都指向 workParent，末尾 sibling=null。只做这一层，后代随后按需处理。"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "理解检查",
+            "解析"
+          ],
+          "rows": [
+            [
+              "F2 已准备、F1.alternate 指向F2，当前结果是否已切换？",
+              "尚未切换。建立对应关系是准备动作，根的当前入口仍要等提交路径采用完成树。"
+            ],
+            [
+              "沿用 child 与 dependencies 复制外壳矛盾吗？",
+              "两者生命周期不同。child 为后续按需处理保留入口；dependencies 外层会在render修改，先复制容器。不能用统一深拷贝解释所有字段。"
+            ],
+            [
+              "放弃后的伙伴还能复用吗？",
+              "可以再次准备。必须从当前依据重置输入和临时工作；复用对象地址不表示接受被放弃结果。"
+            ]
+          ]
         }
       ]
     },
@@ -388,6 +456,30 @@ export const reactDoubleBufferArticle:Article={
       "title": "手算三轮，再用测试检查信息有没有丢",
       "paragraphs": [],
       "blocks": [
+        {
+          "type": "paragraph",
+          "text": "下面直接展示配套示例的全部模型核心：类型、初始数据、准备、完成、提交和放弃都在这里。React 界面只负责调用这些函数并显示字段，样式和表格渲染不影响规则。STATIC=4、UPDATE=1 是教学位值，真实 React 常量没有采用这两个数字；complete 中 selected=true 也是便于观察新对象的教学选择。"
+        },
+        {
+          "type": "code",
+          "kind": "excerpt",
+          "language": "typescript",
+          "filename": "App.tsx · 模型核心",
+          "purpose": "与配套项目逐字相同的可执行 TypeScript；无需 React 私有字段。调用示例紧随其后。",
+          "code": "export const STATIC = 4,\n  UPDATE = 1; // 教学位值，不是React真实常量。\nexport type Node = {\n  id: string;\n  alternate: Node | null;\n  pendingProps: { title: string };\n  memoizedProps: { title: string };\n  memoizedState: { selected: boolean };\n  updateQueue: object;\n  child: object;\n  dependencies: { firstContext: object } | null;\n  flags: number;\n  subtreeFlags: number;\n  deletions: string[] | null;\n};\nexport type Model = {\n  current: Node;\n  work: Node | null;\n  visible: string;\n  completed: boolean;\n  created: number;\n};\nexport function createModel(): Model {\n  const props = { title: \"任务 A\" };\n  const current: Node = {\n    id: \"F1\",\n    alternate: null,\n    pendingProps: props,\n    memoizedProps: props,\n    memoizedState: { selected: false },\n    updateQueue: {},\n    child: { id: \"Host-1\" },\n    dependencies: { firstContext: { name: \"Theme\" } },\n    flags: STATIC,\n    subtreeFlags: 0,\n    deletions: null,\n  };\n  return {\n    current,\n    work: null,\n    visible: props.title,\n    completed: false,\n    created: 1,\n  };\n}\nexport function prepare(model: Model, title: string) {\n  const current = model.current;\n  let work = current.alternate;\n  if (!work) {\n    work = { ...current, id: `F${++model.created}`, alternate: current };\n    current.alternate = work;\n  }\n  work.pendingProps = { title };\n  work.flags = current.flags & STATIC;\n  work.subtreeFlags = 0;\n  work.deletions = null;\n  work.memoizedProps = current.memoizedProps;\n  work.memoizedState = current.memoizedState;\n  work.updateQueue = current.updateQueue;\n  work.child = current.child;\n  work.dependencies = current.dependencies ? { ...current.dependencies } : null;\n  model.work = work;\n  model.completed = false;\n}\nexport function complete(model: Model) {\n  if (!model.work) throw new Error(\"请先准备工作\");\n  model.work.memoizedProps = model.work.pendingProps;\n  model.work.memoizedState = { selected: true };\n  model.work.flags |= UPDATE;\n  model.completed = true;\n}\nexport function commit(model: Model) {\n  if (!model.work || !model.completed) throw new Error(\"未完成工作不能提交\");\n  model.visible = model.work.memoizedProps.title;\n  model.current = model.work;\n  model.work = null;\n  model.completed = false;\n}\nexport function abandon(model: Model) {\n  model.work = null;\n  model.completed = false;\n}"
+        },
+        {
+          "type": "code",
+          "kind": "excerpt",
+          "language": "typescript",
+          "filename": "trace.ts · 调用片段",
+          "purpose": "模型函数调用顺序；在同一模块或正确导入上述函数后运行，输出中的 F1/F2 是模型标识。",
+          "code": "const model = createModel();\nprepare(model, \"任务 B\");\nconsole.log(model.current.id, model.work?.id, model.visible); // F1 F2 任务 A\ncomplete(model);\nconsole.log(model.visible); // 任务 A\ncommit(model);\nconsole.log(model.current.id, model.visible); // F2 任务 B\nprepare(model, \"任务 C\");\ncomplete(model);\ncommit(model);\nconsole.log(model.current.id, model.created); // F1 2\nprepare(model, \"错误标题\");\ncomplete(model);\nabandon(model);\nconsole.log(model.current.id, model.visible); // F1 任务 C"
+        },
+        {
+          "type": "paragraph",
+          "text": "第一行输出验证准备时可见标题未变；complete 只把待处理输入变为工作侧已计算输入并增加教学更新标记；commit 才把 visible 和 current 一起推进。第三轮 complete 后 abandon，只清空 work 与完成状态，仍保留任务 C。重新 prepare 会再次覆盖伙伴上的错误输入和临时标记。"
+        },
         {
           "type": "paragraph",
           "text": "先准备标题“任务 B”，观察current仍为F1，work为F2，child与queue引用相等，dependencies外壳不相等。点击完成计算，模型flags增加更新位，可见标题仍是任务A；提交之后current变F2，可见标题才变任务B。第二轮输入任务C，准备时work应当是F1，提交后又轮到F1，累计创建节点数保持2。"

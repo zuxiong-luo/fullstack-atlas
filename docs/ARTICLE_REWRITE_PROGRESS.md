@@ -1,95 +1,56 @@
-# 文章重写进度
+# 全站文章升级进度
 
-2026-10-22 · 按 ARTICLE_WRITING_GUIDE.md 验收，不用字数或小节数代替质量。
+更新时间：2026-10-23。当前40篇文章，React18篇与其他22篇。执行计划见FULL_SITE_ARTICLE_UPGRADE_PLAN.md，验收依据ARTICLE_WRITING_GUIDE.md。
 
-当前阶段：两篇标杆及React源码专题已完成本地反馈迭代；用户已授权按新规划开始重写。已完成React优先补缺批的技术验收，按通过验收的内容提交、推送、检查线上版本。**原25篇全量重写与React27章规划均未整体完成。**
+“技术审校通过”指声明范围内的代码、证据与自动检查；页面继续保留审阅稿标识，尚未验证的专用环境另列。历史记录见REACT_BATCH_01_VALIDATION.md等，不再以旧25篇/27章计划作为当前完成数。
 
-状态定义：待重写 / 编写中 / 待审校 / 已完成。“待审校”也包括本次标杆的读者反馈；已完成须包含内容、代码、图形、站点、离线与适用环境验收。
+| 专题 | 文章ID | 当前阶段 | 交付与验证 |
+| --- | --- | --- | --- |
+| react | react-foundations | 已发布（新七篇） | 2026-10-23正文自足修订，配套源码及示例 |
+| react | react-hooks-interactions | 已发布（新七篇） | 2026-10-23正文自足修订，配套源码及示例 |
+| react | react-state-management | 已发布（新七篇） | 2026-10-23正文自足修订，配套源码及示例 |
+| react | react-fiber-reconciliation | 已发布（新七篇） | 2026-10-23正文自足修订，配套源码及示例 |
+| react | react-concurrency | 已发布（新七篇） | 2026-10-23正文自足修订，配套源码及示例 |
+| react | react-performance | 已发布（新七篇） | 2026-10-23正文自足修订，配套源码及示例 |
+| react | react-modern-engineering | 已发布（新七篇） | 2026-10-23正文自足修订，配套源码及示例 |
+| operations | offline-first-static-site | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| identity | oauth-login | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| react | react-state-effects | 技术审校/站点整合中 | 按新规范重写；固定原码比对、配套示例及图形 |
+| data | transactions-locks | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| tasks | reliable-tasks | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| operations | k8s-debugging | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| flutter | flutter-engineering | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| react | react-fiber-scheduling | 技术审校/站点整合中 | 按新规范重写；固定原码比对、配套示例及图形 |
+| react | react-identity-events | 技术审校/站点整合中 | 按新规范重写；固定原码比对、配套示例及图形 |
+| nextjs | next-server-boundaries | 编写与验证中 | 独立示例、正文与图形并行交付 |
+| nodejs | node-capacity | 编写与验证中 | 独立示例、正文与图形并行交付 |
+| python | python-async-services | 编写与验证中 | 独立示例、正文与图形并行交付 |
+| algorithms | algorithms-invariants | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| webgl | webgl-pipeline | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| flutter | cross-platform-models | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| flutter | electron-trust-boundary | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| identity | web-security-boundaries | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| ai | agent-foundations | 待复核 | 已有双语言基准；需按新规范审查正文自足性 |
+| ai | agent-tools-mcp | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| ai | agent-rag | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| ai | agent-control-loop | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| ai | agent-context-memory | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| ai | agent-evaluation | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| ai | agent-security | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| ai | agent-production | 待重写 | 既有内容保留访问；按全站计划依次交付 |
+| react | react-fiber-structure | 技术审校/站点整合中 | 按新规范重写；固定原码比对、配套示例及图形 |
+| react | react-hooks-queue | 技术审校/站点整合中 | 按新规范重写；固定原码比对、配套示例及图形 |
+| react | react-lane-selection | 技术审校/站点整合中 | 按新规范重写；固定原码比对、配套示例及图形 |
+| react | react-work-loop-commit | 技术审校/站点整合中 | 按新规范重写；固定原码比对、配套示例及图形 |
+| react | react-double-buffer | 技术审校/站点整合中 | 按新规范重写；固定原码比对、配套示例及图形 |
+| react | react-root-scheduling | 技术审校/站点整合中 | 按新规范重写；固定原码比对、配套示例及图形 |
+| react | react-bailout-memo | 技术审校/站点整合中 | 按新规范重写；固定原码比对、配套示例及图形 |
+| react | react-hook-memoization | 技术审校/站点整合中 | 按新规范重写；固定原码比对、配套示例及图形 |
 
-| 批次 | 文章ID | 状态 | 示例 / 图形 / 核验记录 |
-|---|---|---|---|
-| 标杆批 | agent-foundations | 待审校（标杆反馈） | examples/agent-workshop 双语言及shared；public/figures/agent-foundations 两图；BENCHMARK_VALIDATION.md |
-| 标杆批 | react-fiber-scheduling | 待审校（标杆反馈） | examples/react-fiber-scheduling；public/figures/react-fiber-scheduling 两图；BENCHMARK_VALIDATION.md |
-| 第一批 | next-server-boundaries | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第一批 | node-capacity | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第一批 | python-async-services | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第一批 | react-identity-events | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第一批 | react-state-effects | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第二批 | k8s-debugging | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第二批 | oauth-login | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第二批 | offline-first-static-site | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第二批 | reliable-tasks | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第二批 | transactions-locks | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第二批 | web-security-boundaries | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第三批 | algorithms-invariants | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第三批 | cross-platform-models | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第三批 | electron-trust-boundary | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第三批 | flutter-engineering | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第三批 | webgl-pipeline | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第四批 | agent-context-memory | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第四批 | agent-control-loop | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第四批 | agent-evaluation | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第四批 | agent-production | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第四批 | agent-rag | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第四批 | agent-security | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
-| 第四批 | agent-tools-mcp | 待重写 | 尚未建立完整验证示例；公开页面保留并标注概览 |
+## 状态约束
 
-## 继续实施时的约束
-
-- 内容模型和目录：`src/data/articleTypes.ts`、`src/data/articles.ts`。新文章使用独立文件；未迁移正文位于 `src/data/articles/legacy/`，经适配器渲染。每次替换保留文章ID、questionIds和评论topic。
-- 主代理负责共享渲染器、目录聚合、工作流；子代理仅编辑分配的文章、示例和图形。交叉审校后再整合。
-- 示例ID入口 `#lab/example/react-scheduling`；草稿key为 `example:react-scheduling`，不覆盖react模式草稿。
-- 构建时将白名单源码复制到 `public/downloads/` 并打包ZIP，进入离线清单；不包含依赖目录、虚拟环境或密钥文件。Python/Node项目依赖不属于离线浏览器执行资源。
-- Agent共享契约先行。chapter-01-v1当前是显式清单标记；发布时记录Git提交/tag，后续章节不能覆盖旧章可复现入口。
-- Flutter/RN/Electron/K8s的设备/系统验证待对应批次执行；缺少环境必须记录阻塞，不把源码完成当作环境验证。
-- 不批量改写研习题。本批保留全部研习、评论、学习记录的关联。
-
-## 新增 React 源码专题（2026-10-22）
-
-用户追加四篇独立源码专题，原25篇重写清单保持不变。本站现有33篇；新增文章完成编写与技术交叉审校，与优先补缺批一同发布。历史本地验证见对应记录。
-
-| 文章ID | 状态 | 示例及图形 |
-|---|---|---|
-| react-fiber-structure | 待审校（读者反馈） | examples/react-fiber-structure；public/figures/react-fiber-structure |
-| react-hooks-queue | 待审校（读者反馈） | examples/react-hooks-queue；public/figures/react-hooks-queue |
-| react-lane-selection | 待审校（读者反馈） | examples/react-lane-selection；public/figures/react-lane-selection |
-| react-work-loop-commit | 待审校（读者反馈） | examples/react-work-loop-commit；public/figures/react-work-loop-commit |
-
-每个示例附VERIFICATION.md，统一记录见REACT_SOURCE_SERIES_VALIDATION.md。
-
-## React 专栏重写 · 第一批（2026-10-22）
-
-按REACT_SERIES_PLAN.md优先补缺，四篇均先保持review，不把整套27章标记完成。
-
-| 章 | 稳定ID | 当前状态 | 覆盖目标 |
-|---|---|---|---|
-| C2 | react-double-buffer | 已完成（技术验收，页面保留审阅稿标识） | 初次建立、后续复用、字段变化、提交切换与未完成工作 |
-| D3 | react-root-scheduling | 已完成（技术验收，页面保留审阅稿标识） | 更新到根、callback复用取消、Sync队列与Scheduler入口 |
-| E1 | react-bailout-memo | 已完成（技术验收，页面保留审阅稿标识） | props/state/Context/lanes/childLanes与子树继续工作 |
-| E2 | react-hook-memoization | 已完成（技术验收，页面保留审阅稿标识） | Hook记忆化、依赖、生命周期、旧闭包与成本 |
-
-共享交付：按A～G组织现有正文阅读入口；源码快照同步脚本保持固定tag并校验已存文件hash；正常构建不联网下载源码。
-
-本批统一验收记录：`REACT_BATCH_01_VALIDATION.md`。页面保留review便于读者反馈，不表示整个系列已完成。
-
-## 七篇系列标杆（2026-10-22）
-
-最新目录采用REACT_SEVEN_ARTICLE_PLAN.md。本次仅交付react-foundations第一篇本地审阅稿：12个递进小节、三张本地图、完整阅读清单实验；七项示例测试与28项主站测试通过，浏览器及390px阅读已检查。暂不批量合并或重定向旧专题，待读者确认表达与深度。实验记录见examples/react-foundations/VERIFICATION.md。
-
-## 2026-10-22：Fiber 与协调整合审阅稿
-
-- 新增 `react-fiber-reconciliation`，按概念、作用、结构、双缓冲、队列、协调、列表 Diff、工作循环、提交和完整实验展开。
-- 配套 `examples/react-fiber-reconciliation/`：锁定 React 18.3.1，5 项真实 React DOM 行为测试与独立构建通过。
-- 3 幅仓库内 SVG；内嵌源码逐行比对固定版本离线源文件，ReactChildFiber.old.js 与官方 tag 原文一致。
-- 站点 29 项回归通过；浏览器已检查正文、图形放大与 390px 手机布局（页面无横向溢出）。
-- 移除列表页及文章页的旧 A～G 系列导航，保留文章内部目录及旧文章路由。
-- 当前为本地审阅稿。未宣称完整调度、异常恢复、SSR 或浏览器性能测试完成；其余七篇计划状态保持不变。
-
-## 2026-10-22：React 剩余五篇整合
-
-- 第2、3、5、6、7篇完成全文、源码/示例、失败路径与范围说明，详见REACT_SEVEN_ARTICLE_PLAN.md。
-- 独立示例：Hooks5、状态9、调度5、性能8、SSR4，共31项测试通过；五个项目构建通过。
-- 配套旧模型复跑：Lane6、根回调4、Hooks队列6项通过。站点回归29项通过。
-- 交叉审校修正调度回调替换前提、补全源码连续分支、性能搜索行身份、SSR下载路径与JSX打包白名单。
-- 浏览器核验：五篇390px布局；七幅SVG放大渲染；四个站内实验；SSR正常水合及不匹配恢复。
-- 离线构建清单检查覆盖新资源；本批未重新进行全量离线下载UI测试。普通生产Profiler默认无样本，未发布虚构性能收益。SSR只验证传统18.3.1路径，不宣称Next/RSC/流式项目完成。
+- 每批只发布验收通过的文件，不夹带独立界面修改。
+- 正常构建不联网下载React原码；固定快照与行段逐字核对。
+- 服务端依赖不属于浏览器离线运行包，正文/图/浏览器实验进入离线清单。
+- Agent按章节契约顺序推进，Python/TypeScript共用输入输出与错误约定。
+- Flutter/RN/Electron/K8s缺少设备或运行环境时明确保留未验证项；不以静态检查代替运行验收。

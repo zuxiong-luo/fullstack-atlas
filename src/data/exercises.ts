@@ -29,7 +29,7 @@ function describeTask(task: Task): string {
 }
 
 console.log(describeTask({ status: 'running', progress: 42 }));`},
- react:{title:'状态快照，还是连续更新？',description:'实际 React 18 预览。支持 React / react-dom/client 导入、JSX 与 TSX。',task:'把三个函数式更新改成 setCount(count + 1)，观察按钮点击后的结果。',code:`import React, { useState } from 'react';
+ react:{title:'状态快照，还是连续更新？',description:'实际 React 18 预览。支持 React、react-dom/client、react-dom（createPortal）导入、JSX 与 TSX。',task:'把三个函数式更新改成 setCount(count + 1)，观察按钮点击后的结果。',code:`import React, { useState } from 'react';
 
 export default function App() {
   const [count, setCount] = useState(0);

@@ -1,0 +1,22 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {JSDOM} from 'jsdom';
+import {build} from 'esbuild';
+import {mkdir} from 'node:fs/promises';
+const dom=new JSDOM('<!doctype html><div id="root"></div>',{url:'http://localhost/'});
+globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.Element=dom.window.Element;globalThis.Event=dom.window.Event;
+globalThis.IS_REACT_ACT_ENVIRONMENT=true;
+const React=await import('react');const {createRoot}=await import('react-dom/client');
+await mkdir('.test',{recursive:true});
+await build({entryPoints:['App.tsx'],bundle:true,format:'esm',platform:'node',external:['react','react-dom'],outfile:'.test/app.mjs'});
+const lib=await import('./.test/app.mjs');
+const text=label=>document.querySelector(`[aria-label="${label}"]`)?.textContent;
+async function fixture(run){const root=createRoot(document.getElementById('root'));await React.act(async()=>root.render(React.createElement(lib.default)));
+ const click=async name=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent===name);assert.ok(b,name);await React.act(async()=>b.dispatchEvent(new window.MouseEvent('click',{bubbles:true,cancelable:true})))};
+ const fill=async(label,value)=>{const input=document.querySelector(`input[aria-label="${label}"]`);assert.ok(input);await React.act(async()=>{Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set.call(input,value);input.dispatchEvent(new window.Event('input',{bubbles:true}))})};
+ try{await run({root,click,fill})}finally{await React.act(async()=>root.unmount())}}
+test('saved callback retains its rendering snapshot after a later update',()=>fixture(async({click})=>{await click('保存闭包');await click('加一');await click('读取闭包');assert.equal(text('当前计数'),'1');assert.equal(text('闭包记录'),'闭包读到 0')}));
+test('late success after cancellation cannot replace newer result',()=>fixture(async({click})=>{await click('查询 A');await click('查询 B');await click('查看请求表');assert.match(document.body.textContent,/已收到取消信号/);await click('完成 2');assert.equal(text('查询结果'),'B结果');await click('完成 1');assert.equal(text('查询结果'),'B结果');assert.equal(text('查询状态'),'success')}));
+test('late failure cannot replace the newer successful state',()=>fixture(async({click})=>{await click('查询 A');await click('查询 B');await click('查看请求表');await click('完成 2');await click('失败 1');assert.equal(text('查询结果'),'B结果');assert.equal(document.querySelector('[role="alert"]'),null)}));
+test('current failure is visible and clearing query removes ownership',()=>fixture(async({click})=>{await click('查询 A');await click('查看请求表');await click('失败 1');assert.equal(text('查询状态'),'error');assert.match(document.querySelector('[role="alert"]').textContent,/A失败/);await click('清空查询');assert.equal(text('查询状态'),'idle');assert.equal(text('查询结果'),'无结果')}));
+test('unmount invalidates callback and aborts the transport signal',async()=>{const t=lib.createTransport();let result;function Probe(){result=lib.useSearch('A',t.load);return null;}const root=createRoot(document.getElementById('root'));await React.act(async()=>root.render(React.createElement(Probe)));assert.equal(t.requests.length,1);await React.act(async()=>root.unmount());assert.equal(t.requests[0].aborted,true);await React.act(async()=>t.requests[0].resolve(['late']));assert.equal(result.status,'loading')});

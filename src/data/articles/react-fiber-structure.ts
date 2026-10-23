@@ -4,7 +4,7 @@ export const reactFiberStructureArticle: Article = {
   "topic": "react",
   "title": "Fiber 是什么：从概念、作用和结构理解 React 的更新",
   "description": "先认识 Fiber 这个内部节点对象，再理解它的作用、树结构、状态和双缓冲；沿一次计数更新串起工作过程，最后通过列表实验和 React 18.3.1 源码验证。",
-  "minutes": 48,
+  "minutes": 55,
   "labMinutes": 20,
   "tags": [
     "React 18.3.1",
@@ -20,7 +20,7 @@ export const reactFiberStructureArticle: Article = {
     "TypeScript 5.7.2",
     "Node.js 22"
   ],
-  "verifiedAt": "2026-10-22",
+  "verifiedAt": "2026-10-23",
   "scope": "Fiber入门与结构专题；以React DOM 18.3.1普通函数组件为例，讲清对象、树、状态与更新过程。协调源码作为后半篇进阶阅读；完整调度与双缓冲另有配套章节。",
   "prerequisites": [
     "会写函数组件、props和useState",
@@ -50,7 +50,7 @@ export const reactFiberStructureArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "阅读顺序是：先分清它与元素、DOM的关系，再看为什么需要它、它有什么作用和特性；然后认识字段和一次更新，最后运行计数器实验、对照源码。前半篇建立认识，后半篇核对实现。你不需要一开始就读懂整段协调函数。"
+          "text": "本篇是节点结构的专项阅读：先分清元素、Fiber 与 DOM，再看字段如何被创建和连接，最后解释状态身份。七篇总览中的 Fiber 篇串起整次更新，这里放慢到具体对象和字段。关键代码与实验组件都放在正文；来源链接只负责标注版本。"
         },
         {
           "type": "paragraph",
@@ -155,30 +155,25 @@ export const reactFiberStructureArticle: Article = {
         {
           "type": "table",
           "headers": [
-            "特性",
-            "具体含义",
-            "不能据此推出什么"
+            "作用",
+            "怎样落实到字段",
+            "后面怎样验证"
           ],
           "rows": [
             [
-              "信息保存在节点对象上",
-              "函数返回后仍能通过React内部结构找到状态与树关系",
-              "业务代码不应读取或修改私有Fiber字段"
+              "保存节点身份与状态",
+              "key/type 标识身份，memoizedState 关联节点状态",
+              "同一业务 ID 重排后保留计数"
             ],
             [
-              "工作按节点推进",
-              "工作循环可以找到下一个节点，并在允许时让出",
-              "不能中断组件函数内部正在执行的同步代码"
+              "组织可遍历的工作",
+              "child 向下、sibling 换支、return 回父级",
+              "按 section → A → B 推演指针"
             ],
             [
-              "当前版本与工作版本分开组织",
-              "alternate关联同一逻辑节点的两份对应工作记录",
-              "不是每轮深拷贝整棵树，也不是两套DOM"
-            ],
-            [
-              "可复用匹配的身份与工作节点",
-              "协调时判断哪些旧身份可以延续，下一版从已有信息开始",
-              "复用不等于组件函数不执行，更不等于没有DOM变化"
+              "记录当前与待完成结果",
+              "alternate 对应两侧，flags 记录本轮工作",
+              "新 props 进入工作侧，提交前当前侧仍作依据"
             ]
           ]
         },
@@ -224,6 +219,28 @@ export const reactFiberStructureArticle: Article = {
           "type": "reference",
           "title": "createFiberFromElement 与 Fiber 的创建",
           "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactFiber.old.js#L604-L628"
+        },
+        {
+          "type": "paragraph",
+          "text": "下面看真实创建入口。输入是一个元素对象，例如 <Counter key=\"A\" id=\"A\" />；element.type 是模块顶层的 Counter 函数，element.key 是字符串 A，element.props 为 {id:\"A\"}。这个入口将描述拆成类型、key、待处理 props，交给 createFiberFromTypeAndProps 确定节点类别并分配工作记录。这里只核对描述如何进入 Fiber；类型分类器还覆盖宿主节点、Fragment、lazy 等，本例的普通函数进入 FunctionComponent 路径。"
+        },
+        {
+          "type": "code",
+          "kind": "excerpt",
+          "language": "flow",
+          "filename": "ReactFiber.old.js:604–629",
+          "purpose": "createFiberFromElement 完整函数：从元素提取身份与输入。React v18.3.1 连续原码节选，依赖内部上下文；MIT License，版权归 Meta/Facebook 及贡献者。",
+          "code": "export function createFiberFromElement(\n  element: ReactElement,\n  mode: TypeOfMode,\n  lanes: Lanes,\n): Fiber {\n  let owner = null;\n  if (__DEV__) {\n    owner = element._owner;\n  }\n  const type = element.type;\n  const key = element.key;\n  const pendingProps = element.props;\n  const fiber = createFiberFromTypeAndProps(\n    type,\n    key,\n    pendingProps,\n    owner,\n    mode,\n    lanes,\n  );\n  if (__DEV__) {\n    fiber._debugSource = element._source;\n    fiber._debugOwner = element._owner;\n  }\n  return fiber;\n}"
+        },
+        {
+          "type": "reference",
+          "title": "代码出处：ReactFiber.old.js:604–629（v18.3.1）",
+          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactFiber.old.js#L604-L629",
+          "note": "正文已展示关键代码，链接仅供追溯；完整许可随站内源码副本保留。"
+        },
+        {
+          "type": "paragraph",
+          "text": "返回后得到的是一个新 Fiber，并未执行 Counter，也未创建它返回的 p。后续 beginWork 才读取 pendingProps 并执行组件。建立对象、执行组件、提交宿主结果因此是三个有顺序的动作。"
         }
       ]
     },
@@ -295,6 +312,24 @@ export const reactFiberStructureArticle: Article = {
           "kind": "excerpt",
           "filename": "ReactFiber.old.js:125–155",
           "language": "javascript"
+        },
+        {
+          "type": "code",
+          "kind": "excerpt",
+          "language": "flow",
+          "filename": "ReactFiberHooks.old.js:147–153",
+          "purpose": "Hook 完整类型定义：节点状态与 Hook 队列分层。React v18.3.1 连续原码节选，依赖内部上下文；MIT License，版权归 Meta/Facebook 及贡献者。",
+          "code": "export type Hook = {|\n  memoizedState: any,\n  baseState: any,\n  baseQueue: Update<any, any> | null,\n  queue: any,\n  next: Hook | null,\n|};"
+        },
+        {
+          "type": "reference",
+          "title": "代码出处：ReactFiberHooks.old.js:147–153（v18.3.1）",
+          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactFiberHooks.old.js#L147-L153",
+          "note": "正文已展示关键代码，链接仅供追溯；完整许可随站内源码副本保留。"
+        },
+        {
+          "type": "paragraph",
+          "text": "带入 Counter 的 useState(0)：Fiber.memoizedState 指向第一个 Hook，Hook.memoizedState 才是此时的 0，Hook.queue 保存这一个状态位的更新队列。若增加第二个 useState，新增的是 Hook.next 指向的另一个 Hook，而不是把 Fiber.memoizedState 改成两个数字组成的业务数组。读到 queue 前先找这一层，才能知道更新属于哪个状态位。"
         }
       ]
     },
@@ -305,39 +340,43 @@ export const reactFiberStructureArticle: Article = {
       "blocks": [
         {
           "type": "paragraph",
-          "text": "current 指向已经提交的那一版工作树。准备下一版时，React 使用 work-in-progress。createWorkInProgress 先看 current.alternate：如果还没有另一份节点，就懒创建并互相连接；如果已有，就重用这个节点，更新输入并清理本轮不应继承的工作标记。"
-        },
-        {
-          "type": "paragraph",
-          "text": "这解释了为什么通常不需要每次更新无限增加一个新版本：两个对应节点可以交替承担当前版本和工作版本。但也不能把这句话写成“所有节点从第一次渲染起永远都有两个对象”。另一份节点是按需创建，树还可能插入、删除和重建，未更新节点不需要预先分配一对对象。"
-        },
-        {
-          "type": "figure",
-          "src": "figures/react-fiber-structure/alternate.svg",
-          "title": "构建下一版时，哪些信息被沿用",
-          "alt": "current与work-in-progress通过双向alternate连接。createWorkInProgress可沿用child、memoizedState、updateQueue引用，再由后续工作路径处理；flags与subtreeFlags清理或按StaticMask保留，提交后root.current切换到完成树。",
-          "caption": "引用沿用不等于允许业务直接修改内部对象；这张图只说明createWorkInProgress的起始处理，后续协调还会调整子树与状态。"
-        },
-        {
-          "type": "paragraph",
-          "text": "尤其值得停下来读的是源码里的几行赋值：workInProgress.child = current.child，以及 memoizedState、updateQueue 的沿用。这不是递归深拷贝。dependencies 对象则有单独的克隆处理，因为渲染过程中会修改它。不同字段按各自生命周期处理，不能用“一棵完全独立的镜像树”概括所有内存关系。"
+          "text": "双缓冲指同一逻辑节点的当前记录与待完成记录通过 alternate 对应。这里用已经挂载的 Counter A 说明：当前节点叫 F1，下一次收到 {id:\"A\"} 时，React 为它准备 F2。对象编号是本文的称呼，不是 React 字段。"
         },
         {
           "type": "code",
-          "code": "  workInProgress.child = current.child;\n  workInProgress.memoizedProps = current.memoizedProps;\n  workInProgress.memoizedState = current.memoizedState;\n  workInProgress.updateQueue = current.updateQueue;",
-          "purpose": "React18.3.1 createWorkInProgress真实短节选；说明起始阶段沿用引用，不代表所有后续处理均共享。",
           "kind": "excerpt",
-          "filename": "ReactFiber.old.js:306–309",
-          "language": "javascript"
+          "language": "flow",
+          "filename": "ReactFiber.old.js:249–288",
+          "purpose": "创建工作节点与复用分支；省略后续 DEV 调试字段和公共字段初始化，公共状态字段在下一段给出。React v18.3.1 连续原码节选，依赖内部上下文；MIT License，版权归 Meta/Facebook 及贡献者。",
+          "code": "export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber {\n  let workInProgress = current.alternate;\n  if (workInProgress === null) {\n    // We use a double buffering pooling technique because we know that we'll\n    // only ever need at most two versions of a tree. We pool the \"other\" unused\n    // node that we're free to reuse. This is lazily created to avoid allocating\n    // extra objects for things that are never updated. It also allow us to\n    // reclaim the extra memory if needed.\n    workInProgress = createFiber(\n      current.tag,\n      pendingProps,\n      current.key,\n      current.mode,\n    );\n    workInProgress.elementType = current.elementType;\n    workInProgress.type = current.type;\n    workInProgress.stateNode = current.stateNode;\n\n    if (__DEV__) {\n      // DEV-only fields\n\n      workInProgress._debugSource = current._debugSource;\n      workInProgress._debugOwner = current._debugOwner;\n      workInProgress._debugHookTypes = current._debugHookTypes;\n    }\n\n    workInProgress.alternate = current;\n    current.alternate = workInProgress;\n  } else {\n    workInProgress.pendingProps = pendingProps;\n    // Needed because Blocks store data on type.\n    workInProgress.type = current.type;\n\n    // We already have an alternate.\n    // Reset the effect tag.\n    workInProgress.flags = NoFlags;\n\n    // The effects are no longer valid.\n    workInProgress.subtreeFlags = NoFlags;\n    workInProgress.deletions = null;"
         },
         {
           "type": "reference",
-          "title": "createWorkInProgress：创建、复用、字段重置与沿用",
-          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactFiber.old.js#L249-L330"
+          "title": "代码出处：ReactFiber.old.js:249–288（v18.3.1）",
+          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactFiber.old.js#L249-L288",
+          "note": "正文已展示关键代码，链接仅供追溯；完整许可随站内源码副本保留。"
         },
         {
           "type": "paragraph",
-          "text": "提交阶段会应用需要的DOM变更，并在mutation阶段之后、layout阶段之前把root.current指向完成树。不能认为仅仅换一个JavaScript指针就已经更新了浏览器。这里先建立两份工作记录的概念；首次分配、后续字段重置与连续轮换在双缓冲专篇逐步展开。"
+          "text": "输入 current=F1、F1.alternate=null，先进入创建分支，使用 F1 的 tag/key/mode 与新 pendingProps 建 F2，再建立 F1↔F2。下一次 F2 已提交成为当前侧时，传入 F2 会取回 F1，进入复用分支；pendingProps 更新，旧临时标记重置。分配新对象只发生在缺少对应侧时。"
+        },
+        {
+          "type": "code",
+          "kind": "excerpt",
+          "language": "flow",
+          "filename": "ReactFiber.old.js:300–320",
+          "purpose": "工作侧的公共字段准备：状态引用沿用，dependencies 外壳复制。React v18.3.1 连续原码节选，依赖内部上下文；MIT License，版权归 Meta/Facebook 及贡献者。",
+          "code": "  // Reset all effects except static ones.\n  // Static effects are not specific to a render.\n  workInProgress.flags = current.flags & StaticMask;\n  workInProgress.childLanes = current.childLanes;\n  workInProgress.lanes = current.lanes;\n\n  workInProgress.child = current.child;\n  workInProgress.memoizedProps = current.memoizedProps;\n  workInProgress.memoizedState = current.memoizedState;\n  workInProgress.updateQueue = current.updateQueue;\n\n  // Clone the dependencies object. This is mutated during the render phase, so\n  // it cannot be shared with the current fiber.\n  const currentDependencies = current.dependencies;\n  workInProgress.dependencies =\n    currentDependencies === null\n      ? null\n      : {\n          lanes: currentDependencies.lanes,\n          firstContext: currentDependencies.firstContext,\n        };"
+        },
+        {
+          "type": "reference",
+          "title": "代码出处：ReactFiber.old.js:300–320（v18.3.1）",
+          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactFiber.old.js#L300-L320",
+          "note": "正文已展示关键代码，链接仅供追溯；完整许可随站内源码副本保留。"
+        },
+        {
+          "type": "paragraph",
+          "text": "这一步结束时，F2.memoizedState 仍引用 F1 的 Hook 起点；随后 Hooks 更新路径才组织本轮工作状态。child 也是先沿用当前引用，后续根据工作情况继续处理。双缓冲提供准备空间，字段怎样更新仍由各自算法负责；提交阶段才把完成结果作为当前依据。"
         }
       ]
     },
@@ -462,11 +501,11 @@ export const reactFiberStructureArticle: Article = {
       "blocks": [
         {
           "type": "code",
-          "code": "const [items, setItems] = useState([{id:\"A\"}, {id:\"B\"}]);\n// byIndex=false：稳定业务ID；true：把位置作为身份。\n<section key={epoch}>\n  {items.map((item, index) =>\n    <Row key={byIndex ? index : item.id} id={item.id} />\n  )}\n</section>",
-          "purpose": "配套App.tsx的列表节选；完整项目提供Row、epoch和控制按钮。",
           "kind": "excerpt",
+          "language": "tsx",
           "filename": "App.tsx",
-          "language": "tsx"
+          "purpose": "配套项目完整组件；已包含输入、操作处理与观测逻辑。正文可直接阅读全部关键路径，main.tsx、HTML 和锁定依赖属于启动环境。",
+          "code": "import React, {useState} from 'react';\ntype Item={id:string};\nfunction Counter({id}:{id:string}) {\n const [count,setCount]=useState(0);\n return <p data-row={id}>{id} 的局部状态：<output>{count}</output> <button onClick={()=>setCount(n=>n+1)}>给 {id} 加一</button></p>;\n}\nfunction OtherCounter({id}:{id:string}) {\n const [count,setCount]=useState(0);\n return <p data-row={id}>{id} 的局部状态：<output>{count}</output> <button onClick={()=>setCount(n=>n+1)}>给 {id} 加一</button></p>;\n}\nexport default function App(){\n const [items,setItems]=useState<Item[]>([{id:'A'},{id:'B'}]);\n const [byIndex,setByIndex]=useState(false);\n const [epoch,setEpoch]=useState(0);\n const [other,setOther]=useState(false);\n const Row=other?OtherCounter:Counter;\n return <main style={{padding:20,fontFamily:'system-ui',maxWidth:700,margin:'auto'}}>\n  <h2>状态究竟跟着位置，还是跟着业务对象？</h2>\n  <p>先给 A 加一，再交换顺序。切换 key 策略会主动重置整组实验，避免上一次的状态干扰比较。</p>\n  <button onClick={()=>{setByIndex(x=>!x);setEpoch(n=>n+1);setItems([{id:'A'},{id:'B'}])}}>切换 key 策略</button>\n  <p role=\"status\">当前 key：{byIndex?'数组下标':'业务 ID'}；组件类型：{other?'OtherCounter':'Counter'}；重置版本：{epoch}</p>\n  <button onClick={()=>setItems(xs=>[...xs].reverse())}>交换 A / B</button>{' '}\n  <button onClick={()=>setEpoch(n=>n+1)}>更换父级 key</button>{' '}\n  <button onClick={()=>setOther(x=>!x)}>更换组件类型</button>\n  <section key={epoch} style={{border:'1px solid #9aaa9e',padding:16,marginTop:20}}>\n   {items.map((item,index)=><Row key={byIndex?index:item.id} id={item.id}/>)}\n  </section>\n  <p>此实验观察 React 18.3.1 的公开行为，不读取 DOM 的私有 Fiber 字段；两种组件输出相同标签，但函数对象不同。</p>\n </main>;\n}"
         },
         {
           "type": "paragraph",
@@ -536,6 +575,28 @@ export const reactFiberStructureArticle: Article = {
           "type": "reference",
           "title": "删除标记的记录 原始源码（v18.3.1）",
           "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L276-L305"
+        },
+        {
+          "type": "paragraph",
+          "text": "上面的同 key、不同类型分支调用 deleteRemainingChildren。这个调用的结果必须在本页可见：它遍历剩余旧兄弟，把待删除节点记到父级，而不是当场调用 removeChild。下面两段是同一闭包内的完整函数。"
+        },
+        {
+          "type": "code",
+          "kind": "excerpt",
+          "language": "flow",
+          "filename": "ReactChildFiber.old.js:274–305",
+          "purpose": "deleteChild 与 deleteRemainingChildren：记录删除，提交时再处理。React v18.3.1 连续原码节选，依赖内部上下文；MIT License，版权归 Meta/Facebook 及贡献者。",
+          "code": "  function deleteChild(returnFiber: Fiber, childToDelete: Fiber): void {\n    if (!shouldTrackSideEffects) {\n      // Noop.\n      return;\n    }\n    const deletions = returnFiber.deletions;\n    if (deletions === null) {\n      returnFiber.deletions = [childToDelete];\n      returnFiber.flags |= ChildDeletion;\n    } else {\n      deletions.push(childToDelete);\n    }\n  }\n\n  function deleteRemainingChildren(\n    returnFiber: Fiber,\n    currentFirstChild: Fiber | null,\n  ): null {\n    if (!shouldTrackSideEffects) {\n      // Noop.\n      return null;\n    }\n\n    // TODO: For the shouldClone case, this could be micro-optimized a bit by\n    // assuming that after the first child we've already added everything.\n    let childToDelete = currentFirstChild;\n    while (childToDelete !== null) {\n      deleteChild(returnFiber, childToDelete);\n      childToDelete = childToDelete.sibling;\n    }\n    return null;\n  }"
+        },
+        {
+          "type": "reference",
+          "title": "代码出处：ReactChildFiber.old.js:274–305（v18.3.1）",
+          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L274-L305",
+          "note": "正文已展示关键代码，链接仅供追溯；完整许可随站内源码副本保留。"
+        },
+        {
+          "type": "paragraph",
+          "text": "例如旧父级孩子为 Counter A → Counter B，新描述只保留 OtherCounter A：key A 先命中，但类型不兼容；旧 A 和后面的 B 都加入父级 deletions，父级增加 ChildDeletion。新建的 OtherCounter 从 useState(0) 开始。若旧 A 的类型也相同，则复用 A，只把 A.sibling 开始的 B 标为删除。两条路径的计数是否保留由类型判断决定。"
         }
       ]
     },
@@ -631,6 +692,27 @@ export const reactFiberStructureArticle: Article = {
       "title": "结构解释到哪里，就把保证停在哪里",
       "paragraphs": [],
       "blocks": [
+        {
+          "type": "table",
+          "headers": [
+            "遮住链接后试着判断",
+            "按本文结构推演"
+          ],
+          "rows": [
+            [
+              "新建元素对象，Counter 函数与 key 都没变，count 必然重置吗？",
+              "不会仅因元素对象新建而重置。元素是本轮描述；协调仍可复用对应身份，已有 Hook 状态得以延续。"
+            ],
+            [
+              "数组下标 key 为什么会让 B 显示 1？",
+              "旧第0位是 A，状态1；新第0位描述B但 key仍是0、类型仍Counter，因此复用该位的状态记录，只把 id 输入换为B。"
+            ],
+            [
+              "两个 Fiber 是否需要两个按钮 DOM？",
+              "不需要。宿主节点两侧可沿用同一个 stateNode；两侧工作记录与可见DOM数量不是相同维度。"
+            ]
+          ]
+        },
         {
           "type": "paragraph",
           "text": "回到本文开头，Fiber首先是一个节点对象。它把类型、输入、状态、树关系和待处理工作组织在一起；多个Fiber形成工作树，工作循环据此推进更新。双缓冲组织当前与工作版本，协调确定旧身份能否延续。计数器案例只是其中“身份与状态”这一条关系的验证，不是Fiber的全部用途。"
