@@ -7,4 +7,11 @@ it('hides member navigation and removes learning paths for visitors',()=>{const 
 it('blocks direct offline access and reveals member navigation after login',()=>{expect(render('#offline')).toContain('登录账号');const member=render('#library',true);expect(member).toContain('href="#offline"');expect(member).toContain('href="#study"');expect(member).toContain('退出登录')});
 it('keeps direct study links gated while public article content is accessible',()=>{expect(render('#q/oauth')).not.toContain('一分钟回答');expect(render('#article/oauth-login')).toContain('OAuth')});
 
-it('separates guestbook discussions from contact details',()=>{const contact=render('#contact');expect(contact).toContain('给我发邮件');expect(contact).not.toContain('comments-panel');const guestbook=render('#guestbook');expect(guestbook).toContain('comments-panel');expect(guestbook).not.toContain('给我发邮件');expect(guestbook).toContain('GitHub Discussions')});
+it('separates guestbook discussions from contact details',()=>{const contact=render('#contact');expect(contact).toContain('给我发邮件');expect(contact).not.toContain('comments-panel');const guestbook=render('#guestbook');expect(guestbook).toContain('comments-panel');expect(guestbook).not.toContain('给我发邮件');expect(guestbook).toContain('在 GitHub 查看讨论')});
+
+it('opens the personal homepage by default and keeps the learning overview separate',()=>{
+ for(const hash of ['', '#home']){
+  const home=render(hash);expect(home).toContain('祖雄的首页');expect(home).toContain('也给生活');expect(home).toContain('href="#overview"');expect(home).toContain('href="#library"');expect(home).not.toContain('class="sidebar');
+ }
+ const overview=render('#overview');expect(overview).toContain('把零散知识，连成完整体系。');expect(overview).toContain('href="#home"');expect(overview).toContain('href="#overview"');
+});
