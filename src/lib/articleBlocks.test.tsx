@@ -7,8 +7,8 @@ import {PublicArticle} from '../components/Articles';
 import {browserExamples} from '../data/browserExamples';
 import Playground from '../components/Playground';
 it('renders interleaved prose, local figures and executable entries with stable identities',()=>{
- for(const id of ['algorithms-invariants','webgl-pipeline','node-capacity','python-async-services','next-server-boundaries','oauth-login','transactions-locks','reliable-tasks','k8s-debugging','offline-first-static-site','web-security-boundaries','flutter-engineering','cross-platform-models','electron-trust-boundary','react-state-effects','react-identity-events','react-hooks-interactions','react-state-management','react-concurrency','react-performance','react-modern-engineering','react-fiber-reconciliation','react-fiber-scheduling','agent-foundations','react-fiber-structure','react-hooks-queue','react-lane-selection','react-work-loop-commit','react-double-buffer','react-root-scheduling','react-bailout-memo','react-hook-memoization']){
-  const a=articles.find(a=>a.id===id)!;const html=renderToStaticMarkup(<PublicArticle article={a} unlocked={false}/>);
+ for(const a of articles){
+  const id=a.id;const html=renderToStaticMarkup(<PublicArticle article={a} unlocked={false}/>);
   for(const s of a.sections){expect(html).toContain('section-'+s.id);for(const b of sectionBlocks(s)){
    if(b.type==='figure'){expect(fs.existsSync('public/'+b.src)).toBe(true);expect(html).toContain(b.alt);expect(html).toContain('<img');}
    if(b.type==='experiment'){expect(browserExamples[b.id]).toBeDefined();expect(html).toContain('#lab/example/'+b.id)}

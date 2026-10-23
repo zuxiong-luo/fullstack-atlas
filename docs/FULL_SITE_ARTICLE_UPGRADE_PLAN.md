@@ -15,12 +15,12 @@
 | 顺序 | 内容 | 分工与依赖 | 验收重点 |
 | --- | --- | --- | --- |
 | 0（已发布） | React旧11篇 | 结构3篇、调度4篇、缓存2篇并行；主代理重写两篇概览并补实验 | 原码逐字比对、正文完整调用链、普通与失败行为、18个路由保留 |
-| 1 | node-capacity、python-async-services、next-server-boundaries | 三个独立服务工程并行 | 固定依赖、完整最小服务、生命周期/取消/错误、Next实际请求与缓存行为 |
-| 2 | oauth-login、web-security-boundaries、offline-first-static-site | 身份、安全、本站离线实现独立审校 | 协议时序、受控安全案例、完整边界校验、与本站实现一致的离线恢复 |
-| 3 | transactions-locks、reliable-tasks、k8s-debugging | 数据库并发、任务租约、部署排障并行 | 可控并发和故障窗口、恢复步骤、输出解释；记录真实DB/K8s环境 |
-| 4 | algorithms-invariants、webgl-pipeline、electron-trust-boundary | 独立算法、GPU实验、桌面权限并行 | 算法不变量与步进、完整三角形/变换、IPC授权与渲染进程隔离 |
-| 5 | flutter-engineering、cross-platform-models | Flutter、RN模型各自锁定版本；共享事实交叉核对 | 完整跨端最小案例、设备/模拟器与平台验证记录，不以静态检查代替真机 |
-| 6 | agent-foundations复核及Agent02—08 | 先统一shared契约，再逐章推进；Python/TS实现并行，第三人审稿/评测 | 双语言相同用例、本地确定模型、SQLite/检索/恢复/记忆删除/评测/权限/部署，章节入口可追溯 |
+| 1（已发布） | node-capacity、python-async-services、next-server-boundaries | 三个独立服务工程并行 | 固定依赖、完整最小服务、生命周期/取消/错误、Next实际请求与缓存行为 |
+| 2（已发布） | oauth-login、web-security-boundaries、offline-first-static-site | 身份、安全、本站离线实现独立审校 | 协议时序、受控安全案例、完整边界校验、与本站实现一致的离线恢复 |
+| 3（已发布，K8s集群待验） | transactions-locks、reliable-tasks、k8s-debugging | 数据库并发、任务租约、部署排障并行 | 可控并发和故障窗口、恢复步骤、输出解释；记录真实DB/K8s环境 |
+| 4（已发布） | algorithms-invariants、webgl-pipeline、electron-trust-boundary | 独立算法、GPU实验、桌面权限并行 | 算法不变量与步进、完整三角形/变换、IPC授权与渲染进程隔离 |
+| 5（已发布，原生/RN审计待验） | flutter-engineering、cross-platform-models | Flutter、RN模型各自锁定版本；共享事实交叉核对 | 完整跨端最小案例、设备/模拟器与平台验证记录，不以静态检查代替真机 |
+| 6（本批交付） | agent-foundations复核及Agent02—08 | 先统一shared契约，再逐章推进；Python/TS实现并行，第三人审稿/评测 | 双语言相同用例、本地确定模型、SQLite/检索/恢复/记忆删除/评测/权限/部署，章节入口可追溯 |
 
 Agent章节有顺序依赖，不让不同作者同时覆盖同一个最终项目。每章先确定共享JSON Schema与预期错误，再实现两端。模拟结果不当模型质量证据，付费真实调用不自动进行。
 
@@ -35,3 +35,7 @@ Agent章节有顺序依赖，不让不同作者同时覆盖同一个最终项目
 7. 更新ARTICLE_REWRITE_PROGRESS.md与批次验收记录。未验证项继续保留明确状态。
 
 不以修改文件、增加篇幅或固定小节数宣布完成。计划实施过程中，已有内容仍可访问；每批报告交付和尚存缺口。
+
+## 最终收尾验收
+
+Agent元数据/下载路径修复后，站点34项测试通过；正文源码同步支持workshop相对路径及完整仓库路径。全部40篇组件渲染、原ID/章节锚点/研习关联纳入检查，26张非React图形已实际栅格审校。最终暂存快照34测试和构建通过，97个下载链接/56处图形引用/522项离线资源已逐项检查；线上需核对本批主资源index-MnX8qhtC.js。原生/RN依赖、K8s、Docker和真实模型限制继续保留。

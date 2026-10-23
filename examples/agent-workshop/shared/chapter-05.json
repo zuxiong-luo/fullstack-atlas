@@ -1,0 +1,19 @@
+{
+  "version": "chapter-05-v2",
+  "chapter": 5,
+  "article": "agent-context-memory",
+  "contract": "v2/CONTRACT.md",
+  "schema": "v2/schema.json",
+  "cases": "v2/http-cases.json",
+  "retrieval_cases": "v2/retrieval-cases.json",
+  "implementations": [
+    "../python-v2",
+    "../typescript-v2"
+  ],
+  "scope": "显式记忆的所有者隔离与删除",
+  "versioning": "同一份v2源码按CHAPTER逐章开放能力；此文件是版本入口，不是独立Git tag。具体源码版本由本文件所在提交固定。",
+  "start": {
+    "python": "CHAPTER=5 PORT=4341 .venv/bin/python server.py",
+    "typescript": "CHAPTER=5 PORT=4340 npm start"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "kind": "real_loopback_http_parity",
+  "results": [
+    {
+      "chapter": 2,
+      "matching_http_steps": 5
+    },
+    {
+      "chapter": 3,
+      "matching_http_steps": 8
+    },
+    {
+      "chapter": 4,
+      "matching_http_steps": 12
+    },
+    {
+      "chapter": 5,
+      "matching_http_steps": 17
+    },
+    {
+      "chapter": 6,
+      "matching_http_steps": 17
+    },
+    {
+      "chapter": 7,
+      "matching_http_steps": 20
+    },
+    {
+      "chapter": 8,
+      "matching_http_steps": 20
+    }
+  ],
+  "external_model_calls": 0
+}

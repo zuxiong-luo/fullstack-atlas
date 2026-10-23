@@ -1,0 +1,8 @@
+[
+ {"id":"lease","owner":"alice","question":"lease worker recovery","expected":["lease-guide"]},
+ {"id":"cache","owner":"alice","question":"offline cache snapshot","expected":["cache-guide"]},
+ {"id":"ready","owner":"bob","question":"pod readiness probe","expected":["ready-guide"]},
+ {"id":"private","owner":"alice","question":"alice friday plan","expected":["alice-note"]},
+ {"id":"none","owner":"alice","question":"quantum banana","expected":[]},
+ {"id":"injection","owner":"bob","question":"untrusted injection policy","expected":["injection-demo"]}
+]

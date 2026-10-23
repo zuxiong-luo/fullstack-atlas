@@ -30,3 +30,10 @@ it('keeps source attribution without a duplicate viewer when the excerpt is alre
  expect(renderToStaticMarkup(<ArticleBlocks blocks={[{...excerpt,filename:'React 18.3.1 · '+excerpt.filename+' · MIT'},reference]}/>)).not.toContain('展开源码');
  expect(renderToStaticMarkup(<ArticleBlocks blocks={[reference]}/>)).toContain('展开源码');
 });
+
+it('loads GLSL, Dart and Docker grammars with their required dependencies',()=>{
+ for(const [language,code] of [['glsl','precision mediump float; void main() { gl_FragColor = vec4(1.0); }'],['dart','class Device { final int id = 1; }'],['dockerfile','FROM node:22\nWORKDIR /app']]){
+  const html=renderToStaticMarkup(<HighlightedCode language={language} code={code}/>);
+  expect(html,language).toContain('class="token ');
+ }
+});

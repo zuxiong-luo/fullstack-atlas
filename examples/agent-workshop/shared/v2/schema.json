@@ -1,0 +1,14 @@
+{
+ "$schema":"https://json-schema.org/draft/2020-12/schema",
+ "$id":"atlas-agent-workshop-v2",
+ "$defs":{
+  "id":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,64}$"},
+  "question":{"type":"string","minLength":1,"maxLength":2000},
+  "answerRequest":{"type":"object","required":["question"],"additionalProperties":false,"properties":{"question":{"$ref":"#/$defs/question"}}},
+  "runRequest":{"type":"object","required":["request_id","question"],"additionalProperties":false,"properties":{"request_id":{"$ref":"#/$defs/id"},"question":{"$ref":"#/$defs/question"}}},
+  "memoryRequest":{"type":"object","required":["id","text"],"additionalProperties":false,"properties":{"id":{"$ref":"#/$defs/id"},"text":{"type":"string","minLength":1,"maxLength":2000}}},
+  "toolRequest":{"type":"object","required":["name","arguments"],"additionalProperties":false,"properties":{"name":{"type":"string"},"arguments":{"type":"object"}}},
+  "lookupArguments":{"type":"object","required":["document_id"],"additionalProperties":false,"properties":{"document_id":{"$ref":"#/$defs/id"}}}
+ },
+ "description":"具体规范、归一化、按身份授权和错误优先级见CONTRACT.md；schema不替代业务授权。"
+}

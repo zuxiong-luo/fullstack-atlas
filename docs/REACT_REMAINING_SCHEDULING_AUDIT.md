@@ -16,7 +16,7 @@
 ## 实际完成的核验
 
 - 使用官方 `facebook/react` v18.3.1 raw 源文件核对新增摘录。下载的 Hooks、WorkLoop、Lane、ConcurrentUpdates、EventPriorities 与仓库已有对应快照逐字一致；正文代码保持 Flow、注释和所示范围内分支。
-- 用 esbuild 加载实际文章数据，对四篇所有带 `文件.js:起止行` 的真实源码代码块逐字比对 `public/sources/react-v18.3.1` 固定文件。结果记录于本次交付说明。
+- 用 esbuild 加载实际文章数据，对四篇所有带 `文件.js:起止行` 的真实源码代码块逐字比对 `public/sources/react-v18.3.1` 固定文件。共37个摘录逐字通过：调度3、Hooks7、Lane13、根安排14。
 - `npx tsc -b`：通过。
 - `npm test -- --run src/lib/reactSeries.test.tsx src/lib/sourceReading.test.tsx`：5 项通过，覆盖现有源码/呈现相关回归。另行逐字比对覆盖四篇，避免现有七篇列表没有枚举到补充文章导致漏检。
 - 四个独立项目分别执行 `npm test`：调度 2 项、Hooks 6 项、Lane 6 项、根安排 4 项，合计 18 项通过。Lane 测试包含 4^6 可用性快照与指定 WIP/纠缠组合的源码对照；根安排包含 6^4 序列对照。
