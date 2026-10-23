@@ -1,0 +1,20 @@
+{
+  "name": "atlas-cross-platform",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "engines": {
+    "node": "24.14.1"
+  },
+  "scripts": {
+    "start": "expo start",
+    "test": "node --test test.mjs",
+    "check": "node --check session.mjs && node --check test.mjs && node --check native-port.js && node --check index.js && node --check metro.config.cjs && node verify-config.mjs"
+  },
+  "dependencies": {
+    "expo": "58.0.17",
+    "react": "19.3.0",
+    "react-native": "0.88.0"
+  }
+}

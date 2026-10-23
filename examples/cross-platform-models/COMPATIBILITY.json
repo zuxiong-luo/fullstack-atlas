@@ -1,0 +1,10 @@
+{
+  "verifiedAt": "2026-10-23",
+  "expo": "58.0.17",
+  "react": "19.3.0",
+  "react-native": "0.88.0",
+  "node": "24.14.1",
+  "source": "https://registry.npmjs.org/expo/58.0.17",
+  "compatibility": "package/bundledNativeModules.json from official expo npm tarball",
+  "officialRelease": "https://expo.dev/changelog/sdk-58"
+}

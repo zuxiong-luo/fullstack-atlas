@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>Electron 权限边界实验</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="style.css"></head><body>
+<h1>报表导出：页面提出请求，主进程决定权限</h1>
+<p>演示角色为 reader。只允许导出 summary，finance 为受限资源。</p>
+<label>报表ID <input id="report-id" value="summary" maxlength="40"></label>
+<button id="export">导出到应用目录</button><button id="help">官方安全文档</button>
+<p id="status" role="status">等待操作。导出文件不会覆盖。</p>
+<p>界面没有 Node 文件系统能力，只获得 exportReport 与 openHelp 两个固定方法。</p>
+<script src="renderer.js"></script></body></html>

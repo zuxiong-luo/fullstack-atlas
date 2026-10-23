@@ -1,6 +1,8 @@
 import {it,expect} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import vm from 'node:vm';
+import ts from 'typescript';
+import {sectionBlocks} from '../data/articleTypes';
 import {articles,findArticles} from '../data/articles';
 import {questions} from '../data/content';
 import {expandedArticles} from '../data/expandedArticles';
@@ -8,4 +10,4 @@ import {agentChapters} from '../data/series';
 import AgentColumn from '../components/AgentColumn';
 it('connects every new article to real practice and a nonempty chapter sequence',()=>{expect(articles.map(a=>a.id)).toEqual(expect.arrayContaining(expandedArticles.map(a=>a.id)));for(const a of expandedArticles){expect(a.sections.length).toBeGreaterThan(0);expect(new Set(a.sections.map(s=>s.id)).size).toBe(a.sections.length);for(const id of a.questionIds)expect(questions.some(q=>q.id===id)).toBe(true)}expect(new Set(agentChapters.map(c=>c.id)).size).toBe(8);for(const c of agentChapters)expect(articles.find(a=>a.id===c.id)?.topic).toBe('ai')});
 it('exposes the Agent sequence publicly and makes its core concepts searchable',()=>{const html=renderToStaticMarkup(<AgentColumn/>);for(const c of agentChapters)expect(html).toContain('#article/'+c.id);expect(html).not.toContain('href="#q/');expect(findArticles('MCP','ai').some(a=>a.id==='agent-tools-mcp')).toBe(true);expect(findArticles('checkpoint','ai').some(a=>a.id==='agent-control-loop')).toBe(true)});
-it('runs the published lowerBound example and checks boundary properties',()=>{const a=articles.find(a=>a.id==='algorithms-invariants')!;const code=a.sections.find(s=>s.language==='js')!.code!;const context=vm.createContext({console:{log(){}}});vm.runInContext(code,context);for(let n=0;n<25;n++){const values=Array.from({length:n},(_,i)=>Math.floor(i/3));for(let target=-1;target<12;target++){const expected=values.findIndex(x=>x>=target);context.values=values;context.target=target;expect(vm.runInContext('lowerBound(values,target)',context)).toBe(expected===-1?n:expected)}}});
+it('runs the published lowerBound example and checks boundary properties',()=>{const a=articles.find(a=>a.id==='algorithms-invariants')!;const block=a.sections.flatMap(sectionBlocks).find(b=>b.type==='code'&&b.code.includes('export function lowerBound('));expect(block?.type).toBe('code');if(block?.type!=='code')throw new Error('Missing published lowerBound');const code=ts.transpileModule(block.code,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;const context=vm.createContext({console:{log(){}},exports:{},require(){return {}}});vm.runInContext(code,context);for(let n=0;n<25;n++){const values=Array.from({length:n},(_,i)=>Math.floor(i/3));for(let target=-1;target<12;target++){const expected=values.findIndex(x=>x>=target);context.values=values;context.target=target;expect(vm.runInContext('lowerBound(values,target)',context)).toBe(expected===-1?n:expected)}}});

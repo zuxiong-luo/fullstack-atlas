@@ -1,3 +1,5 @@
+import algorithmLab from '../../examples/algorithms-invariants/App.tsx?raw';
+import webglLab from '../../examples/webgl-pipeline/App.tsx?raw';
 import stateEffects from '../../examples/react-state-effects/App.tsx?raw';
 import identityEvents from '../../examples/react-identity-events/App.tsx?raw';
 import concurrencyLab from '../../examples/react-concurrency/App.tsx?raw';
@@ -46,3 +48,6 @@ browserExamples['react-concurrency']={mode:'react',articleId:'react-concurrency'
 
 browserExamples['react-state-effects']={mode:'react',articleId:'react-state-effects',title:'请求归属与Effect清理',description:'手动改变请求返回顺序',task:'先A再B，先完成B再完成A，确认旧结果与旧错误不覆盖当前界面。',code:stateEffects};
 browserExamples['react-identity-events']={mode:'react',articleId:'react-identity-events',title:'节点身份与Portal传播',description:'对照React关系、DOM关系和事件职责',task:'分别验证稳定key、下标key和Portal捕获冒泡，再检查表单与订阅。',code:identityEvents};
+
+browserExamples['algorithms-invariants']={mode:'react',articleId:'algorithms-invariants',title:'算法区间与不变量',description:'逐步观察lower_bound候选区间',task:'改变排序数组与目标，先预测边界，再逐步观察lo/hi/mid。',code:algorithmLab};
+browserExamples['webgl-pipeline']={mode:'react',articleId:'webgl-pipeline',title:'WebGL三角形与坐标变换',description:'真实着色器、缓冲、矩阵与绘制',task:'调整角度/缩放，再切换编译错误、链接错误和正常恢复。',code:webglLab};
