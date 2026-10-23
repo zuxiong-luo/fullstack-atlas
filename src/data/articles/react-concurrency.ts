@@ -55,6 +55,59 @@ export const reactConcurrencyArticle: Article = {
       ]
     },
     {
+      "id": "normal-route",
+      "title": "先走通一条普通路径：输入更新与列表更新怎样分工",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "先不记 Lane 常量。页面有 text 和 query 两份状态：text 是输入框里正在输入的文字，query 是列表当前采用的搜索条件。初始两者都是空字符串。一次输入 \"a\" 时，我们希望输入框尽快显示 a，昂贵列表可以稍后按 a 重算。它们的含义不同，所以这不是把同一个事实随意存两份。"
+        },
+        {
+          "type": "code",
+          "filename": "App.tsx",
+          "kind": "excerpt",
+          "language": "tsx",
+          "purpose": "来自配套 App 的状态与事件处理思路；只展示 transition 正常路径，Results 的完整定义在本文实验节。",
+          "code": "const [text, setText] = useState('');\nconst [query, setQuery] = useState('');\nconst [pending, startTransition] = useTransition();\nfunction change(next: string) {\n  setText(next);\n  startTransition(() => setQuery(next));\n}\n// 输入框 value={text}，列表 <Results query={query} ... />"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "阶段",
+            "发生的事",
+            "此时应怎样理解"
+          ],
+          "rows": [
+            [
+              "输入事件",
+              "执行 setText(\"a\")，并在 transition scope 内执行 setQuery(\"a\")",
+              "两个更新都已经请求；scope 本身同步执行"
+            ],
+            [
+              "选择工作",
+              "根先安排紧急的输入反馈",
+              "列表可以暂时使用旧 query"
+            ],
+            [
+              "准备列表",
+              "以后处理 query=\"a\" 对应的工作",
+              "计算可能继续、让出，或被新输入要求的工作替代"
+            ],
+            [
+              "成功提交",
+              "完成的列表结果成为当前界面",
+              "pending 表示过渡状态，不能拿它当网络进度"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "这是一条允许出现的执行路径，不承诺用户每次都能看到中间帧：列表很快、设备很快时，两阶段可能难以肉眼区分。接下来逐层解释这张表：Lane 标识工作类别，根选择这次做哪些，Scheduler 给执行机会，Fiber 工作循环处理节点。先有这条完整路线，再看各层代码。"
+        }
+      ]
+    },
+    {
       "id": "priorities",
       "title": "先分清三种优先级，不要把数字混在一起",
       "paragraphs": [],
@@ -169,6 +222,10 @@ export const reactConcurrencyArticle: Article = {
           "text": "根的pendingLanes表示尚未完成的工作；suspendedLanes表示此前被依赖阻塞的工作；pingedLanes表示已收到可以重试的信号。它们是集合，不是三条彼此排斥的队列。同一Lane可以还在pending，同时在suspended与pinged里。ping只说明可以再试，不保证下一次一定完成。"
         },
         {
+          "type": "paragraph",
+          "text": "先代入没有挂起的普通情况：pending 同时包含 SyncLane 和一条 TransitionLane，suspended 为空，当前也没有正在计算的树。非 Idle 候选包含这两项，getHighestPriorityLanes 先选择 Sync 类别。等紧急工作处理完、根仍保有 Transition 工作，再次选择时就可以轮到它。下面的挂起和保留进度分支，是在这条普通路径上增加条件。"
+        },
+        {
           "type": "code",
           "purpose": "getNextLanes先在非Idle工作中挑未挂起或已唤醒的候选",
           "code": "  const pendingLanes = root.pendingLanes;\n  if (pendingLanes === NoLanes) {\n    return NoLanes;\n  }\n\n  let nextLanes = NoLanes;\n\n  const suspendedLanes = root.suspendedLanes;\n  const pingedLanes = root.pingedLanes;\n\n  // Do not work on any idle work until all the non-idle work has finished,\n  // even if the work is suspended.\n  const nonIdlePendingLanes = pendingLanes & NonIdleLanes;\n  if (nonIdlePendingLanes !== NoLanes) {\n    const nonIdleUnblockedLanes = nonIdlePendingLanes & ~suspendedLanes;\n    if (nonIdleUnblockedLanes !== NoLanes) {\n      nextLanes = getHighestPriorityLanes(nonIdleUnblockedLanes);\n    } else {\n      const nonIdlePingedLanes = nonIdlePendingLanes & pingedLanes;\n      if (nonIdlePingedLanes !== NoLanes) {\n        nextLanes = getHighestPriorityLanes(nonIdlePingedLanes);\n      }\n    }\n  } else {\n    // The only remaining work is Idle.\n    const unblockedLanes = pendingLanes & ~suspendedLanes;\n    if (unblockedLanes !== NoLanes) {\n      nextLanes = getHighestPriorityLanes(unblockedLanes);\n    } else {\n      if (pingedLanes !== NoLanes) {\n        nextLanes = getHighestPriorityLanes(pingedLanes);\n      }\n    }\n  }\n",
@@ -225,6 +282,10 @@ export const reactConcurrencyArticle: Article = {
           "language": "javascript",
           "filename": "ReactFiberLane.old.js:233–254",
           "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "逐项读这个保留进度判断：首先要确实存在 wipLanes，其次新候选与它不同，而且原工作没有被挂起；这时才值得比较是否继续原工作。命中返回 wipLanes，意味着保留原选择，不是从 pending 中删掉新更新。新候选更急且没有命中保留条件时，才继续使用新候选。"
         },
         {
           "type": "reference",
@@ -296,6 +357,10 @@ export const reactConcurrencyArticle: Article = {
           "kind": "excerpt"
         },
         {
+          "type": "paragraph",
+          "text": "把根当作预约的持有人：第一次有 Transition 工作且没有旧预约，就创建一个回调；在它执行前又来同类别工作，根通常保留已有预约，回调开始时再读最新的根状态。若新选择变成更紧急的类别，取消的是旧预约而不是状态更新。新预约以后仍能从根找到未处理工作。这解释了为什么连续调用 setter 与 Scheduler 回调数量不是一一对应。"
+        },
+        {
           "type": "reference",
           "title": "React v18.3.1 · 相同优先级返回；否则取消旧回调",
           "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactFiberWorkLoop.old.js#L743-L750"
@@ -358,6 +423,31 @@ export const reactConcurrencyArticle: Article = {
           "language": "javascript",
           "filename": "Scheduler.js:189–244",
           "kind": "excerpt"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "读源码的位置",
+            "代入一个未完成的回调任务 T"
+          ],
+          "rows": [
+            [
+              "检查 expirationTime 与 shouldYieldToHost",
+              "T 未过期而宿主需要让出，就跳出循环，把机会还给宿主"
+            ],
+            [
+              "callback(didUserCallbackTimeout)",
+              "执行 T；一旦进入回调，内部同步函数仍要自己返回"
+            ],
+            [
+              "typeof continuationCallback === \"function\"",
+              "有后续工作时把返回函数放回 T.callback，下一次继续调它"
+            ],
+            [
+              "pop(taskQueue)",
+              "没有 continuation 且 T 仍为队头时，才从堆中取走该已完成任务"
+            ]
+          ]
         },
         {
           "type": "reference",
@@ -472,6 +562,10 @@ export const reactConcurrencyArticle: Article = {
           "language": "javascript",
           "filename": "ReactFiberHooks.old.js:815–858",
           "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "读这段时盯住 newBaseQueueLast。处理低优先级“加 10”时，本轮 Lane 不包含它，于是建立克隆；这是第一个被跳过的更新，所以同时把 newBaseState 设为跳过之前的 1。处理后面的“乘 2”时，本轮允许执行，但 newBaseQueueLast 已非空，表示前面有欠下的操作；因此它也必须进入保留队列，只是克隆的 Lane 设为 NoLane。这样以后重放不会丢掉乘法，也不会把乘法误放到加法前面。"
         },
         {
           "type": "reference",
@@ -630,11 +724,11 @@ export const reactConcurrencyArticle: Article = {
         },
         {
           "type": "code",
-          "purpose": "同步计算反例：startTransition只标记setter，不能让score自动后台执行。",
-          "code": "startTransition(() => {\n  score(next.length, count * rounds); // 同步CPU计算，此处仍阻塞\n  setQuery(next);\n});",
-          "language": "tsx",
           "filename": "App.tsx",
-          "kind": "excerpt"
+          "kind": "excerpt",
+          "language": "tsx",
+          "purpose": "配套实验完整 App.tsx：包含 score、Row、memo Results、四种更新方式与输入提交代理指标；入口和锁定依赖属于项目运行环境。无需跳转即可对照全部计算位置。",
+          "code": "import React, {\n  memo,\n  useState,\n  useTransition,\n  useLayoutEffect,\n  useRef,\n} from \"react\";\ntype Mode = \"sync\" | \"transition\" | \"reduced\" | \"blocking\";\nconst modes: { id: Mode; label: string }[] = [\n  { id: \"sync\", label: \"普通更新\" },\n  { id: \"transition\", label: \"Transition\" },\n  { id: \"reduced\", label: \"减少工作量\" },\n  { id: \"blocking\", label: \"同步计算反例\" },\n];\n// 确定性 CPU 工作，模拟单行计算，不在 render 内读写时钟或外部状态。\nexport function score(seed: number, rounds: number): number {\n  let n = seed | 0;\n  for (let i = 0; i < rounds; i++)\n    n = (Math.imul(n ^ i, 1664525) + 1013904223) | 0;\n  return n >>> 0;\n}\nfunction Row({\n  index,\n  query,\n  rounds,\n}: {\n  index: number;\n  query: string;\n  rounds: number;\n}) {\n  const value = score(index + query.length, rounds);\n  return (\n    <div data-result-row={index} style={{ padding: \"3px 8px\", borderBottom: \"1px solid #eee\" }}>\n      {index + 1}. {query || \"全部\"} · {value}\n    </div>\n  );\n}\nconst Results = memo(function Results({\n  query,\n  count,\n  rounds,\n}: {\n  query: string;\n  count: number;\n  rounds: number;\n}) {\n  return (\n    <div>\n      {Array.from({ length: count }, (_, index) => (\n        <Row key={index} index={index} query={query} rounds={rounds} />\n      ))}\n    </div>\n  );\n});\nexport default function App() {\n  const [mode, setMode] = useState<Mode>(\"sync\");\n  const [text, setText] = useState(\"\");\n  const [query, setQuery] = useState(\"\");\n  const [count, setCount] = useState(800);\n  const [rounds, setRounds] = useState(16000);\n  const [pending, startTransition] = useTransition();\n  const lastInput = useRef<{ text: string; at: number } | null>(null);\n  const visibleCount = mode === \"reduced\" ? Math.min(count, 40) : count;\n  useLayoutEffect(() => {\n    const sample = lastInput.current;\n    if (!sample || sample.text !== text) return;\n    console.log(\"[输入提交代理指标 ms]\", {\n      mode,\n      text,\n      elapsed: +(performance.now() - sample.at).toFixed(2),\n    });\n    lastInput.current = null;\n  }, [text, mode]);\n  function change(next: string) {\n    lastInput.current = { text: next, at: performance.now() };\n    setText(next);\n    if (mode === \"transition\" || mode === \"blocking\")\n      startTransition(() => {\n        if (mode === \"blocking\")\n          console.log(\"[同步计算校验值]\", score(next.length, count * rounds));\n        setQuery(next);\n      });\n    else setQuery(next);\n  }\n  return (\n    <main\n      style={{\n        fontFamily: \"system-ui\",\n        padding: 20,\n        maxWidth: 760,\n        margin: \"auto\",\n      }}\n    >\n      <h2>同一个输入框，四种工作安排</h2>\n      <p>\n        连续输入 abcdef，观察输入、列表标题、pending\n        和控制台。先用默认规模，再按机器能力调整。\n      </p>\n      <div style={{ display: \"flex\", flexWrap: \"wrap\", gap: 8 }}>\n        {modes.map((m) => (\n          <button\n            key={m.id}\n            onClick={() => setMode(m.id)}\n            aria-pressed={mode === m.id}\n            style={{\n              padding: 8,\n              background: mode === m.id ? \"#cce6db\" : \"#fff\",\n            }}\n          >\n            {m.label}\n          </button>\n        ))}\n      </div>\n      <p>\n        <label>\n          行数{\" \"}\n          <select\n            value={count}\n            onChange={(e) => setCount(Number(e.target.value))}\n          >\n            {[200, 800, 1600].map((n) => (\n              <option key={n}>{n}</option>\n            ))}\n          </select>\n        </label>{\" \"}\n        <label>\n          每行迭代{\" \"}\n          <select\n            value={rounds}\n            onChange={(e) => setRounds(Number(e.target.value))}\n          >\n            {[4000, 16000, 48000].map((n) => (\n              <option key={n}>{n}</option>\n            ))}\n          </select>\n        </label>\n      </p>\n      <input\n        aria-label=\"实验输入\"\n        value={text}\n        onChange={(e) => change(e.target.value)}\n        placeholder=\"连续输入 abcdef\"\n        style={{ width: \"100%\", boxSizing: \"border-box\", padding: 10 }}\n      />\n      <p role=\"status\">\n        输入：{text || \"空\"} ｜ 列表参数：{query || \"空\"} ｜{\" \"}\n        {pending ? \"pending：正在准备列表\" : \"已提交\"}\n      </p>\n      <p>\n        当前渲染 {visibleCount} 行；减少工作量只显示前 40\n        行，是分页的简化示意，不是完整虚拟列表。\n      </p>\n      <div\n        style={{\n          height: 280,\n          overflow: \"auto\",\n          opacity: pending ? 0.6 : 1,\n          border: \"1px solid #bbb\",\n        }}\n      >\n        <Results query={query} count={visibleCount} rounds={rounds} />\n      </div>\n    </main>\n  );\n}"
         },
         {
           "type": "paragraph",
@@ -665,11 +759,36 @@ export const reactConcurrencyArticle: Article = {
       "blocks": [
         {
           "type": "paragraph",
-          "text": "现在可以按职责复述：事件与transition上下文影响Lane分配；更新记录进入状态队列并向根传播工作；根选择可做的Lane并复用或替换回调；Scheduler提供执行机会；渲染入口重新检查根并选择同步或并发循环；Fiber循环在单元边界推进；更新队列保留跳过操作的顺序；只有完成且可以提交的结果才进入页面。每一层都有自己的记录，不能用一个“异步setState”概括。"
+          "text": "读完可以把一次输入按职责展开：事件代码请求更新；Lane 标识更新的工作类别；根从可执行工作中选择本轮集合并预约回调；回调获得执行机会后重新检查根；Fiber 循环准备结果；被跳过的状态操作保留顺序；完成并提交的结果才成为当前界面。"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "检查问题",
+            "解析"
+          ],
+          "rows": [
+            [
+              "startTransition(() => heavyCalculation()) 为什么仍会卡？",
+              "scope 同步执行，heavyCalculation 在返回前一直占着当前线程。transition 标记状态更新的紧迫程度，不把任意函数送到后台线程。"
+            ],
+            [
+              "取消根的旧回调会丢掉之前的更新吗？",
+              "不会因为取消预约就删除状态更新。根和队列仍保存未完成工作，新回调重新选择。"
+            ],
+            [
+              "为什么重放从 1 开始，而不是从已经显示的 2 开始？",
+              "2 只应用了乘法；原顺序是先加 10 再乘 2。从记录的 baseState=1 重放，才得到 22；从 2 补加得到的 12 改变了顺序。"
+            ],
+            [
+              "输入越来越快，是否必须把每个 query 都画出来？",
+              "不必逐一提交每个过时结果。可中断的准备工作可以被更新的输入替代；业务副作用应放在有明确语义的位置，不能靠每次 render 执行一次来保证。"
+            ]
+          ]
         },
         {
           "type": "paragraph",
-          "text": "调度改善的是响应机会，不保证计算量减少，也不等于保证每次输入都有独立可见的中间结果。下一篇性能优化从测量和工作量出发，继续回答：哪些计算原本就不该发生、哪些渲染范围可以缩小、哪些缓存会失效，以及怎样证明优化没有牺牲正确性。"
+          "text": "下一篇性能优化讨论工作量：能否缩小更新范围、避免重复计算、减少可见列表的节点数。调度解决先后与响应机会，性能优化还要检查总成本。是否真正改善用户等待，需要浏览器测量，不能从这张流程表直接推导提速数字。"
         }
       ]
     }

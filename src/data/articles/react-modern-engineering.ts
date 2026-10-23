@@ -3,7 +3,7 @@ export const reactModernEngineeringArticle: Article = {
   "id": "react-modern-engineering",
   "topic": "react",
   "title": "现代 React 工程：客户端、服务端与框架边界",
-  "description": "从 CSR、SSR 与 hydration 建立执行环境模型，用 React 18.3.1 最小服务验证数据快照、请求隔离、安全序列化、错误恢复，并分清流式 SSR、RSC 与框架的职责。",
+  "description": "沿一次页面请求讲透 SSR 与 hydration：同一份数据怎样生成 HTML、交给浏览器并恢复交互；再用流式渲染、RSC 和路由导读定位框架的职责。",
   "minutes": 60,
   "labMinutes": 30,
   "tags": [
@@ -22,7 +22,7 @@ export const reactModernEngineeringArticle: Article = {
     "jsdom 26.1.0"
   ],
   "verifiedAt": "2026-10-22",
-  "scope": "普通 React 18 SSR/hydration 与 HTTP 数据边界；流式 SSR 和 RSC 为机制说明，不宣称提供完整 Next.js、RSC 或生产部署。",
+  "scope": "深入实现 React 18.3.1 的字符串 SSR、hydration、请求隔离与失败恢复；末尾的 streaming、RSC、路由为概念导读，不作为已运行的框架实现。",
   "prerequisites": [
     "函数组件、props、useState 与 Effect",
     "HTTP 请求响应和 Node.js 基础"
@@ -36,7 +36,7 @@ export const reactModernEngineeringArticle: Article = {
       "blocks": [
         {
           "type": "paragraph",
-          "text": "React 负责把数据描述成界面，并在数据变化后更新界面。真正上线一个应用，还要决定请求在哪里接收、数据在哪里读取、HTML 在什么时候生成、哪些代码发送到浏览器，以及失败时由谁恢复。这些共同组成了本篇说的 React 工程。它不是某个新 Hook，也不是“用了 Next.js 就自动完成”的配置选项。"
+          "text": "React 工程关心的是：组件怎样进入一条完整、可运行的请求链路。浏览器发来地址后，谁读数据、谁生成 HTML、浏览器拿到页面后怎样恢复交互，都需要具体安排。本篇集中回答其中一件事：一页 React 界面如何从服务器走到浏览器，并在这两个环境里保持一致。"
         },
         {
           "type": "paragraph",
@@ -48,7 +48,7 @@ export const reactModernEngineeringArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "实验固定 Node.js 22、React / React DOM 18.3.1、esbuild 0.28.2 与 jsdom 26.1.0，不引入框架，不实现 RSC 编译器或生产路由器。正文解释流式渲染和 RSC 的职责，配套实验只承诺验证普通 SSR、hydration 和 HTTP 边界。阅读前需要懂函数组件、props、useState，以及 HTTP 请求和响应。"
+          "text": "阅读分两段。先把普通 SSR 的完整链路做出来：请求 → 数据 → HTML 与 JSON → hydration → 点击更新 → 故障恢复。最后三节是扩展导读，只解释流式 SSR、RSC、客户端路由分别改变哪一段链路。这样读完你能实现和排查前一段，也能判断引入框架时需要继续验证什么。实验固定 Node.js 22、React / React DOM 18.3.1、esbuild 0.28.2、jsdom 26.1.0。"
         }
       ]
     },
@@ -155,7 +155,7 @@ export const reactModernEngineeringArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "一个没有身份信息的公共商品字典可以被共享缓存，但缓存键、过期和并发加载要明确；个人订单缓存则必须包含身份与权限相关维度，或直接不共享。本示例所有 HTML 都使用 Cache-Control: no-store，牺牲缓存收益，换来清晰的实验边界。它不演示 CDN 个性化缓存，也不声称一个响应头替代了鉴权。"
+          "text": "共享缓存需要按数据归属决定。公共商品字典可以在请求之间复用；用户订单则需要同时考虑身份、权限和失效规则。本例直接为每个请求创建对象，并使用 Cache-Control: no-store，让你先看清请求与数据的一一对应。前篇讲过客户端 Store，这里新增的关键差别是：服务器模块往往服务很多用户，生命周期比一次请求长。"
         },
         {
           "type": "code",
@@ -167,7 +167,11 @@ export const reactModernEngineeringArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "点击“重新请求页面”使用普通 a 链接，会产生完整文档请求。这是刻意保留的可观察基线：服务器重新创建 requestId 和 count，所以页面回到 0。它没有实现 SPA 路由，也不会自动保留上一页面的 Hook 状态；后面比较客户端导航时，必须先承认这个差别。"
+          "text": "顺着 App 读一次：服务器把 data.count=0 交给 useState，得到带“计数 0”的 HTML；浏览器随后也从 0 初始化。onClick 中的函数只在浏览器事件发生时执行，函数本身不会被序列化到 HTML。点击后浏览器状态变为 1，而服务器已经结束的那次请求仍然没有被修改。"
+        },
+        {
+          "type": "paragraph",
+          "text": "“重新请求页面”使用普通 a 链接。点击它会取回一份新文档，服务器新建 requestId 与 count=0，因此计数重置。这正好给后面的客户端导航留下一个比较基线：完整文档导航重建应用，SPA 导航则可以在原来的根中更新页面。"
         }
       ]
     },
@@ -189,20 +193,44 @@ export const reactModernEngineeringArticle: Article = {
           "text": "这里需要同时看两层边界：能安全展示的数据不一定可以公开。即使做了完美转义，浏览器仍然能读取所有初始 JSON。API 密钥、数据库连接信息、跨租户的内部字段根本不应进入这个对象。反过来，服务器验证过的数据到客户端之后，也不能作为以后写操作的可信授权证据。"
         },
         {
+          "type": "paragraph",
+          "text": "先看服务端真正连接两种输出的三行。markup 负责让浏览器先看到内容；JSON 负责让浏览器稍后用相同输入执行 App。这两条路径都读取同一个 data。"
+        },
+        {
+          "type": "code",
+          "language": "javascript",
+          "filename": "server.mjs · documentFor 的两条数据路径",
+          "purpose": "从下面完整文件提取关键调用并命名中间值；HTML 拼接在完整文件中。",
+          "kind": "excerpt",
+          "code": "const markup = renderToString(React.createElement(App, {data}));\nconst snapshot = serialize(data);\n// markup 放进 #root；snapshot 放进 #initial-data。\n// 浏览器入口只解析 snapshot，再用同一个 App 执行 hydrateRoot。"
+        },
+        {
+          "type": "paragraph",
+          "text": "接着读完整文件时，按四个位置找：createServer 的请求回调创建 requestId；路由确认后创建 data；documentFor 在发送响应前完成字符串渲染；catch 在失败时返回 500。静态脚本 /client.js 走独立分支，它负责把客户端代码送过去，不会再生成页面数据。"
+        },
+        {
           "type": "code",
           "language": "javascript",
           "filename": "server.mjs",
           "purpose": "完整服务端文件：请求作用域、文本渲染、HTML 上下文序列化、500 回退和诊断日志都在这里。",
           "kind": "excerpt",
           "code": "import http from 'node:http';\nimport {randomUUID} from 'node:crypto';\nimport {readFile} from 'node:fs/promises';\nimport {pathToFileURL} from 'node:url';\nimport React from 'react';\nimport {renderToString} from 'react-dom/server';\nimport {App} from './dist/App.mjs';\n// JSON is placed in an HTML script raw-text context; JSON.stringify alone is insufficient.\nexport function serialize(data) {\n  return JSON.stringify(data).replace(/</g, '\\\\u003c').replace(/\\u2028/g,'\\\\u2028').replace(/\\u2029/g,'\\\\u2029');\n}\nexport function documentFor(data) {\n  const markup = renderToString(React.createElement(App, {data}));\n  return '<!doctype html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>React SSR 实验</title></head><body><div id=\"root\">'\n    + markup + '</div><script type=\"application/json\" id=\"initial-data\">'\n    + serialize(data) + '</script><script defer src=\"/client.js\"></script></body></html>';\n}\nexport function createServer({log = console.log} = {}) {\n  return http.createServer(async (req, res) => {\n    const requestId = randomUUID();\n    const start = performance.now();\n    res.setHeader('X-Request-Id', requestId);\n    res.setHeader('X-Content-Type-Options', 'nosniff');\n    res.setHeader('Cache-Control', 'no-store');\n    res.setHeader('Content-Security-Policy', \"default-src 'none'; script-src 'self'; base-uri 'none'; frame-ancestors 'none'\");\n    try {\n      const url = new URL(req.url, 'http://localhost');\n      if (url.pathname === '/client.js') {\n        res.setHeader('Content-Type','text/javascript; charset=utf-8');\n        res.end(await readFile(new URL('./dist/client.js',import.meta.url))); return;\n      }\n      if (url.pathname !== '/') {res.writeHead(404); res.end('Not found'); return;}\n      if (url.searchParams.has('fail')) throw new Error('simulated loader failure');\n      // Each request owns its own data. Never store the current visitor in a module-global variable.\n      const data = {title: url.searchParams.get('title')?.slice(0,200) || '服务端与浏览器共享一份快照', count:0, requestId};\n      const html = documentFor(data); // Complete before sending headers: failures can still return 500.\n      res.setHeader('Content-Type','text/html; charset=utf-8');\n      res.end(html);\n    } catch (error) {\n      res.writeHead(500, {'Content-Type':'text/plain; charset=utf-8'});\n      res.end('页面暂时不可用，请重试。请求编号：' + requestId);\n      log(JSON.stringify({requestId, phase:'render-or-load', error:error.message}));\n    } finally {\n      log(JSON.stringify({requestId,status:res.statusCode, durationMs:Math.round(performance.now()-start)}));\n    }\n  });\n}\nif (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {\n  createServer().listen(4307,'127.0.0.1', () => console.log('http://127.0.0.1:4307'));\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "例如请求 /?title=Hello，服务端 data 中是 title=\"Hello\"、count=0 和本次 requestId。响应中的 h1 显示 Hello，JSON 同时保留这三个字段。若标题包含 </script>，serialize 必须使 HTML 源码不再出现由数据形成的结束标签，而 JSON.parse 后仍得到原来的标题。安全检查因此要同时验证“没新增 script 元素”和“还原值完全相等”，只检查没有执行脚本还不够。"
         }
       ]
     },
     {
       "id": "client",
-      "title": "客户端接管：不要用重新渲染掩盖数据不一致",
+      "title": "客户端接管：读快照、建立状态、接上事件",
       "paragraphs": [],
       "blocks": [
+        {
+          "type": "paragraph",
+          "text": "浏览器解析完响应后执行 client.js。下面的入口按顺序完成三件事：取出服务器嵌入的 JSON，选择正常或故障实验输入，最后把容器、组件与诊断回调交给 hydrateRoot。这里的初始值必须从响应读取，因为服务器已经用它决定了 DOM。"
+        },
         {
           "type": "code",
           "language": "javascript",
@@ -213,7 +241,7 @@ export const reactModernEngineeringArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "正常路径里，我们没有清空 root，没有再请求一次标题，也没有先 createRoot 再试图复用 HTML。hydrateRoot 收到的 App 与服务端调用相同，初始数据来自同一份响应。按钮事件被接管后，点击只更新浏览器里的 count，不会再次运行 Node.js 的请求回调。"
+          "text": "正常路径中，JSON.parse 得到 data，App 用它初始化 count，React 便能将组件结果与已有 DOM 对应。按钮被接管后，点击更新浏览器里的 count。整个点击不需要新的 HTTP 请求；只有点击页面中的普通导航链接，才会再次进入 Node.js 的页面请求回调。"
         },
         {
           "type": "paragraph",
@@ -222,91 +250,6 @@ export const reactModernEngineeringArticle: Article = {
         {
           "type": "paragraph",
           "text": "本例用 development 构建，目的是观察诊断信息，不拿它测量生产性能。线上构建应关闭开发诊断并压缩资源，同时保留受控的恢复遥测。React 19 文档里的 onCaughtError、onUncaughtError 等配置不能直接复制给 React 18 当作相同能力；升级需要以实际安装版本和测试结果为依据。"
-        }
-      ]
-    },
-    {
-      "id": "streaming",
-      "title": "流式 SSR 与 Suspense：逐段发送，并不等于所有请求自动并行",
-      "paragraphs": [],
-      "blocks": [
-        {
-          "type": "paragraph",
-          "text": "前面的 renderToString 把整段结果计算成字符串，再发给浏览器。流式 SSR 则允许把已经就绪的部分先发送，其他内容就绪后继续输出。React 18 在 Node.js 中提供 renderToPipeableStream；外围已就绪的页面结构通常称为 shell，Suspense 边界为尚未就绪的子树提供 fallback。它解决的是输出顺序和等待边界，不是给任意 fetch 自动加缓存。"
-        },
-        {
-          "type": "paragraph",
-          "text": "例如标题、导航已经准备好，推荐列表仍在等待。如果把整个页面都挡在推荐列表前面，浏览器只能等待全部完成；把推荐区域放在合适的 Suspense 边界内，shell 可以包含该区域的 fallback，后续内容再补进来。但组件里普通 useEffect 的请求是在客户端提交后发生，不能因为外面包了 Suspense 就变成服务端流式数据源。React 18 的数据接入通常由支持 Suspense 的框架管理；手写抛 Promise 的缓存不是这里承诺的稳定生产接口。"
-        },
-        {
-          "type": "code",
-          "language": "javascript",
-          "filename": "streaming-lifecycle.js",
-          "purpose": "生命周期伪代码，只说明发送头前后能做什么；不是本项目可运行入口，省略了框架数据源、取消监听与客户端脚本配置。",
-          "kind": "pseudocode",
-          "code": "const stream = renderToPipeableStream(page, {\n  onShellReady() {\n    response.statusCode = didError ? 500 : 200;\n    stream.pipe(response); // 从这里开始，HTTP 状态可能已经发出\n  },\n  onShellError(error) {\n    sendStandaloneErrorPage(500); // shell 本身无法生成\n  },\n  onError(error) {\n    didError = true;\n    recordError(error); // shell 发出后不能把 200 改回 500\n  }\n});\n// 还必须在超时/连接关闭时清理监听与计时器，并按场景 abort。"
-        },
-        {
-          "type": "paragraph",
-          "text": "这会改变错误处理的时间窗口。字符串渲染时，我们在 res.end 之前就知道本次渲染是否成功；流式渲染开始发送后，后续区域失败也不能把已经发出去的 200 改成 500。必须把 shell 失败、边界内失败、客户端恢复分别观测。代理/CDN 还可能缓冲响应，所以“服务端调用了 pipe”不证明真实用户逐段看到了页面。验证需要观察实际部署链路的分块到达和浏览器行为。"
-        },
-        {
-          "type": "reference",
-          "title": "renderToPipeableStream：shell、错误与终止",
-          "url": "https://react.dev/reference/react-dom/server/renderToPipeableStream",
-          "note": "本节解释机制；配套项目没有实现 Suspense 数据源，未声称通过流式部署验收。"
-        }
-      ]
-    },
-    {
-      "id": "rsc",
-      "title": "RSC 与 Client Component：模块边界和 HTML 渲染是两条轴",
-      "paragraphs": [],
-      "blocks": [
-        {
-          "type": "paragraph",
-          "text": "React Server Components，简称 RSC，是另一层组件执行与传输模型。Server Component 可以在服务器或构建环境执行，把适合跨边界传递的结果交给客户端组合；它的实现代码及只在服务器使用的依赖不必进入浏览器包。SSR 说的是生成 HTML，RSC 说的是组件在哪个环境执行及如何把结果传给客户端，两者可以同时使用，不能互相替代。"
-        },
-        {
-          "type": "paragraph",
-          "text": "以文章页面为例，服务器读取正文并做 Markdown 处理，点赞按钮保留浏览器状态。RSC 架构可以把正文处理留在服务器，再将点赞数量等可序列化输入交给 Client Component。首屏仍可以把包含这个按钮的树渲染成 HTML，所以 Client Component 不等于“服务器永远不会渲染它”。浏览器需要的交互模块仍要下载并 hydration。"
-        },
-        {
-          "type": "paragraph",
-          "text": "在支持这种模型的框架里，use client 声明的是客户端模块入口边界，它会影响被导入模块所属的客户端依赖图，不只是给一个函数贴标签。把声明放得太高，可能把大量本可留在服务器的依赖带到浏览器。相反，组件作为 children 由服务器组合后传入客户端组件，并不意味着那段服务器组件源码自动变为客户端依赖。理解时要分清 JSX 的嵌套关系与模块的 import 关系。"
-        },
-        {
-          "type": "paragraph",
-          "text": "本实验是传统 React 18 SSR，没有 RSC 协议、编译器或服务器函数调度。给 App.jsx 随便加 use client，不会让 esbuild 自动生成一套 RSC 应用。React 19 的 Server Components 能力与其框架/打包器集成接口也有不同稳定性边界，不能据此声称 React 18 手工 SSR 已经具备相同能力。选用框架时，应锁定框架与 React 的兼容版本，再验证客户端包和服务端访问边界。"
-        },
-        {
-          "type": "reference",
-          "title": "Server Components：执行环境与集成版本边界",
-          "url": "https://react.dev/reference/rsc/server-components",
-          "note": "仅用于职责区分；本项目没有运行 RSC 或 Next.js。"
-        }
-      ]
-    },
-    {
-      "id": "routing",
-      "title": "路由与数据生命周期：首屏能用，不代表后续导航正确",
-      "paragraphs": [],
-      "blocks": [
-        {
-          "type": "paragraph",
-          "text": "一次完整文档请求的生命周期很直观：建立请求、读数据、渲染、返回、结束。SPA 导航则可能在同一个页面和同一个 React 根里切换地址，布局与部分状态继续存在；框架需要决定哪些 loader 重新运行、哪些缓存可复用、加载期间保留什么 UI，以及地址和数据何时一起提交。把 history.pushState 调一下只改变地址，不会自动完成这些工作。"
-        },
-        {
-          "type": "paragraph",
-          "text": "假设你先打开商品 A，再快速切到商品 B。A 的请求更慢，最后才返回。如果返回数据时只写入一个无归属的 detail 状态，就可能把 B 的地址配上 A 的内容。无论手工 Hook 还是路由框架，都需要将结果关联到请求身份、路由参数或缓存键，并对过期响应做取消或忽略。服务器渲染只改善第一次访问，不会自动修复这类客户端竞态。"
-        },
-        {
-          "type": "paragraph",
-          "text": "写操作同样需要定义后续动作。用户修改标题成功后，服务器事实已经改变，但页面的 loader 数据、浏览器查询缓存、服务器缓存和 CDN 缓存可能仍然保存旧值。应该明确哪个缓存被标记失效、哪部分 UI 等待重读、乐观更新失败如何回滚。不要把 React 的 useMemo 当请求缓存，也不要把一次 router.refresh 想象成清除了部署链路里的所有缓存。"
-        },
-        {
-          "type": "paragraph",
-          "text": "Next.js 等框架把这些环节组织进路由约定，但缓存默认值、导航和再验证接口随具体版本、路由体系和配置变化。本篇不提供未经运行的 Next.js 最小项目，也不列一个跨版本的默认缓存表。迁移本实验时，应先把当前页面对应到具体路由，写出初次请求、客户端导航、写入后重读三条路径，再通过网络面板确认数据到底来自哪里。"
         }
       ]
     },
@@ -322,6 +265,45 @@ export const reactModernEngineeringArticle: Article = {
         {
           "type": "paragraph",
           "text": "本例的 fail=1 在输出 HTML 前模拟加载失败，所以服务器可以返回真正的 500 与一个不依赖 React 的文本回退。响应只包含通用提示和请求编号，详细原因进入服务器日志。用户重试发起新的请求，不会复用失败渲染留下的进程级状态。为了避免假成功，测试同时检查 HTTP 状态与响应内容，而不是只看页面上是否出现“错误”。"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "步骤",
+            "正常 /",
+            "故障 /?fail=1",
+            "故障 /?mismatch=1"
+          ],
+          "rows": [
+            [
+              "生成数据",
+              "创建 count=0 的 data",
+              "在创建页面之前抛异常",
+              "创建 count=0 的 data"
+            ],
+            [
+              "HTTP 响应",
+              "200，包含 HTML 与 JSON",
+              "catch 返回 500 和文本",
+              "200，包含 HTML 与 JSON"
+            ],
+            [
+              "浏览器入口",
+              "读取 0 后 hydration",
+              "没有 App，也没有 hydration",
+              "入口故意把 count 改成 99"
+            ],
+            [
+              "观察依据",
+              "点击后 0 → 1",
+              "网络状态与服务端 phase 日志",
+              "恢复回调；本例切换客户端渲染"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "这张表也给出了定位顺序。看到 500，先查服务端；HTTP 是 200 且初始文字存在，但按钮不动，先看脚本是否成功加载；脚本已执行又出现 hydration-recovery，再比较响应 JSON 与客户端入口。按实际阶段缩小范围，比把所有现象都归为“React 渲染失败”更有效。"
         },
         {
           "type": "table",
@@ -393,6 +375,26 @@ export const reactModernEngineeringArticle: Article = {
       "paragraphs": [],
       "blocks": [
         {
+          "type": "paragraph",
+          "text": "正文已经给出 App.jsx、server.mjs 和 client.jsx。将它们放在同一目录，再加入下面的构建文件。构建做两份产物：浏览器使用包含 React 的 client.js；Node.js 使用 App.mjs，并从安装依赖中加载 React。这样同一个组件才会真的在两种环境执行。"
+        },
+        {
+          "type": "code",
+          "language": "javascript",
+          "filename": "build.mjs",
+          "purpose": "完整构建文件，与配套示例一致。",
+          "kind": "excerpt",
+          "code": "import {build} from 'esbuild';\nawait build({entryPoints:['client.jsx'],bundle:true,outfile:'dist/client.js',format:'iife',define:{'process.env.NODE_ENV':'\"development\"'}});\nawait build({entryPoints:['App.jsx'],bundle:true,outfile:'dist/App.mjs',format:'esm',platform:'node',external:['react']});\n"
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "filename": "终端 · 手工按正文创建文件后",
+          "purpose": "先创建正文中的四个文件；命令生成自己的锁文件。配套 ZIP 则使用已提交的锁文件，见下面 npm ci 路径。",
+          "kind": "excerpt",
+          "code": "npm init -y\nnpm pkg set type=module\nnpm install --save-exact react@18.3.1 react-dom@18.3.1\nnpm install --save-dev --save-exact esbuild@0.28.2\nnode build.mjs\nnode server.mjs"
+        },
+        {
           "type": "code",
           "language": "bash",
           "filename": "终端",
@@ -414,7 +416,126 @@ export const reactModernEngineeringArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "验证记录与完整命令放在示例 README 和 VERIFICATION 中。本章交付的是理解执行环境的最小闭环：相同快照支撑 hydration，请求作用域支撑隔离，错误所处阶段决定恢复手段。后续引入路由框架、流式数据或 RSC 时，可以沿着这几条边界逐一检查，而不是只对照 API 名称。"
+          "text": "配套目录中的 README 和 VERIFICATION 保留命令记录，正文的理解与运行步骤已经完整。已有验证覆盖匹配快照接管、不匹配恢复、JSON 上下文和 HTTP 请求隔离；jsdom 用例不覆盖真实代理的分块、生产负载或浏览器 CSP 审计。运行时若与上面不同，先核对 Node 与 React 版本、构建是否完成，以及 4307 是否被占用。"
+        },
+        {
+          "type": "paragraph",
+          "text": "检查一：服务器打印了“计数 0”，为什么还要传 JSON？因为 HTML 只提供显示结果，客户端执行组件还需要初始输入。靠重新请求可能拿到另一份数据；传同一份快照才能解释两次渲染为什么一致。"
+        },
+        {
+          "type": "paragraph",
+          "text": "检查二：打开 /?mismatch=1 得到 200，为什么仍然算失败？HTTP 200 只说明本例服务端生成响应成功；客户端随后改变输入，才破坏了 hydration 的前提。修复点是入口数据，不是把服务端状态码改成 500。"
+        },
+        {
+          "type": "paragraph",
+          "text": "检查三：并发请求没串数据，是否证明全局 Store 安全？没有。示例正是靠每个请求独立创建 data 避免共享。未来加 await 和模块级可变用户状态后，需要重新验证交错执行下的隔离。"
+        }
+      ]
+    },
+    {
+      "id": "streaming",
+      "title": "扩展导读一：流式 SSR 改变发送与恢复的时间窗口",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "到这里，普通 SSR 的实现、运行和失败过程已经闭合。下面三节只定位框架能力，不再引入另一套待运行项目。第一种扩展保留“生成 HTML → hydration”的关系，把一次性发送改为分段发送。"
+        },
+        {
+          "type": "paragraph",
+          "text": "前面的 renderToString 把整段结果计算成字符串，再发给浏览器。流式 SSR 则允许把已经就绪的部分先发送，其他内容就绪后继续输出。React 18 在 Node.js 中提供 renderToPipeableStream；外围已就绪的页面结构通常称为 shell，Suspense 边界为尚未就绪的子树提供 fallback。它解决的是输出顺序和等待边界，不是给任意 fetch 自动加缓存。"
+        },
+        {
+          "type": "paragraph",
+          "text": "例如标题、导航已经准备好，推荐列表仍在等待。如果把整个页面都挡在推荐列表前面，浏览器只能等待全部完成；把推荐区域放在合适的 Suspense 边界内，shell 可以包含该区域的 fallback，后续内容再补进来。但组件里普通 useEffect 的请求是在客户端提交后发生，不能因为外面包了 Suspense 就变成服务端流式数据源。React 18 的数据接入通常由支持 Suspense 的框架管理；手写抛 Promise 的缓存不是这里承诺的稳定生产接口。"
+        },
+        {
+          "type": "code",
+          "language": "javascript",
+          "filename": "streaming-lifecycle.js",
+          "purpose": "生命周期伪代码，只说明发送头前后能做什么；不是本项目可运行入口，省略了框架数据源、取消监听与客户端脚本配置。",
+          "kind": "pseudocode",
+          "code": "const stream = renderToPipeableStream(page, {\n  onShellReady() {\n    response.statusCode = didError ? 500 : 200;\n    stream.pipe(response); // 从这里开始，HTTP 状态可能已经发出\n  },\n  onShellError(error) {\n    sendStandaloneErrorPage(500); // shell 本身无法生成\n  },\n  onError(error) {\n    didError = true;\n    recordError(error); // shell 发出后不能把 200 改回 500\n  }\n});\n// 还必须在超时/连接关闭时清理监听与计时器，并按场景 abort。"
+        },
+        {
+          "type": "paragraph",
+          "text": "这会改变错误处理的时间窗口。字符串渲染时，我们在 res.end 之前就知道本次渲染是否成功；流式渲染开始发送后，后续区域失败也不能把已经发出去的 200 改成 500。必须把 shell 失败、边界内失败、客户端恢复分别观测。代理/CDN 还可能缓冲响应，所以“服务端调用了 pipe”不证明真实用户逐段看到了页面。验证需要观察实际部署链路的分块到达和浏览器行为。"
+        },
+        {
+          "type": "reference",
+          "title": "renderToPipeableStream：shell、错误与终止",
+          "url": "https://react.dev/reference/react-dom/server/renderToPipeableStream",
+          "note": "本节解释机制；配套项目没有实现 Suspense 数据源，未声称通过流式部署验收。"
+        }
+      ]
+    },
+    {
+      "id": "rsc",
+      "title": "扩展导读二：RSC 改变组件代码的执行与传输边界",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "React Server Components，简称 RSC，是另一层组件执行与传输模型。Server Component 可以在服务器或构建环境执行，把适合跨边界传递的结果交给客户端组合；它的实现代码及只在服务器使用的依赖不必进入浏览器包。SSR 说的是生成 HTML，RSC 说的是组件在哪个环境执行及如何把结果传给客户端，两者可以同时使用，不能互相替代。"
+        },
+        {
+          "type": "paragraph",
+          "text": "以文章页面为例，服务器读取正文并做 Markdown 处理，点赞按钮保留浏览器状态。RSC 架构可以把正文处理留在服务器，再将点赞数量等可序列化输入交给 Client Component。首屏仍可以把包含这个按钮的树渲染成 HTML，所以 Client Component 不等于“服务器永远不会渲染它”。浏览器需要的交互模块仍要下载并 hydration。"
+        },
+        {
+          "type": "paragraph",
+          "text": "在支持这种模型的框架里，use client 声明的是客户端模块入口边界，它会影响被导入模块所属的客户端依赖图，不只是给一个函数贴标签。把声明放得太高，可能把大量本可留在服务器的依赖带到浏览器。相反，组件作为 children 由服务器组合后传入客户端组件，并不意味着那段服务器组件源码自动变为客户端依赖。理解时要分清 JSX 的嵌套关系与模块的 import 关系。"
+        },
+        {
+          "type": "code",
+          "language": "jsx",
+          "filename": "模块关系示意 · 不属于上面的 React 18 SSR 项目",
+          "purpose": "模块依赖示意伪代码：强调服务器把结果/props 交给交互组件；不是可以直接复制运行的 RSC 服务。",
+          "kind": "pseudocode",
+          "code": "// ServerPage 模块（服务器侧）\nimport LikeButton from './LikeButton'; // 跨入客户端模块边界\n// 服务器读取正文后组合：\n<ArticleBody text={text} />\n<LikeButton initialCount={count} />\n\n// LikeButton 模块（由兼容 RSC 的打包器识别）\n'use client';\n// 使用 useState，处理点击。正文处理依赖不由此模块导入。"
+        },
+        {
+          "type": "paragraph",
+          "text": "本实验是传统 React 18 SSR，没有 RSC 协议、编译器或服务器函数调度。给 App.jsx 随便加 use client，不会让 esbuild 自动生成一套 RSC 应用。React 19 的 Server Components 能力与其框架/打包器集成接口也有不同稳定性边界，不能据此声称 React 18 手工 SSR 已经具备相同能力。选用框架时，应锁定框架与 React 的兼容版本，再验证客户端包和服务端访问边界。"
+        },
+        {
+          "type": "reference",
+          "title": "Server Components：执行环境与集成版本边界",
+          "url": "https://react.dev/reference/rsc/server-components",
+          "note": "仅用于职责区分；本项目没有运行 RSC 或 Next.js。"
+        },
+        {
+          "type": "reference",
+          "title": "use client：客户端模块边界与传递依赖",
+          "url": "https://react.dev/reference/rsc/use-client",
+          "note": "供核对模块关系；本节概念导读与 React 18 传统 SSR 实验分开。"
+        }
+      ]
+    },
+    {
+      "id": "routing",
+      "title": "扩展导读三：客户端路由延长了页面与数据的生命周期",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "一次完整文档请求的生命周期很直观：建立请求、读数据、渲染、返回、结束。SPA 导航则可能在同一个页面和同一个 React 根里切换地址，布局与部分状态继续存在；框架需要决定哪些 loader 重新运行、哪些缓存可复用、加载期间保留什么 UI，以及地址和数据何时一起提交。把 history.pushState 调一下只改变地址，不会自动完成这些工作。"
+        },
+        {
+          "type": "paragraph",
+          "text": "假设你先打开商品 A，再快速切到商品 B。A 的请求更慢，最后才返回。如果返回数据时只写入一个无归属的 detail 状态，就可能把 B 的地址配上 A 的内容。无论手工 Hook 还是路由框架，都需要将结果关联到请求身份、路由参数或缓存键，并对过期响应做取消或忽略。服务器渲染只改善第一次访问，不会自动修复这类客户端竞态。"
+        },
+        {
+          "type": "paragraph",
+          "text": "写操作同样需要定义后续动作。用户修改标题成功后，服务器事实已经改变，但页面的 loader 数据、浏览器查询缓存、服务器缓存和 CDN 缓存可能仍然保存旧值。应该明确哪个缓存被标记失效、哪部分 UI 等待重读、乐观更新失败如何回滚。不要把 React 的 useMemo 当请求缓存，也不要把一次 router.refresh 想象成清除了部署链路里的所有缓存。"
+        },
+        {
+          "type": "paragraph",
+          "text": "Next.js 等框架把这些环节组织进路由约定，但缓存默认值、导航和再验证接口随具体版本、路由体系和配置变化。本篇不提供未经运行的 Next.js 最小项目，也不列一个跨版本的默认缓存表。迁移本实验时，应先把当前页面对应到具体路由，写出初次请求、客户端导航、写入后重读三条路径，再通过网络面板确认数据到底来自哪里。"
+        },
+        {
+          "type": "paragraph",
+          "text": "回到同一页计数器：普通链接重新请求后回到 0；客户端路由可能保留布局中的计数器，同时替换正文；RSC 决定正文处理代码是否需要送到浏览器；流式 SSR 决定首份响应哪些部分先到达。这四个问题各有自己的输入与输出。选框架前先把它们分清，遇到故障时才能找到真正负责的那一层。"
         }
       ]
     }

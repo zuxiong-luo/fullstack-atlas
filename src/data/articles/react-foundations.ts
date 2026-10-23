@@ -21,8 +21,8 @@ export const reactFoundationsArticle: Article = {
     "TypeScript 5.7.2",
     "Node.js 22"
   ],
-  "verifiedAt": "2026-10-22",
-  "scope": "浏览器函数组件的基础模型与可观察行为；不展开Effect内部、Fiber源码、并发调度或服务端渲染。七篇系列第一篇标杆审阅稿。",
+  "verifiedAt": "2026-10-23",
+  "scope": "浏览器函数组件的基础模型与可观察行为；先建立组件、数据和身份的关系，Effect 生命周期、外部状态订阅、Fiber 与调度分别在后续篇章展开。",
   "prerequisites": [
     "JavaScript函数、数组map/filter和对象引用",
     "基本HTML；不需要先读React源码"
@@ -53,7 +53,7 @@ export const reactFoundationsArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "当然，浏览器最终仍然需要DOM操作。React并没有取消这些操作，而是把“计算界面”和“应用DOM变更”组织起来，让业务代码主要围绕数据关系表达意图。对于一个没有交互的静态页面，直接HTML可能已经足够；React的价值通常在多处界面需要随数据协同变化时更明显。它也不会自动解决路由、后端接口、数据存储和所有性能问题。"
+          "text": "React 把“计算界面”和“应用 DOM 变更”组织起来，让业务代码主要围绕数据关系表达意图。阅读清单里，行按钮和已读汇总共享一份数据；我们只维护这份数据，界面便能按同一套规则更新。下面先认识组成这套规则的组件、元素、props 和 state。"
         },
         {
           "type": "paragraph",
@@ -131,10 +131,6 @@ export const reactFoundationsArticle: Article = {
         {
           "type": "paragraph",
           "text": "后面说“组件实例”时，指树中某个具体使用位置所对应的组件身份，不是说函数组件会生成一个可供业务操作的class实例。同一个BookRow函数可以用于两本书，两行也可以拥有彼此独立的局部状态。不要因为它们由同一个函数定义，就以为状态也只有一份。"
-        },
-        {
-          "type": "paragraph",
-          "text": "组件函数应在模块顶层定义。若在App函数内部重新定义BookRow，每次App执行都可能产生新的函数对象，改变子组件类型身份，导致状态重建。普通的计算辅助函数可以局部定义；需要作为组件使用并保留自身状态的类型，不能随意在父组件每次执行时重新创建。"
         }
       ]
     },
@@ -327,6 +323,36 @@ export const reactFoundationsArticle: Article = {
           "text": "App得到新的books，计算completed，再给BookRow传入更新后的book。React比较新旧描述，准备需要的宿主变化。进入commit时，它才把对应变化应用到DOM。在浏览器中，布局、绘制还有自己的时机，因此“组件函数已执行”“DOM已变化”和“像素已显示”不能混成一件事。"
         },
         {
+          "type": "table",
+          "headers": [
+            "时刻",
+            "数据与计算",
+            "页面"
+          ],
+          "rows": [
+            [
+              "点击之前",
+              "A.done=false，B.done=false；completed=0",
+              "两本未读，汇总 0"
+            ],
+            [
+              "点击 A 的按钮",
+              "onToggle(\"A\") → toggle(\"A\")；map 返回新数组，A.done=true",
+              "请求更新，当前事件函数继续执行"
+            ],
+            [
+              "下次 render",
+              "App 读到新 books，completed=1；两行收到各自 book",
+              "计算下一版描述"
+            ],
+            [
+              "commit 完成",
+              "新的描述成为已提交界面",
+              "A 按钮变为“标为未读 A”，汇总 1；B 的文字不变"
+            ]
+          ]
+        },
+        {
           "type": "figure",
           "src": "figures/react-foundations/phases.svg",
           "title": "标为已读的一次更新",
@@ -335,15 +361,11 @@ export const reactFoundationsArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "重新渲染不代表整页DOM被替换。没有变化的宿主节点可以保留；组件函数执行过也可能没有产生需要的DOM变更。本例在稳定ID下反转两行，测试还会检查A的输入节点是否仍是同一个DOM对象。这个观察只验证该场景的复用，不应扩大成“所有更新都保证DOM不变”。"
+          "text": "这张图与上表可以一起读：render 回答“新的界面是什么”，commit 负责把差异应用到 DOM，浏览器再显示像素。重新执行组件不意味着整页 DOM 被替换。B 的组件即使被调用，只要它产生的宿主内容没有变化，就不需要为了这次已读操作重写 B 的文字。"
         },
         {
           "type": "paragraph",
           "text": "组件计算应该是纯粹的：对于同样的props、state和Context，不修改输入或外部数据，也不在render期间做请求和订阅。React可能重新调用组件或放弃未提交结果。网络、计时器与外部系统同步应该根据具体需求放在事件或Effect里，下一篇再深入区分。"
-        },
-        {
-          "type": "paragraph",
-          "text": "如果你在开发环境看到组件日志执行两次，不要马上推断用户点击了两次。StrictMode会增加开发检查；组件函数执行次数、Effect执行次数、DOM变更次数也并不相等。本例为了集中观察基本数据关系，不包StrictMode，但这不是建议真实项目关闭它。"
         },
         {
           "type": "reference",
@@ -435,6 +457,10 @@ export const reactFoundationsArticle: Article = {
         },
         {
           "type": "paragraph",
+          "text": "组件类型也参与身份判断。因此 BookRow 定义在模块顶层。如果把它定义在 App 函数内部，App 每次执行都会产生新的函数对象；即使书籍 key 相同，新的组件类型也会让原来的行状态重建。这里的判断依据是函数对象的身份，不是函数名称或返回的标签看起来相同。"
+        },
+        {
+          "type": "paragraph",
           "text": "再做一个更容易误判的操作：给A写笔记并标记已读，然后搜索TypeScript，让A消失，再清空搜索。A再次出现时，已读仍在，临时笔记却为空。原因是已读记录在仍然存活的App.books里，而BookRow A已经被过滤出渲染树并卸载。稳定key帮助匹配仍在协调范围中的身份，不会自动保存已卸载组件的历史state。"
         },
         {
@@ -450,12 +476,52 @@ export const reactFoundationsArticle: Article = {
     },
     {
       "id": "practice",
-      "title": "运行完整实验：先预测，再操作，再解释",
+      "title": "把片段拼成完整阅读清单，再逐项验证",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "上面的片段分别服务于不同概念。配套App.tsx把它们组成可以运行的单文件应用，包含完整类型、状态、事件和两个对照实验，不需要接口或密钥。在本站实验室打开后点击运行；完整项目可以下载，也可以在仓库中安装运行。"
+          "text": "下面是配套 App.tsx 的完整内容，按三个函数边界拆开显示；顺序合并后就是同一个文件。关键实现都在本页，实验室与下载只是运行方式。第一段先建立数据类型和行组件：已读从父级传入，临时笔记保存在该行，因此它们具有不同生命周期。"
+        },
+        {
+          "type": "code",
+          "code": "import React, { useState } from 'react';\ntype Book = { id: string; title: string; done: boolean };\nconst initialBooks = (): Book[] => [\n  { id: 'A', title: 'React 基础', done: false },\n  { id: 'B', title: 'TypeScript 基础', done: false },\n];\nfunction BookRow({ book, onToggle }: { book: Book; onToggle: (id: string) => void }) {\n  const [note, setNote] = useState('');\n  return <li data-row={book.id} style={{ padding: 12, border: '1px solid #b9c9c0', marginBottom: 12 }}>\n    <strong>{book.id} · {book.title}</strong>{' '}\n    <button onClick={() => onToggle(book.id)}>{book.done ? '标为未读' : '标为已读'} {book.id}</button>\n    <p>状态：<output data-done={book.id}>{book.done ? '已读' : '未读'}</output></p>\n    <label>临时笔记 {book.id}<input aria-label={`临时笔记 ${book.id}`} value={note} onChange={e => setNote(e.target.value)} style={{ maxWidth: '100%', boxSizing: 'border-box' }}/></label>\n    <p>当前草稿：<output data-note={book.id}>{note || '（空）'}</output></p>\n  </li>;\n}",
+          "purpose": "完整 App.tsx 的第 1 段，原样节选：导入、初始数据与 BookRow。",
+          "filename": "App.tsx",
+          "language": "tsx",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "这里 BookRow 不保存第二份 done。点击只把 book.id 交还 App；笔记则通过本行 setNote 更新。之后观察“过滤后已读保留、笔记消失”，就能从这两份数据的所有者直接推导原因。"
+        },
+        {
+          "type": "code",
+          "code": "function SnapshotCounter() {\n  const [count, setCount] = useState(0);\n  const [report, setReport] = useState('尚未点击');\n  function values() {\n    setCount(count + 1); setCount(count + 1); setCount(count + 1);\n    setReport(`本次处理函数读取的 count=${count}`);\n  }\n  function updaters() {\n    setCount(n => n + 1); setCount(n => n + 1); setCount(n => n + 1);\n    setReport(`本次处理函数读取的 count=${count}`);\n  }\n  return <section aria-label=\"快照实验\"><h2>状态快照实验</h2>\n    <p>计数：<output data-count>{count}</output>；<span data-report>{report}</span></p>\n    <button onClick={values}>三次值更新</button>{' '}<button onClick={updaters}>三次函数更新</button>{' '}\n    <button onClick={() => { setCount(0); setReport('尚未点击'); }}>重置计数</button>\n  </section>;\n}",
+          "purpose": "完整 App.tsx 的第 2 段，原样节选：独立计数诊断区。",
+          "filename": "App.tsx",
+          "language": "tsx",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "SnapshotCounter 的 report 记录处理函数当时读取的 count；output 展示下一次渲染得到的 count。让两个值同时出现，是为了把“事件读了什么”与“更新后显示什么”分开。它不参与书籍清单的数据。"
+        },
+        {
+          "type": "code",
+          "code": "export default function App() {\n  const [books, setBooks] = useState(initialBooks);\n  const [query, setQuery] = useState('');\n  const [byIndex, setByIndex] = useState(false);\n  const [generation, setGeneration] = useState(0);\n  const visible = books.filter(book => book.title.toLowerCase().includes(query.trim().toLowerCase()));\n  const completed = books.filter(book => book.done).length;\n  function toggle(id: string) {\n    setBooks(previous => previous.map(book => book.id === id ? { ...book, done: !book.done } : book));\n  }\n  function changeStrategy() {\n    setByIndex(value => !value); setBooks(initialBooks()); setQuery(''); setGeneration(n => n + 1);\n  }\n  return <main style={{ fontFamily: 'system-ui', maxWidth: 760, margin: 'auto', padding: 20, lineHeight: 1.8 }}>\n    <h1>阅读清单：数据、状态和身份</h1>\n    <p>React 18.3.1；无网络请求，无 StrictMode，不统计性能。刷新后数据重置。</p>\n    <label>搜索书名 <input aria-label=\"搜索书名\" value={query} onChange={e => setQuery(e.target.value)} /></label>\n    <p data-summary>总共 {books.length} 本，已读 {completed} 本，当前显示 {visible.length} 本。</p>\n    <p>当前 key：{byIndex ? '数组下标（故障对照）' : '业务 ID'}</p>\n    <button onClick={() => setBooks(previous => [...previous].reverse())}>反转顺序</button>{' '}\n    <button onClick={changeStrategy}>切换 key 策略并重置</button>{' '}\n    <button onClick={() => setGeneration(n => n + 1)}>只重建列表</button>\n    <ul key={generation} style={{ padding: 0, listStyle: 'none' }}>\n      {visible.map((book, index) => <BookRow key={byIndex ? index : book.id} book={book} onToggle={toggle} />)}\n    </ul>\n    <p>临时笔记属于行组件，过滤掉一行会卸载它，重新显示时草稿为空；已读状态属于父组件，仍然保留。真实产品若要保留隐藏后的草稿，应调整数据归属。</p>\n    <SnapshotCounter />\n  </main>;\n}",
+          "purpose": "完整 App.tsx 的第 3 段，原样节选：状态所有者、事件与最终界面。",
+          "filename": "App.tsx",
+          "language": "tsx",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "读主组件时先沿 toggle 走一遍：事件给 ID，map 产生新 books，completed 与 visible 重新计算，BookRow 收到新输入。再看两个实验开关：byIndex 只改变行 key 策略；generation 改变整个 ul 的身份，会重建它下面的行。切换策略同时重置初始数据和 generation，是为了让两组实验从相同初始条件开始。"
+        },
+        {
+          "type": "paragraph",
+          "text": "三段合并为 App.tsx，配合前面的 main.tsx 即可接到现有 React 项目；完整示例已包含入口、HTML 与锁定依赖。本站实验室已经提供入口，直接运行即可。"
         },
         {
           "type": "experiment",
@@ -540,8 +606,29 @@ export const reactFoundationsArticle: Article = {
           "text": "以标记A已读为例，点击发生在BookRow，回调把A的ID交给App；App用不可变更新生成新的books；下次组件计算时，汇总与行内容从同一份数据得出；React提交必要的DOM变更。搜索只是改变query并推导visible，不需要复制整个清单状态。重排时，key与类型帮助决定哪些组件身份延续，因此局部笔记能否跟对对象也是数据设计的一部分。"
         },
         {
+          "type": "table",
+          "headers": [
+            "先自己回答",
+            "解析"
+          ],
+          "rows": [
+            [
+              "A 标记已读时，B 的组件函数执行就代表 B 的 DOM 必须改变吗？",
+              "不代表。组件执行计算描述；宿主内容未改变时，不需要相应 DOM 修改。把函数调用次数当作 DOM 操作次数，会混淆 render 与 commit。"
+            ],
+            [
+              "稳定 key 为什么保不住过滤掉后又出现的笔记？",
+              "key 帮助协调时匹配身份；过滤掉的行已经卸载，局部 note 随之结束。App 的 books 仍存活，所以已读保留。"
+            ],
+            [
+              "直接修改 book.done，再传回原 books 为什么不可靠？",
+              "旧快照已被修改，而 setter 仍收到同一引用，React 可以跳过更新。即使另一次更新碰巧把修改显示出来，也只是掩盖了数据流错误。"
+            ]
+          ]
+        },
+        {
           "type": "paragraph",
-          "text": "读完后，尝试不用源码术语回答三个问题：为什么连续三次值更新不等于加三？为什么只改对象但没有正确请求更新可能不刷新？为什么稳定key也救不回已经卸载的行草稿？如果能把输入、状态所在位置和操作顺序说清楚，就建立了后面理解Hooks和Fiber所需的基础。"
+          "text": "最后集中记住本篇的范围：React 负责界面计算与更新，路由和持久化仍需另行选择；组件计算应保持纯粹，开发 StrictMode 可能增加检查调用；本例使用普通浏览器更新，不用调用日志判断绘制次数。后面的实验是观察这些行为的工具，不能把某一次观察推广为所有内部路径的保证。"
         },
         {
           "type": "paragraph",

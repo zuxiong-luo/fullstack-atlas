@@ -1,0 +1,81 @@
+/* Prism Tomorrow Night Eighties, based on prismjs/themes/prism-tomorrow.css.
+ * Original theme by Rose Pritchard; scoped to article code blocks.
+ * Comments and inserted text are brightened for readability on #2d2d2d.
+ */
+.article-code.article-code {background:#2d2d2d;color:#e0e0e0}
+.article-code .syntax-code {color:#e0e0e0;background:transparent;text-shadow:none}
+.article-code .syntax-code::selection,
+.article-code .syntax-code *::selection {background:#515151;color:#fff}
+.article-code .syntax-code .token.comment,
+.article-code .syntax-code .token.block-comment,
+.article-code .syntax-code .token.prolog,
+.article-code .syntax-code .token.doctype,
+.article-code .syntax-code .token.cdata {
+	color: #b3b3b3;
+}
+
+.article-code .syntax-code .token.punctuation {
+	color: #ccc;
+}
+
+.article-code .syntax-code .token.tag,
+.article-code .syntax-code .token.attr-name,
+.article-code .syntax-code .token.namespace,
+.article-code .syntax-code .token.deleted {
+	color: #e2777a;
+}
+
+.article-code .syntax-code .token.function-name {
+	color: #6196cc;
+}
+
+.article-code .syntax-code .token.boolean,
+.article-code .syntax-code .token.number,
+.article-code .syntax-code .token.function {
+	color: #f08d49;
+}
+
+.article-code .syntax-code .token.property,
+.article-code .syntax-code .token.class-name,
+.article-code .syntax-code .token.constant,
+.article-code .syntax-code .token.symbol {
+	color: #f8c555;
+}
+
+.article-code .syntax-code .token.selector,
+.article-code .syntax-code .token.important,
+.article-code .syntax-code .token.atrule,
+.article-code .syntax-code .token.keyword,
+.article-code .syntax-code .token.builtin {
+	color: #cc99cd;
+}
+
+.article-code .syntax-code .token.string,
+.article-code .syntax-code .token.char,
+.article-code .syntax-code .token.attr-value,
+.article-code .syntax-code .token.regex,
+.article-code .syntax-code .token.variable {
+	color: #7ec699;
+}
+
+.article-code .syntax-code .token.operator,
+.article-code .syntax-code .token.entity,
+.article-code .syntax-code .token.url {
+	color: #67cdcc;
+}
+
+.article-code .syntax-code .token.important,
+.article-code .syntax-code .token.bold {
+	font-weight: bold;
+}
+.article-code .syntax-code .token.italic {
+	font-style: italic;
+}
+
+.article-code .syntax-code .token.entity {
+	cursor: help;
+}
+
+.article-code .syntax-code .token.inserted {
+	color: #7ec699;
+}

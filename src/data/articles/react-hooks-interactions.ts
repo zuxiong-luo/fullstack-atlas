@@ -20,7 +20,7 @@ export const reactHooksInteractionsArticle: Article = {
     "TypeScript 5.7.2",
     "Node.js 22"
   ],
-  "verifiedAt": "2026-10-22",
+  "verifiedAt": "2026-10-23",
   "scope": "客户端函数组件的状态与外部同步；不使用 React 19 新接口，不覆盖完整请求缓存或服务端写入幂等实现。",
   "prerequisites": [
     "了解函数组件、props、受控输入和基础 JavaScript Promise",
@@ -44,7 +44,7 @@ export const reactHooksInteractionsArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "第一篇介绍了组件、props 和页面更新；这一篇把交互过程补齐：一次点击读到了哪个版本的数据，为什么连续更新不能只看调用次数，外部请求怎样跟随界面又不覆盖新结果。我们使用一个阅读清单：两篇文章可以标记已读，同时可以查询阅读建议。计数区是同一页面上的诊断工具，用来单独观察状态队列和闭包。"
+          "text": "第一篇已经建立了“状态快照、数据向下、事件请求更新”的基本模型。本篇不再重讲整套清单，而是沿着一个新问题深入：界面切换到新关键词以后，旧的事件函数和旧的请求还在执行，怎样判断它们读的是哪份数据、能否继续改变界面？先认识 Hook 的调用规则，再连接闭包、Effect 和异步结果。计数区与阅读清单保留为独立诊断工具。"
         },
         {
           "type": "paragraph",
@@ -157,20 +157,20 @@ export const reactHooksInteractionsArticle: Article = {
     },
     {
       "id": "queue",
-      "title": "更新队列与批处理：三次调用究竟提交了什么",
+      "title": "从已知的快照继续：混合更新按什么顺序计算",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "先从运算含义推导。count=0 的事件里调用三次 setCount(count+1)，每次传进去的都是数字 1；你交给 React 的是三次“替换成 1”。三次 setCount(n=>n+1) 则交给 React 三个函数，处理时前一个结果交给后一个，从 0 到 1，再到 2，再到 3。两者的差异先来自参数含义，再谈 React 何时处理。"
+          "text": "上一章已经验证了三次值更新得到 1、三次函数更新得到 3。这里推进一步：替换和函数更新混在同一个处理函数里会怎样？先不考虑优先级，只看一次点击中三个请求的参数。下面的事件在 count=0 时依次提交“替换为 5”“在待处理值上加一”“替换为 10”。"
         },
         {
           "type": "code",
-          "code": "function replaceThreeTimes() {\n  setCount(count + 1);\n  setCount(count + 1);\n  setCount(count + 1);\n}\nfunction incrementThreeTimes() {\n  setCount(n => n + 1);\n  setCount(n => n + 1);\n  setCount(n => n + 1);\n}",
-          "purpose": "同一计数区的两组按钮。各自从 0 开始时，结果分别是 1 和 3。",
-          "kind": "excerpt",
+          "code": "function replaceAndCalculate() {\n  setCount(count + 5);\n  setCount(n => n + 1);\n  setCount(10);\n}",
+          "purpose": "基于前文 count / setCount 的教学片段；各表达式按顺序入队。下表从初始 0 推演，最终是 10；它不是配套按钮的原样源码。",
           "filename": "App.tsx",
-          "language": "tsx"
+          "language": "tsx",
+          "kind": "excerpt"
         },
         {
           "type": "table",
@@ -203,7 +203,7 @@ export const reactHooksInteractionsArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "因此“setState 是异步的”过于粗糙：当前闭包的变量不变是快照语义，多个更新一起处理是批处理，先处理哪种优先级则是调度问题。三者有关联，但不是同一件事。本章不根据 console.log 的次数推断最终提交次数，渲染可能被检查、重试或丢弃。"
+          "text": "这里应分清三件事：闭包让 count + 5 使用事件创建时的值；队列让 updater 接到前一个待处理结果；批处理让 React 能一起安排这些请求。把第三个 setCount(10) 删除，结果就会是 6。这一推演只依赖参数和顺序，不需要先知道 Lane 或 Scheduler。"
         },
         {
           "type": "paragraph",
@@ -228,7 +228,7 @@ export const reactHooksInteractionsArticle: Article = {
       "blocks": [
         {
           "type": "paragraph",
-          "text": "阅读清单有两条记录，每条包含 id、title、done。已读数量直接由 done=true 的记录数计算。若再保存一个 doneCount 状态，标记、撤销、重置、导入时都要同时维护两份信息，一次遗漏就会显示矛盾。这是状态建模问题，不能靠多加一个 Effect 在事后修复。"
+          "text": "第一篇已经决定清单保存 books、已读数由 books 推导。现在多了“重置”和“标记”两种动作，可以用 reducer 把状态转换集中起来。事件只描述发生了什么，reducer 根据旧状态和动作决定新状态；这让新增动作时有一个明确的修改位置。"
         },
         {
           "type": "code",
@@ -237,6 +237,10 @@ export const reactHooksInteractionsArticle: Article = {
           "kind": "excerpt",
           "filename": "App.tsx",
           "language": "tsx"
+        },
+        {
+          "type": "paragraph",
+          "text": "带入初始清单看 toggle：action.id=\"hooks\" 时，第一项命中并得到新的 done=true 对象，第二项沿用旧对象，map 返回新数组。下一次组件执行时 done 计算为 1。随后 dispatch({type:\"reset\"}) 会从 initialBooks 创建两条新记录，done 回到 0。reducer 没有直接修改页面；它仍然是在回答“下一份状态是什么”。"
         },
         {
           "type": "paragraph",
@@ -320,16 +324,43 @@ export const reactHooksInteractionsArticle: Article = {
           "text": "依赖列表描述 Effect 读取了哪些会变化的渲染输入，不是你想让它“多久执行一次”的开关。React 使用 Object.is 对比各项。query 改变必须重新查询，loader 改变意味着外部操作实现变了，也必须纳入依赖。把 loader 定义成组件内每次新建的函数，会导致每次提交都得到不同引用；本例把默认实现定义在模块作用域，既稳定又没有藏住对 query 的读取。"
         },
         {
-          "type": "paragraph",
-          "text": "不要为了阻止重复请求删除依赖。先检查依赖是否确实必要：可以把只在 Effect 使用的配置对象移进去，把纯工具函数移到模块作用域，把基于旧状态的计算改为函数更新。如果函数确实要捕获变化的配置，就保留依赖并正确清理。useCallback 可以稳定函数身份，但它的依赖同样需要诚实，不能用它掩盖过期闭包。"
+          "type": "table",
+          "headers": [
+            "阶段",
+            "本轮闭包记住的值",
+            "发生的事"
+          ],
+          "rows": [
+            [
+              "提交 query=\"react\" 后",
+              "setup R：query=\"react\"、controller R、active R",
+              "发起 react 查询；回调读取的是 active R"
+            ],
+            [
+              "query 变为 \"hooks\" 并提交",
+              "旧 cleanup R 仍引用 R 的局部变量",
+              "将 active R=false，取消 controller R"
+            ],
+            [
+              "开始新一轮 setup H",
+              "query=\"hooks\"、controller H、active H=true",
+              "建立 hooks 查询；H 和 R 的局部变量彼此独立"
+            ],
+            [
+              "hooks 结果到达",
+              "成功回调检查 active H",
+              "H 有效，更新本轮结果"
+            ],
+            [
+              "组件卸载",
+              "最后一轮 cleanup H",
+              "H 失效，停止其资源"
+            ]
+          ]
         },
         {
           "type": "paragraph",
-          "text": "省略依赖数组，Effect 在该组件每次提交后重新同步；空数组表示没有从渲染中读取的可变依赖，并不保证应用生命周期永远只执行一次：组件会重新挂载，开发检查也会额外执行。把“空数组等于 componentDidMount”当规则，会忽略清理和重新同步的语义。"
-        },
-        {
-          "type": "paragraph",
-          "text": "useLayoutEffect 在 DOM 变更后、浏览器绘制前处理需要同步测量布局的工作，会阻塞绘制；useEffect 不应承担必须阻止首帧闪动的布局测量。也不能反过来断言 useEffect 一定在绘制之后执行，交互及更新路径会影响时机。本例只验证资源先清后建与请求结果有效性，不用日志替浏览器证明绘制时间。"
+          "text": "这就是闭包、依赖和清理之间的联系：依赖决定何时需要新一轮，闭包让每一轮记住自己的参数和资源，清理终止旧一轮。清理时 query 并不会神奇地变成新值；旧清理拿到旧资源，恰好是我们需要的。先按这条普通路径理解，再看下节“旧请求晚到”的失败路径。"
         },
         {
           "type": "reference",
@@ -374,9 +405,25 @@ export const reactHooksInteractionsArticle: Article = {
       "paragraphs": [],
       "blocks": [
         {
+          "type": "paragraph",
+          "text": "先把 Hook 依赖的输入输出约定放在眼前。Loader 接收关键词和取消信号，返回字符串数组的 Promise。下面是项目内的完整模拟实现；它不发网络请求，让正常、较慢和失败路径能稳定复现。"
+        },
+        {
+          "type": "code",
+          "code": "export type Loader = (query:string, signal:AbortSignal)=>Promise<string[]>;\n// A deterministic fake I/O source: slow takes 600ms, fast takes 40ms.\n// This is a teaching transport, not measured network latency.\nexport const loadSuggestions:Loader = (query,signal)=>new Promise((resolve,reject)=>{\n  if(signal.aborted){reject(new DOMException('Aborted','AbortError'));return;}\n  const abort=()=>{clearTimeout(timer);reject(new DOMException('Aborted','AbortError'));};\n  const timer=setTimeout(()=>{signal.removeEventListener('abort',abort);if(query==='error')reject(new Error('模拟上游失败'));else resolve([`${query} 的阅读建议`]);},query==='slow'?600:40);\n  signal.addEventListener('abort',abort,{once:true});\n});",
+          "purpose": "项目原样节选：Loader 类型与默认 transport。其余 Hook 代码接在后面；文件顶部从 react 导入 useEffect、useState。",
+          "filename": "App.tsx",
+          "language": "tsx",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "普通路径先创建 timer，并在到期时移除 abort 监听，然后 resolve 条目或 reject 错误。取消路径则清除 timer 并 reject AbortError；once 让已触发的取消监听移除。开头 signal.aborted 的检查覆盖“调用时就已经失效”的情况。600ms 与 40ms 只是控制实验顺序，不是测量结果。"
+        },
+        {
           "type": "code",
           "code": "type SearchState = {query:string;status:'idle'|'loading'|'success'|'error';items:string[];error:string};\nexport function useSuggestions(query:string, loader:Loader=loadSuggestions) {\n  const [state,setState]=useState<SearchState>({query:'',status:'idle',items:[],error:''});\n  useEffect(()=>{\n    if(!query){setState({query,status:'idle',items:[],error:''});return;}\n    const controller=new AbortController();let active=true;\n    setState({query,status:'loading',items:[],error:''});\n    loader(query,controller.signal).then(items=>{\n      if(active)setState({query,status:'success',items,error:''});\n    },error=>{\n      if(active)setState({query,status:'error',items:[],error:error instanceof Error?error.message:String(error)});\n    });\n    return ()=>{active=false;controller.abort();};\n  },[query,loader]);\n  // An old response can briefly remain in state before the next Effect runs.\n  // Never label that old result as belonging to the new query.\n  return state.query===query?state:{query,status:query?'loading':'idle',items:[],error:''} as SearchState;\n}",
-          "purpose": "项目中的完整自定义 Hook；Loader、默认模拟 transport 和导入位于同一 App.tsx，下载项目可直接运行。",
+          "purpose": "项目完整 Hook 原样节选；上面已给出 Loader 与默认实现，导入 useEffect、useState 后可读通整个请求路径。",
           "kind": "excerpt",
           "filename": "App.tsx",
           "language": "tsx"
@@ -404,6 +451,18 @@ export const reactHooksInteractionsArticle: Article = {
         {
           "type": "paragraph",
           "text": "抽取 Hook 的理由是把“关键词到有效结果”的完整约定放在一个地方，而不是把每一个 useState 都包装成新名字。它的输入、输出、清理和错误策略应该能被一句业务话说明。调用者知道什么时候 loading、何时展示 error，比调用者需要知道内部用了几个 Effect 更重要。"
+        },
+        {
+          "type": "code",
+          "code": "function SuggestionsPanel() {\n  const [query, setQuery] = useState('');\n  const result = useSuggestions(query);\n  return <section>\n    <label>关键词 <input value={query}\n      onChange={event => setQuery(event.target.value)} /></label>\n    <p>{result.status}</p>\n    <ul>{result.items.map(item => <li key={item}>{item}</li>)}</ul>\n    {result.error && <p role=\"alert\">{result.error}</p>}\n  </section>;\n}",
+          "purpose": "基于项目查询区域整理的独立组件节选，不是 React 源码；同文件使用上面的 Hook，省去计数与清单诊断 UI。",
+          "filename": "App.tsx",
+          "language": "tsx",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "调用处只管把输入交给 Hook，再按结果渲染。输入变成 fast 的那一轮，即使内部 state 仍是 slow，返回前的 state.query===query 检查也会提供 fast 的 loading。这个判断不启动请求；下一轮 Effect 才负责外部操作。这样“当前输入”和“展示给用户的结果归属”始终一致。"
         },
         {
           "type": "reference",
@@ -511,7 +570,44 @@ export const reactHooksInteractionsArticle: Article = {
       "blocks": [
         {
           "type": "paragraph",
+          "text": "理解普通路径后，再补几个容易误用的边界。它们都服从同一条原则：Effect 读取了哪些输入，就要据此重新同步；每一轮资源都要能独立停止。"
+        },
+        {
+          "type": "paragraph",
+          "text": "不要为了阻止重复请求删除依赖。先检查依赖是否确实必要：可以把只在 Effect 使用的配置对象移进去，把纯工具函数移到模块作用域，把基于旧状态的计算改为函数更新。如果函数确实要捕获变化的配置，就保留依赖并正确清理。useCallback 可以稳定函数身份，但它的依赖同样需要诚实，不能用它掩盖过期闭包。"
+        },
+        {
+          "type": "paragraph",
+          "text": "省略依赖数组，Effect 在该组件每次提交后重新同步；空数组表示没有从渲染中读取的可变依赖，并不保证应用生命周期永远只执行一次：组件会重新挂载，开发检查也会额外执行。把“空数组等于 componentDidMount”当规则，会忽略清理和重新同步的语义。"
+        },
+        {
+          "type": "paragraph",
+          "text": "useLayoutEffect 在 DOM 变更后、浏览器绘制前处理需要同步测量布局的工作，会阻塞绘制；useEffect 不应承担必须阻止首帧闪动的布局测量。也不能反过来断言 useEffect 一定在绘制之后执行，交互及更新路径会影响时机。本例只验证资源先清后建与请求结果有效性，不用日志替浏览器证明绘制时间。"
+        },
+        {
+          "type": "paragraph",
           "text": "排查旧值时，先问函数来自哪次渲染，而不是先怪 setter；排查重复更新时，先看传入的是替换值还是计算函数；排查 Effect 时，先问外部同步是否真的必要、依赖是否完整、清理是否对应自己的资源；排查异步覆盖时，检查结果能否证明它仍属于当前查询。每个问题都有具体观察点，没必要把它们统一叫成“React 很玄学”。"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "检查理解",
+            "解析"
+          ],
+          "rows": [
+            [
+              "把 active 放进组件外，全体请求共用，会怎样？",
+              "fast 的 setup 把共享标记置为 true 后，晚到的 slow 也看到 true，仍可覆盖新结果。标记必须属于各自 setup，或使用能区分请求的编号。"
+            ],
+            [
+              "依赖从 [query, loader] 改成 [] 能避免竞态吗？",
+              "只能让后续关键词不再触发同步，查询功能本身就错了。竞态要通过清理和结果归属解决，不能靠删除真实依赖。"
+            ],
+            [
+              "为什么成功和失败回调都检查 active？",
+              "旧请求除了能带回旧数据，也可能带回旧错误。只防成功覆盖，slow 的晚到错误仍可能把 fast 的成功界面改成 error。"
+            ]
+          ]
         },
         {
           "type": "paragraph",

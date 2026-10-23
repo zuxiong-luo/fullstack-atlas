@@ -49,7 +49,7 @@ export const reactFiberReconciliationArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "本篇是七篇系列中的第四篇，可以在读完第一篇后学习；需要理解函数组件、useState、key和基础Effect用法，不要求提前懂调度源码。所有内部代码固定为React/React DOM 18.3.1的old reconciler，源文件来自官方v18.3.1 tag。这里聚焦普通客户端更新，Suspense恢复、hydration和完整Scheduler算法留给各自主题，不用没有解释的特殊分支替代主线。"
+          "text": "本文是七篇系列的第四篇。前面已经会用 state 和 key，这里继续解释：React 用哪些内部记录让状态和界面在一次更新中对应起来。先认识对象与树，再沿着一次普通更新追到提交，最后看重排和失败边界。源码固定为 React 18.3.1 的 old reconciler；关键代码都在正文，出处链接只供核对。"
         }
       ]
     },
@@ -98,7 +98,7 @@ export const reactFiberReconciliationArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "可中断并不意味着React能打断函数组件里正在执行的for循环。同步工作循环也使用Fiber，但不会像并发循环那样按让出条件分段。还有提交阶段：本篇讨论的常规DOM提交，不是对每个DOM操作都按render工作单元随意切片。不要从“Fiber支持调度”推导出“所有工作都异步、都能中断、都会更快”。"
+          "text": "这里先记住分工：Fiber 保存工作记录，工作循环负责推进。我们先看一次没有中断、没有异常的更新怎样完成，再讨论允许让出的边界。这样遇到“可中断”时，你能指出停在什么地方，而不是只记一个形容词。"
         }
       ]
     },
@@ -200,6 +200,43 @@ export const reactFiberReconciliationArticle: Article = {
           "kind": "excerpt"
         },
         {
+          "type": "paragraph",
+          "text": "带入一个已经挂载的 Row A。把它当前的 Fiber 叫 F1，第一次更新前 F1.alternate 为空。函数先读 current.alternate，于是进入创建分支：得到 F2，把 F2.alternate 指向 F1，再把 F1.alternate 指向 F2。返回的是本轮待处理的 F2；当前页面仍以 F1 为依据。"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "时点",
+            "传入 current",
+            "得到的工作节点",
+            "这个动作的意义"
+          ],
+          "rows": [
+            [
+              "第一次准备更新",
+              "F1，alternate 为 null",
+              "新建 F2",
+              "建立双向对应，保留当前依据"
+            ],
+            [
+              "F2 完成并提交后",
+              "root.current 所在树使用 F2",
+              "F1 成为可复用的一侧",
+              "提交结果成为下一次起点"
+            ],
+            [
+              "第二次准备更新",
+              "F2，alternate 指向 F1",
+              "复用 F1",
+              "覆盖新 props，重置本轮临时标记"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "现在再读 else 分支就有目的了：为什么需要 flags = NoFlags、subtreeFlags = NoFlags、deletions = null？因为 F1 上可能还留着上一次作为工作节点时的记录。比如上次需要删除某个孩子，这一次没有删除操作，旧的删除清单就不能继续生效。对象可以复用，本轮要做的事必须重新准备。"
+        },
+        {
           "type": "reference",
           "title": "createWorkInProgress按需创建或复用另一份节点",
           "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactFiber.old.js#L249-L288"
@@ -215,6 +252,10 @@ export const reactFiberReconciliationArticle: Article = {
           "filename": "ReactFiber.old.js:300–320",
           "language": "javascript",
           "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "这段按三组读：先保留 StaticMask 指定的静态信息，再复制 lanes 与 childLanes 作为工作信息的起点，接着沿用 child、memoizedProps、memoizedState、updateQueue 等引用。这里的复制是引用赋值。随后处理 Row 的 Hook、协调它的孩子时，React 才按对应算法组织本轮结果。dependencies 则先建立新外壳，避免两个版本直接共用会在渲染中修改的那层对象。"
         },
         {
           "type": "reference",
@@ -279,11 +320,7 @@ export const reactFiberReconciliationArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "为什么还需要baseState与baseQueue？当本轮只处理一部分优先级的更新时，跳过的更新不能消失，后面已经处理过的操作也可能需要保留顺序并重放。比如初始1，先请求加10，再请求乘2；若本轮只处理后者，暂时结果是2，但之后按原顺序重算应得到22，而不是在2上直接加10得到12。这个例子是假定更新选择的推演，不宣称两个普通连续点击必然产生这个调度顺序。"
-        },
-        {
-          "type": "paragraph",
-          "text": "对于本实验单次加一，使用setCount(n => n + 1)，本轮处理这个更新便得到下一状态。理解这条简单路径即可继续读协调；不同Lane下baseQueue如何克隆和重放属于第五篇调度主题，不应拿简化算术模型冒充整个Hook实现。"
+          "text": "在这一篇，我们只追一次 setCount(n => n + 1)：Row A 的状态 Hook 从当前的 0 计算出 1，产生待提交结果。baseState 与 baseQueue 则服务于“部分更新先处理、其他更新以后补”的情况；它们保留重新计算的起点与顺序。第五篇会用加法和乘法完整推演重放，这里先把 Hook 链和某个 Hook 自己的更新队列区分清楚。"
         }
       ]
     },
@@ -298,7 +335,29 @@ export const reactFiberReconciliationArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "例如ul仍在同一个父位置，新旧孩子都是key为A的Row。普通函数组件的类型也一致时，可以为旧A取得工作节点，再用新的props继续处理。如果key相同但类型换成另一个函数OtherRow，不能仅凭相同key强行沿用原组件状态。Fragment、lazy和热更新还有相应分支，因此“key加type”是普通场景的理解入口，不是完整实现的所有条件。"
+          "text": "先看普通 Row 元素：父级仍是同一个 ul，新旧 key 都是 A。身份判断分两步：调用者先确认 key 对得上；updateElement 再确认组件类型是否兼容。只有两步都成立，才会走到 useFiber 准备这个身份的工作版本。下面把两处判断都放在眼前。"
+        },
+        {
+          "type": "paragraph",
+          "text": "数组顺序扫描会调用 updateSlot。下面保留函数入口、文本处理以及普通 React 元素分支；后面的 Portal、lazy、数组等分支未展示，本次输入是普通 Row 元素，不进入那些分支。"
+        },
+        {
+          "type": "code",
+          "code": "  function updateSlot(\n    returnFiber: Fiber,\n    oldFiber: Fiber | null,\n    newChild: any,\n    lanes: Lanes,\n  ): Fiber | null {\n    // Update the fiber if the keys match, otherwise return null.\n\n    const key = oldFiber !== null ? oldFiber.key : null;\n\n    if (\n      (typeof newChild === 'string' && newChild !== '') ||\n      typeof newChild === 'number'\n    ) {\n      // Text nodes don't have keys. If the previous node is implicitly keyed\n      // we can continue to replace it without aborting even if it is not a text\n      // node.\n      if (key !== null) {\n        return null;\n      }\n      return updateTextNode(returnFiber, oldFiber, '' + newChild, lanes);\n    }\n\n    if (typeof newChild === 'object' && newChild !== null) {\n      switch (newChild.$$typeof) {\n        case REACT_ELEMENT_TYPE: {\n          if (newChild.key === key) {\n            return updateElement(returnFiber, oldFiber, newChild, lanes);\n          } else {\n            return null;\n          }\n        }",
+          "language": "flow",
+          "filename": "ReactChildFiber.old.js:566–597",
+          "kind": "excerpt",
+          "purpose": "读取旧 key；普通 React 元素只有 key 相同才进入 updateElement。React v18.3.1 原码连续节选，依赖内部上下文；省略范围在正文交代。"
+        },
+        {
+          "type": "reference",
+          "title": "代码出处：React v18.3.1 · ReactChildFiber.old.js:566–597",
+          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L566-L597",
+          "note": "正文已展示本段代码；此链接用于核对版本与上下文。React 源码版权归 Meta/Facebook 及贡献者，采用 MIT 许可；许可随站内源码副本提供。"
+        },
+        {
+          "type": "paragraph",
+          "text": "旧 Row A 的 key 是 \"A\"，新 Row A 的 key 也是 \"A\"，所以进入 updateElement。若新元素是 Row C，key 是 \"C\"，这里直接返回 null；这只表示当前这个位置没有匹配上，数组协调还可以转去映射中寻找 C。"
         },
         {
           "type": "code",
@@ -307,6 +366,10 @@ export const reactFiberReconciliationArticle: Article = {
           "filename": "ReactChildFiber.old.js:395–443",
           "language": "javascript",
           "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "现在给 updateElement 的 current 传入旧 Row A：elementType 是 Row 函数，current.elementType 也是同一个 Row 函数，于是普通类型相等的条件成立，调用 useFiber，并把新节点的 return 指向父级。若新元素改为 OtherRow，即使 key 仍是 A，普通类型比较也失败；在没有热更新或 lazy 兼容的本例中，最终创建新 Fiber，新的组件状态从初始化开始。"
         },
         {
           "type": "reference",
@@ -356,6 +419,57 @@ export const reactFiberReconciliationArticle: Article = {
           "filename": "ReactChildFiber.old.js:307–326",
           "language": "javascript",
           "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "这轮扫描从旧 A 停下，所以映射里收进 A、B、C，值是各自的旧 Fiber。接下来新列表先处理 C；需要看的不只是建 Map，还要看使用什么键去取值。下面是 updateFromMap 的普通元素分支，函数的文本、Portal、lazy 等分支不在本段范围。"
+        },
+        {
+          "type": "code",
+          "code": "        case REACT_ELEMENT_TYPE: {\n          const matchedFiber =\n            existingChildren.get(\n              newChild.key === null ? newIdx : newChild.key,\n            ) || null;\n          return updateElement(returnFiber, matchedFiber, newChild, lanes);\n        }",
+          "language": "flow",
+          "filename": "ReactChildFiber.old.js:651–657",
+          "kind": "excerpt",
+          "purpose": "普通元素用显式 key 或新位置查询旧 Fiber，再交给 updateElement。React v18.3.1 原码连续节选，依赖内部上下文；省略范围在正文交代。"
+        },
+        {
+          "type": "reference",
+          "title": "代码出处：React v18.3.1 · ReactChildFiber.old.js:651–657",
+          "url": "https://github.com/facebook/react/blob/v18.3.1/packages/react-reconciler/src/ReactChildFiber.old.js#L651-L657",
+          "note": "正文已展示本段代码；此链接用于核对版本与上下文。React 源码版权归 Meta/Facebook 及贡献者，采用 MIT 许可；许可随站内源码副本提供。"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "新元素",
+            "查找键",
+            "取到的旧节点",
+            "类型相同时"
+          ],
+          "rows": [
+            [
+              "C",
+              "\"C\"",
+              "旧 C，index = 2",
+              "为旧 C 准备工作版本"
+            ],
+            [
+              "A",
+              "\"A\"",
+              "旧 A，index = 0",
+              "沿用 A 的状态身份，计数仍为 1"
+            ],
+            [
+              "B",
+              "\"B\"",
+              "旧 B，index = 1",
+              "为旧 B 准备工作版本"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "拿到候选并完成类型判断以后，才进入下面的消费与位置处理。existingChildren.delete 删除的是临时 Map 中已经匹配的条目，不是删除页面 DOM。等新列表全部处理完，Map 里剩余的旧节点才成为需要删除的候选。"
         },
         {
           "type": "reference",
@@ -479,6 +593,10 @@ export const reactFiberReconciliationArticle: Article = {
           "filename": "ReactFiberWorkLoop.old.js:1939–1956",
           "language": "javascript",
           "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "按一个最小树走一遍：ul → Row A → li，且 li 没有继续处理的子节点。先对 ul 做 beginWork，进入 Row A；执行 Row A 后进入 li；li 无孩子，开始 completeWork(li)。li 没有兄弟，沿 return 回到 Row A 并完成它。若 Row A.sibling 是 Row B，便把 workInProgress 设为 Row B，再向下处理。等 A、B、C 都完成，才回到 ul 完成父级。child 负责向下，sibling 负责换支，return 负责回到父级，三类指针各有具体工作。"
         },
         {
           "type": "reference",
@@ -637,11 +755,11 @@ export const reactFiberReconciliationArticle: Article = {
         },
         {
           "type": "code",
-          "code": "useLayoutEffect(() => {\n  record(`${id}:layout:setup:${count}:DOM=${node.current?.textContent}`);\n  return () => record(`${id}:layout:cleanup:${count}`);\n}, [id, count]);\n\nuseEffect(() => {\n  record(`${id}:passive:setup:${count}`);\n  return () => record(`${id}:passive:cleanup:${count}`);\n}, [id, count]);",
-          "purpose": "完整Row中的诊断片段。record、node与id/count定义见配套App；日志只用于教学，不用于控制业务。",
-          "filename": "App.tsx",
+          "code": "import React, {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';\nexport const records: string[] = [];\nfunction record(message: string) { records.push(message); console.log('[fiber-lab]', message); }\nfunction Row({id}: {id: string}) {\n  const [count, setCount] = useState(0);\n  const node = useRef<HTMLOutputElement | null>(null);\n  const attach = useCallback((element: HTMLOutputElement | null) => {\n    node.current = element;\n    record(`${id}:ref:${element ? 'attach' : 'detach'}`);\n  }, [id]);\n  // 仅为教学诊断而记录render，不得将此副作用用作业务逻辑。\n  record(`${id}:render:${count}`);\n  useLayoutEffect(() => {\n    record(`${id}:layout:setup:${count}:DOM=${node.current?.textContent}`);\n    return () => record(`${id}:layout:cleanup:${count}`);\n  }, [id, count]);\n  useEffect(() => {\n    record(`${id}:passive:setup:${count}`);\n    return () => record(`${id}:passive:cleanup:${count}`);\n  }, [id, count]);\n  return <li data-row={id} style={{padding:12,border:'1px solid #afc2b7',marginBottom:10}}>\n    书籍 {id} · 本地计数 <output ref={attach}>{count}</output>{' '}\n    <button onClick={() => { record(`${id}:event:${count}`); setCount(n => n + 1); }}>给 {id} 加一</button>\n  </li>;\n}\nexport default function App() {\n  const [ids, setIds] = useState(['A','B','C']);\n  const [indexKey,setIndexKey] = useState(false);\n  const [epoch,setEpoch] = useState(0);\n  const [snapshot,setSnapshot] = useState<string[]>([]);\n  return <main style={{fontFamily:'system-ui',padding:20,maxWidth:820,margin:'auto',lineHeight:1.7}}>\n    <h1>Fiber 与协调：观察状态、DOM 和提交</h1>\n    <p>React 18.3.1，无 StrictMode。日志是诊断，render次数不是提交次数。请先清空记录，再做一个操作，最后读取记录。</p>\n    <p>当前 key：{indexKey?'下标（故障组）':'业务ID'}</p>\n    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>\n      <button onClick={() => setIds(['C','A','B'])}>重排为 C A B</button>\n      <button onClick={() => setIds(['A','D','C'])}>改为 A D C</button>\n      <button onClick={() => setEpoch(n => n+1)}>更换父级 key</button>\n      <button onClick={() => {setIndexKey(v=>!v);setIds(['A','B','C']);setEpoch(n=>n+1);}}>切换 key 并重置</button>\n      <button onClick={() => {records.length=0;setSnapshot([]);}}>清空记录</button>\n      <button onClick={() => setSnapshot([...records])}>读取记录</button>\n    </div>\n    <ul key={epoch} style={{listStyle:'none',padding:0}}>{ids.map((id,index)=><Row key={indexKey?index:id} id={id}/>)}</ul>\n    <p>“清空/读取记录”也可能引发父组件与行组件计算。只观察目标事件之后的片段，不把日志条数当性能结论。</p>\n    <pre aria-label=\"诊断记录\" style={{overflowX:'auto',background:'#edf3ee',padding:12}}>{snapshot.join('\\n') || '尚未读取记录'}</pre>\n    <p>完整原始诊断也输出到浏览器控制台。实验不读取私有Fiber，不模拟CPU调度，不把Effect与浏览器绘制绑成固定顺序。</p>\n  </main>;\n}",
           "language": "tsx",
-          "kind": "excerpt"
+          "filename": "App.tsx",
+          "kind": "excerpt",
+          "purpose": "配套项目的完整 App.tsx：包括 Row 状态、稳定 ref、两类 Effect、重排与日志按钮。需放入 React 18.3.1 项目；入口及依赖安装命令见下文。阅读代码无需打开实验室或下载项目。"
         },
         {
           "type": "table",
@@ -703,11 +821,32 @@ export const reactFiberReconciliationArticle: Article = {
       "blocks": [
         {
           "type": "paragraph",
-          "text": "如果状态跟错对象，先确认父级身份、key与组件类型；如果组件函数执行却看不到变化，区分是否只是计算以及是否产生宿主变更；如果Effect日志让人困惑，区分闭包捕获值、实际DOM读数和阶段；如果输入卡顿，再去检查计算工作量与调度边界。不要让“Fiber”变成所有问题的笼统答案。"
+          "text": "回到本文的四个对象：元素描述需要什么，Fiber 保存对应身份和工作，工作循环准备结果，提交把完成结果应用到当前页面。遇到问题，先定位是哪层出了变化，再找相应字段与分支。"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "试着推演",
+            "解析"
+          ],
+          "rows": [
+            [
+              "A 的 key 没变，却换成 OtherRow，会保留 A 的计数吗？",
+              "本例不会。key 让它成为候选，组件类型变化使普通复用条件失败，新状态重新初始化。"
+            ],
+            [
+              "复用了 alternate，为什么组件函数仍可能执行？",
+              "复用的是工作节点与身份；新 props、state 或 Context 仍可能要求重新计算。是否跳过计算是另一层判断。"
+            ],
+            [
+              "准备好 F2 但还未提交，用户已经看到 F2 吗？",
+              "没有。当前依据仍是已提交树。完成计算与应用结果是两个时点。"
+            ]
+          ]
         },
         {
           "type": "paragraph",
-          "text": "这篇建立的是结构与正常更新链路：Fiber组织记录，双缓冲准备下一版，Hook与队列处理状态，协调决定身份与位置，工作循环推进计算，提交应用结果。它保留了与调度的接口，但不把Lane选择、Scheduler堆、Suspense恢复、服务端hydration和所有Effect特殊分支都挤成几句结论。下一篇调度主题将在这条已建立的链上解释谁先做、何时让出以及怎样重启。"
+          "text": "最后集中记住三个边界。第一，React 可以在工作单元之间让出，但不能打断正在执行的组件函数中的任意语句；同步路径也使用 Fiber。第二，双缓冲保留当前依据，不会回滚 render 期间对外部数组等对象造成的副作用。第三，提交过程与浏览器绘制不是同一条时序，普通 Effect 也不能统一理解为总在绘制之后执行。前面正常路径的推演在这些前提下成立。"
         }
       ]
     }

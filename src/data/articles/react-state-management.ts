@@ -13,7 +13,7 @@ export const reactStateManagementArticle: Article = {
     "TypeScript 5.7.2",
     "Node.js 22"
   ],
-  "verifiedAt": "2026-10-22",
+  "verifiedAt": "2026-10-23",
   "tags": [
     "七篇系列·第3篇",
     "状态管理",
@@ -48,7 +48,7 @@ export const reactStateManagementArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "示例固定React/React DOM 18.3.1、TypeScript 5.7.2与Node.js 22。你需要会写组件、useState和基本Effect；不需要预先用过状态库。本文会交付可运行的小型Store、请求缓存与行为测试，但不会把它宣传成可以替换成熟查询库的生产方案。React官方网站当前展示较新版本，本文只引用18.3.1已有的API契约，并用固定版本实验与源码核对。"
+          "text": "本篇的重点是数据归属、订阅契约和异步结果的写入资格。基础篇已经讲过状态快照，这里只在需要解释Store行为时回顾它。配套项目使用React / React DOM 18.3.1、TypeScript 5.7.2、Node.js 22；关键实现都放在正文，源码链接用于核对出处，下载项目用于运行。"
         }
       ]
     },
@@ -120,7 +120,7 @@ export const reactStateManagementArticle: Article = {
     },
     {
       "id": "minimal",
-      "title": "保持状态最小：派生值、对象身份和不可变更新",
+      "title": "用一份清单表达事实，让统计自然跟着变化",
       "paragraphs": [],
       "blocks": [
         {
@@ -137,7 +137,15 @@ export const reactStateManagementArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "派生计算每次执行不代表一定昂贵。两条数据没必要先加缓存。将来清单足够大、计算足够重，再测量是否需要记忆化或索引。useMemo可以减少重复计算，不能成为事实来源；丢掉计算缓存后重新计算，结果仍应正确。"
+          "text": "这里先直接计算，后续即便加计算缓存，也不改变清单作为事实来源的地位。现在我们要进一步保证：一次修改能准确表达“哪部分事实变了”，这样订阅者才有可靠的比较依据。"
+        },
+        {
+          "type": "code",
+          "code": "export type Book = Readonly<{id: string; title: string; read: boolean}>;\nexport type ReadingState = Readonly<{books: readonly Book[]}>;\nexport type Action = {type: 'toggle'; id: string};\nexport const initialState: ReadingState = {books: [\n  {id: 'fiber', title: 'Fiber 与协调', read: false},\n  {id: 'hooks', title: 'Hooks 与交互', read: false},\n]};",
+          "language": "tsx",
+          "filename": "App.tsx",
+          "purpose": "reducer和Store共用的完整数据类型与初始值；后文代码沿用这些名字。",
+          "kind": "excerpt"
         },
         {
           "type": "code",
@@ -194,7 +202,7 @@ export const reactStateManagementArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "如果所有读取者每次都需要整个清单，Context方案已经合理。若有很多独立区域，只关心高频变化数据的一小部分，再考虑带选择器的订阅机制。不要只因为组件嵌套超过三层就认定必须引入全局库。"
+          "text": "到这里，两篇文章的列表和进度条已经可以共享一个Provider。暂时没有跨页面编辑器，也没有大量独立订阅者，就可以停在这个方案。升级Store的理由应该来自新的需求，而不是组件数量增长本身；后面的选型节会把升级信号具体列出来。"
         },
         {
           "type": "reference",
@@ -223,7 +231,7 @@ export const reactStateManagementArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "按一次“切换fiber”，执行顺序是dispatch调用reducer、拿到新对象、替换state，最后调用listeners。订阅者收到的通知本身不携带业务变化，它会再读取最新快照。这样一个通知表达的是“可能有变化，请检查”，而不是必须重新渲染。无效ID返回旧对象，Store直接退出，不发布无意义通知。"
+          "text": "把一次操作代进去：初始快照S0的fiber.read为false，dispatch({type:\"toggle\",id:\"fiber\"})产生S1，其中fiber.read为true。state先指向S1，随后通知订阅者；订阅者再读getSnapshot，就一定得到S1。没有组件需要自己把“已读数量+1”，因为读取同一份S1后再派生就得到1。"
         },
         {
           "type": "paragraph",
@@ -276,7 +284,7 @@ export const reactStateManagementArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "源码可以确认“通知后重新读取并比较”这一步。以下摘自React 18.3.1 old reconciler，is对应Object.is语义。它只是完整Hook的一部分；订阅安装与一致性检查不止这一处，不能从这个短片段推出所有并发行为。"
+          "text": "下面只跟踪订阅回调的关键路径：接到通知后读取最新快照，和上次渲染使用的值比较，有差异才请求React更新。函数名里的check就是这个检查，不是把通知等同于“所有组件都必须重算”。"
         },
         {
           "type": "code",
@@ -293,19 +301,56 @@ export const reactStateManagementArticle: Article = {
           "note": ""
         },
         {
+          "type": "table",
+          "headers": [
+            "输入情形",
+            "checkIfSnapshotChanged里的比较",
+            "结果"
+          ],
+          "rows": [
+            [
+              "没有更新，仍返回S0",
+              "Object.is(S0, S0)为true",
+              "返回false，不由此回调强制更新"
+            ],
+            [
+              "有效toggle后返回S1",
+              "Object.is(S0, S1)为false",
+              "返回true，进入forceStoreRerender"
+            ],
+            [
+              "无变化却每次复制对象",
+              "每次引用都不同",
+              "把读取误报为变化，破坏快照契约"
+            ]
+          ]
+        },
+        {
           "type": "paragraph",
           "text": "如果只显示已读数量，可以让getSnapshot返回number。即使清单其他字段变化，只要数量相同，读取结果仍相等，这条订阅不会因为快照变化请求渲染。但不要直接返回每次新建的过滤数组。实际状态库通常提供selector以及相应缓存或比较策略；选择器本身必须稳定、可重复计算，不能读取时顺手修改Store。父组件引起的渲染是另一回事，选择器不会消除一切渲染。"
+        },
+        {
+          "type": "code",
+          "code": "function ReadCount({store}: {store: ReturnType<typeof createReadingStore>}) {\n  const count = useSyncExternalStore(\n    store.subscribe,\n    () => store.getSnapshot().books.filter(book => book.read).length,\n  );\n  return <output>{count}</output>;\n}",
+          "language": "tsx",
+          "filename": "App.tsx",
+          "purpose": "完整数量订阅组件，复用前文Store；每次读取返回number，变化判断针对计数而不是整个state。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "例如先把一篇已读文章的标题改掉，Store根快照变了，但数量仍是1，React比较的两个number相同，便不因这个订阅结果安排新渲染。如果返回的是filter生成的新数组，哪怕元素相同，每次读取都会是新引用；这时就需要稳定地缓存选择结果，不能照搬这个返回number的例子。订阅结果不变，也不排除父级或其他更新路径引起组件执行。"
         }
       ]
     },
     {
       "id": "choice",
-      "title": "Redux、Zustand 和 Context：用需求选择，而不是比口号",
+      "title": "真实项目怎样升级：先找缺的能力，再选工具",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "到这里再选库，判断标准会更具体：团队是否需要统一动作约定与调试记录？是否需要选择器？状态作用域是一个页面、一个编辑器实例还是整个客户端？请求缓存是否已有独立方案？这些问题比“哪个更轻”更能预测维护成本。"
+          "text": "设想阅读清单逐步长成一个产品。第一阶段只有列表和统计，共同父组件的state就够用；第二阶段深层工具栏也要发动作，用reducer集中规则、Context传递；第三阶段出现多标签编辑器、侧栏和快捷键，要独立于某一棵页面子树共享状态，而且各区只读一小部分，这时Store与选择器才带来明确价值。最后接入远端文章、分页和保存操作，需要的是查询缓存，不是再把所有请求结果塞进同一个大对象。"
         },
         {
           "type": "table",
@@ -344,7 +389,7 @@ export const reactStateManagementArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "Redux Toolkit是官方推荐的Redux逻辑编写方式，并提供可选的RTK Query。这不是说“Redux过时了，只有另一种库才现代”。Zustand也不是天然免除架构设计：同样需要决定Store的粒度和服务端请求隔离。本文不安装这两种库，不用未运行的API拼出所谓最佳实践，更不发布它们的体积或速度排名。比较的是职责取舍，而不是某个版本的内部实现。"
+          "text": "如果团队需要围绕统一动作和reducer协作、希望状态变化容易追踪，可以优先评估Redux Toolkit配合React Redux。若更希望直接在Store里组织动作、用选择器读取所需状态，可以评估Zustand。这里是基于各自公开接口作出的选型判断，不是速度排名；账号隔离、撤销语义和数据模型仍需自己设计。"
         },
         {
           "type": "reference",
@@ -354,9 +399,52 @@ export const reactStateManagementArticle: Article = {
         },
         {
           "type": "reference",
-          "title": "Zustand v5.0.3：Next.js中的按请求Store设计",
-          "url": "https://github.com/pmndrs/zustand/blob/v5.0.3/docs/guides/nextjs.md",
-          "note": "固定资料版本供追溯；本文未运行Zustand/Next.js集成。"
+          "title": "Zustand：Store、动作与选择器读取",
+          "url": "https://zustand.docs.pmnd.rs/learn/getting-started/introduction",
+          "note": "核对接口职责；本项目未安装该库，不声称做过集成验证。"
+        },
+        {
+          "type": "paragraph",
+          "text": "接口数据的情况另看：如果列表、详情、搜索结果都重复维护loading、error、失效与去重，TanStack Query或者RTK Query通常更切题。已有Redux体系可以先评估RTK Query；没有这套体系也可以独立评估TanStack Query。它们管理服务端副本的生命周期，编辑框未提交的草稿仍留在组件或业务Store中。"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "需求变化",
+            "升级动作",
+            "保留原方案的部分"
+          ],
+          "rows": [
+            [
+              "深层按钮只想触发“标记已读”",
+              "通过Context传dispatch",
+              "局部展开状态继续用useState"
+            ],
+            [
+              "编辑器、侧栏各订阅不同实体",
+              "评估带选择器的Store",
+              "筛选条件需要深链时继续用URL"
+            ],
+            [
+              "列表与详情要共享远端结果并刷新",
+              "引入查询缓存并设计key与失效规则",
+              "未提交草稿继续局部管理"
+            ],
+            [
+              "出现慢交互，但共享需求没变",
+              "先测更新范围，再决定是否改变订阅",
+              "不要为性能猜测直接迁移所有状态"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "迁移可以从一块业务开始：先把ReadingState和toggle动作保持不变，再替换读取与dispatch的接入层，最后验证原有行为。不要同时改状态形状、请求协议和组件层级，否则失败时很难知道是哪一步改变了语义。本文的小Store就是为了把这些可迁移的契约摆到台面上。"
+        },
+        {
+          "type": "reference",
+          "title": "TanStack Query：服务端状态的职责与缓存生命周期",
+          "url": "https://tanstack.com/query/v5/docs/framework/react/overview"
         }
       ]
     },
@@ -394,6 +482,22 @@ export const reactStateManagementArticle: Article = {
           "kind": "excerpt"
         },
         {
+          "type": "code",
+          "code": "// 以下是createQueryCache<T>()内部的共享结构。\ntype Entry = {snapshot: QueryState<T>; version: number; pending?: Promise<T>};\nconst entries = new Map<string, Entry>();\nconst listeners = new Set<() => void>();\nconst entry = (key: string): Entry => {\n  let value = entries.get(key);\n  if (!value) {\n    value = {snapshot: {status: 'idle', stale: true}, version: 0};\n    entries.set(key, value);\n  }\n  return value;\n};\nconst publish = (value: Entry, snapshot: QueryState<T>) => {\n  value.snapshot = snapshot;\n  [...listeners].forEach(listener => listener());\n};",
+          "language": "tsx",
+          "filename": "App.tsx",
+          "purpose": "后面load与optimistic所用的entry/publish完整定义：同一key返回同一条记录，发布时先替换快照再通知。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "// createQueryCache返回对象中的读取与订阅方法：\ngetSnapshot: (key: string) => entry(key).snapshot,\nsubscribe(listener: () => void) {\n  listeners.add(listener);\n  return () => { listeners.delete(listener); };\n},\n// 组件中稳定持有工厂实例，然后订阅当前key：\nconst [cache] = useState(() => createQueryCache<string>());\nconst query = useSyncExternalStore(\n  cache.subscribe,\n  () => cache.getSnapshot(queryKey),\n);",
+          "language": "tsx",
+          "filename": "App.tsx",
+          "purpose": "前半段位于缓存返回对象中，后半段位于组件中；entry/publish见上块，load与optimistic在随后两节完整展示。",
+          "kind": "excerpt"
+        },
+        {
           "type": "paragraph",
           "text": "stale表示这份副本应再验证，不等于立刻删除。invalidate先增加version使旧在途响应失去写入资格，再保留data、标为stale；本实验不自动请求，用户需再点“读取摘要”。成熟库往往还有活跃订阅、自动refetch、重试、缓存回收等规则，不能把这个小实现的默认行为套到它们身上。"
         },
@@ -423,6 +527,41 @@ export const reactStateManagementArticle: Article = {
         {
           "type": "paragraph",
           "text": "R1启动时拿到version1，R2启动时把entry推进到version2。R2返回，2等于当前代数，所以发布结果；R1返回，1不等于2，数据只能返回给R1自己的调用者，不能再发布到共享缓存。注意这个区别：Promise仍然成功了，如果调用者拿到R1返回值又手动写别处，仍会重新制造竞态。界面应读取缓存快照，不要再维护一份不受仲裁的副本。"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "步骤",
+            "entry.version",
+            "该请求拿到的version",
+            "能否发布"
+          ],
+          "rows": [
+            [
+              "R1开始",
+              "1",
+              "1",
+              "等待"
+            ],
+            [
+              "强制刷新R2开始",
+              "2",
+              "2",
+              "等待"
+            ],
+            [
+              "R2成功",
+              "2",
+              "2",
+              "相同，发布新响应"
+            ],
+            [
+              "R1成功或失败",
+              "2",
+              "1",
+              "不同，既不覆盖数据也不覆盖错误状态"
+            ]
+          ]
         },
         {
           "type": "paragraph",
@@ -578,11 +717,36 @@ export const reactStateManagementArticle: Article = {
       "blocks": [
         {
           "type": "paragraph",
-          "text": "现在可以按一条清楚的顺序处理状态：先区分事实、草稿与派生结果，再按共享范围决定归属；局部需求用组件状态，共享树内数据可以提升或用Context，独立Store提供稳定快照和订阅；服务端副本按查询身份管理新鲜度、并发和失败。只有这些规则确定以后，库才能把重复实现收起来，而不是替你猜业务含义。"
+          "text": "回到阅读清单：只看未读是展示条件，books是当前客户端事实，已读数是派生结果；摘要缓存则持有带查询身份和新鲜度的远端副本。分别管理这些语义之后，库的选择才有依据。"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "先自己判断",
+            "解析"
+          ],
+          "rows": [
+            [
+              "统计组件订阅整个state，只有文章标题变了，它会收到新快照吗？",
+              "会。根state换了引用；若只需要数量，可以设计稳定的数量快照或选择器结果。"
+            ],
+            [
+              "取消旧HTTP请求后，还需要version检查吗？",
+              "需要。取消减少无用工作，version规定哪个完成回调仍有写入资格；两者解决不同问题。"
+            ],
+            [
+              "同时有服务端title和编辑框draftTitle，违反单一事实来源吗？",
+              "不违反。一个是已保存事实，一个是待提交意图；明确初始化、提交、失败保留规则即可。"
+            ],
+            [
+              "已有Context是不是必须迁移到Store？",
+              "不是。只有作用域、订阅粒度或协作工具等需求超出当前方案时，迁移才解决具体问题。"
+            ]
+          ]
         },
         {
           "type": "paragraph",
-          "text": "本篇实现的成果不是“又一个全局变量”：它有不可变快照、通知时序、取消订阅、请求代数和回滚资格这些可测试的约束。下一步读性能篇时，可以进一步讨论选择器、稳定身份和更新范围，但先让正确性成立。少渲染一次不能弥补读错用户数据，更多缓存也不能弥补一个缺少关键参数的key。"
+          "text": "接下来读性能篇时，重点会从“数据是否正确”转到“这次变化需要多少工作”。这里的稳定快照和结构共享将成为判断更新范围的依据，数据归属与请求一致性不再重新推导。"
         }
       ]
     }

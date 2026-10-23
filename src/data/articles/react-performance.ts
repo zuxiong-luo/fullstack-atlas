@@ -20,7 +20,7 @@ export const reactPerformanceArticle: Article = {
     "TypeScript 5.7.2",
     "Node.js 22"
   ],
-  "verifiedAt": "2026-10-22",
+  "verifiedAt": "2026-10-23",
   "scope": "客户端性能定位与可验证优化；固定行高窗口为教学实现，不覆盖动态测量/完整无障碍。未提供未经测量的生产收益。",
   "prerequisites": [
     "props、state、不可变更新",
@@ -41,7 +41,7 @@ export const reactPerformanceArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "本篇继续使用阅读清单：列表有300本书，每行能切换“已选”，页面还有一个与书籍无关的计数器。我们依次比较普通行、memo但函数prop不稳定、memo且输入稳定，以及固定行高窗口。每一组都说明省掉了什么、没有省掉什么，再用行为断言检查结果，避免看到日志变少就宣布页面快了。"
+          "text": "贯穿案例是一份300本书的清单，每行可切换“已选”，页面还有一个无关计数器。我们先建立成本与测量概念，再逐项解释状态位置、memo和窗口化，最后用同一次“计数加一”走完整条诊断流程。你可以只读正文跟完关键代码；实验入口用于亲手验证，出处链接用于核对。"
         },
         {
           "type": "paragraph",
@@ -169,7 +169,7 @@ export const reactPerformanceArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "Context还要单独看。Provider的value改变，读取该Context的消费者需要获取新值；外层memo不能把消费者锁死在旧值。把频繁变化的输入和低频主题塞到同一个大对象里，会扩大受影响范围。拆分合理的Context、将state与稳定dispatch分开或使用选择性订阅，解决的是通知范围；不要用错误比较函数阻止必要更新。"
+          "text": "状态管理篇已经说明Context传播，这里只关心它带来的工作范围：把高频输入和低频主题放在同一个value，会让只用主题的消费者也收到变化。性能问题如果来自这种通知范围，应先调整订阅边界，而不是继续给消费者套memo。"
         },
         {
           "type": "experiment",
@@ -206,6 +206,31 @@ export const reactPerformanceArticle: Article = {
           "text": "将本例代进去：无关tick增加，books引用没变，某行book对象也没变。如果onToggle保持同一函数引用，浅比较可以通过，相关行计算有机会跳过。若onToggle每次写成新箭头函数，哪怕函数体文字完全一样，prop值仍不同，memo会继续处理。这就是实验第二组“加了memo却没省工作”的原因。"
         },
         {
+          "type": "table",
+          "headers": [
+            "这次更新的输入",
+            "源码经过的判断",
+            "行计算的结果"
+          ],
+          "rows": [
+            [
+              "tick变了，book与onToggle沿用",
+              "没有该行自己的更新；默认浅比较通过，ref相同",
+              "可以进入bailout，跳过这次行计算"
+            ],
+            [
+              "book不变，onToggle是新函数",
+              "浅比较发现函数引用变化",
+              "继续计算行"
+            ],
+            [
+              "第0本selected变化",
+              "第0行book是新对象，比较不通过",
+              "第0行需要计算；其他行仍可比较通过"
+            ]
+          ]
+        },
+        {
           "type": "code",
           "purpose": "稳定回调利用函数式更新读取当次最新列表；不捕获过期books。",
           "code": "const stableToggle=useCallback((id:number)=>{\n  setBooks(prev=>prev.map(book =>\n    book.id===id ? {...book,selected:!book.selected} : book\n  ));\n},[]);\n// 每行接收原book对象与stableToggle。",
@@ -230,12 +255,12 @@ export const reactPerformanceArticle: Article = {
     },
     {
       "id": "identity",
-      "title": "不可变更新既影响正确性，也决定复用粒度",
+      "title": "结构共享怎样把一次修改限制在一行",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "要让只有第0行变化，数组应该新建，第0行对象也应该新建，其他行对象尽量沿用。这样上层知道列表变了，memo行又能知道自己是否真的变了。把全部对象都复制会扩大渲染；原地修改后继续返回旧数组则可能使React认为状态没变，让界面不更新。两种写法问题不同，不能只凭“用了展开运算符”判断更新合理。"
+          "text": "沿用状态管理篇的结构共享约定：只复制变化路径。本节关注它的性能含义。toggleBook返回新数组，被选中的book得到新对象，其他299本仍是原对象；memo拿到这些引用，就能把“这一行的数据没变”转成一次可用的跳过条件。"
         },
         {
           "type": "code",
@@ -276,7 +301,7 @@ export const reactPerformanceArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "这里仍有一次O(n)的map与列表协调；只更新一行不意味着整次工作O(1)。数据很大时，可以考虑按ID规范化、精确订阅或持久化数据结构，但要测量查找、分配、订阅管理和代码复杂度的总成本。不能把“Row少执行了”扩展成“列表没有任何工作”。"
+          "text": "这让299行有机会跳过组件计算，但上层仍做了一次map，并创建和协调列表元素。优化报告应写“缩小行组件计算范围”，而不是“把列表更新变成O(1)”。只有定位到这次线性遍历本身已成瓶颈，再考虑索引、精确订阅等进一步设计。"
         }
       ]
     },
@@ -304,7 +329,7 @@ export const reactPerformanceArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "源码用areHookInputsEqual逐项比较依赖。对本例filtered而言，[books,query]完整描述过滤所需输入；tick变化不改变依赖，过滤结果数组可以沿用。query变了或books新建了，过滤仍要重新执行。它不会加速首次计算，也不会把filter自动移到后台。"
+          "text": "先只看三个位置：prevState[1]保存上一次依赖，areHookInputsEqual决定是否命中，prevState[0]是命中时返回的旧结果。过滤的依赖是[books, query]：tick从0变1时这两个输入都没变，直接返回旧数组；query从空串变成“1”时比较失败，执行nextCreate，再把新结果与新依赖一起写回Hook。"
         },
         {
           "type": "code",
@@ -321,7 +346,7 @@ export const reactPerformanceArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "JavaScript仍会先求出你传给useCallback的函数表达式，Hook再决定返回旧函数还是保存新函数。它不是禁止所有函数分配的魔法；价值通常在于把稳定引用传给依赖它的memo子组件或其他Hook。若没有这样的使用方，增加Hook和依赖比较可能只有维护成本。"
+          "text": "updateCallback的相同分支返回prevState[0]，不同分支保存当前传入的callback。JavaScript求值时仍会创建本轮函数，Hook决定最终交给调用者的是哪一个引用。这里需要稳定引用的使用方是MemoRow的onToggle；没有使用方依赖这个身份时，就没有必要仅为“函数必须缓存”增加Hook。"
         },
         {
           "type": "code",
@@ -417,7 +442,7 @@ export const reactPerformanceArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "这是可运行的固定行高教学窗口，不是生产级通用虚拟列表。动态行高需要测量与偏移修正；键盘焦点不能随卸载随便丢掉；屏幕阅读器、浏览器查找、滚动恢复、粘性分组和触底加载还要设计。本文明确不把这几十行代码宣称为成熟列表库替代品。实际项目应结合无障碍与交互需求选择方案。"
+          "text": "这个窗口假设每行始终44px。若标题换行改变实际高度，偏移公式就失效，需要测量并修正；若焦点所在行离开窗口，还需要设计焦点保留。动态行高、无障碍、查找与滚动恢复决定了生产方案的复杂度，本文的固定行高例子用来理解几何和状态生命周期。"
         }
       ]
     },
@@ -454,6 +479,104 @@ export const reactPerformanceArticle: Article = {
       ]
     },
     {
+      "id": "diagnosis",
+      "title": "走完一次诊断：为什么计数加一，整张清单都在工作？",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "这是基于配套代码的诊断演练，不是虚构的线上事故或耗时报告。固定条件为300行、空搜索、全部未选，唯一操作是“无关计数加一”。目标先定成：计数正确增加，而书籍业务状态不变；然后检查本次更新是否仍让所有行参与计算。"
+        },
+        {
+          "type": "code",
+          "code": "type Book = {id: number; title: string; selected: boolean};\nfunction Row({book,onToggle}:{book:Book;onToggle:(id:number)=>void}) {\n  return <button onClick={()=>onToggle(book.id)}>\n    {book.title}：{book.selected ? '已选' : '未选'}\n  </button>;\n}\nconst MemoRow = memo(Row);\nconst Item = mode === 'plain' ? Row : MemoRow;\nconst toggle = mode === 'unstable'\n  ? (id:number) => stableToggle(id)\n  : stableToggle;\n// App的列表区域：\n{shown.map(book => <Item key={book.id} book={book} onToggle={toggle}/>)}",
+          "language": "tsx",
+          "filename": "App.tsx",
+          "purpose": "把完整实验中的比较路径放在一起；Row省略诊断计数与布局，stableToggle沿用前文，shown是当前显示的书籍数组。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "第一步排除错误方向。这个按钮只setTick，没有HTTP调用；列表本来已经挂载，key也没有因tick改变。可先排除“这次点击在等接口”与“更换key造成全量重新挂载”这两个假设。接着看行上的提交诊断和React Profiler，而不是先引入缓存库。"
+        },
+        {
+          "type": "paragraph",
+          "text": "第二步建立对照。在普通行模式下，App因tick更新重新计算列表，Row没有props比较屏障。改到“memo + 不稳定函数”，book沿用，但toggle每次都是新箭头函数，因此onToggle使比较失败。这个对照很重要：加了memo没有达到目标，有具体输入变化可以解释。"
+        },
+        {
+          "type": "paragraph",
+          "text": "第三步只改回调身份。切到“memo + 稳定输入”，重复同样操作；stableToggle和book都沿用，行诊断应保持不变。随后点第0本的切换按钮，第0行应改变为已选，其他行保留原状态。后一个动作证明优化仍允许必要更新，没有把界面冻住。"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "对照组",
+            "无关计数加一后的预期",
+            "由此可得的结论"
+          ],
+          "rows": [
+            [
+              "普通行",
+              "行诊断增加",
+              "父级更新传播到了行计算"
+            ],
+            [
+              "memo + 不稳定函数",
+              "行诊断仍增加",
+              "新函数prop阻止了比较命中"
+            ],
+            [
+              "memo + 稳定输入",
+              "行诊断不增加；计数仍增加",
+              "无关操作可以跳过行计算"
+            ],
+            [
+              "稳定输入后选择第0本",
+              "第0行变化，其他行保持",
+              "必要数据变化仍被保留"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "行诊断在layout effect中累加，反映该行参与提交后的观察，不统计所有被放弃的render尝试。模式切换通过key重建列表，因此只比较同一模式内操作前后的增量。先完成这组行为检查，再用Profiler采样，最后用浏览器Performance检查交互到显示之间是否仍有长任务或大量布局。"
+        },
+        {
+          "type": "paragraph",
+          "text": "第四步形成可复查记录。每种模式先预热5次，清空采样，再执行20次计数加一，记录构建、设备、浏览器、样本数、中位数与P95。两组使用相同操作和规模；20次只是入门练习，尾部估计很不稳定，正式评估需要更多样本。本文没有填写耗时，因为这些数必须来自实际设备。"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "记录项",
+            "本演练如何填写"
+          ],
+          "rows": [
+            [
+              "行为",
+              "普通与不稳定memo仍有行更新；稳定输入可跳过，需实际按步骤确认"
+            ],
+            [
+              "耗时与环境",
+              "由执行者填写真实值；不得拿测试运行时间代替"
+            ],
+            [
+              "若React耗时下降但体验没变",
+              "继续查布局、绘制、其他脚本和输入等待"
+            ],
+            [
+              "最终决定",
+              "收益稳定且正确性通过才保留；否则优先把tick下沉到工具栏等更简单方案"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "如果慢的是滚动而不是这个按钮，切换窗口模式才是另一个假设：它减少挂载节点，而非只跳过计算。不要把memo、窗口化和调度同时打开后，把全部改善归给最后加的那一行代码。"
+        }
+      ]
+    },
+    {
       "id": "experiment",
       "title": "完整实验与验收：正确结果必须先过关",
       "paragraphs": [],
@@ -466,11 +589,7 @@ export const reactPerformanceArticle: Article = {
         },
         {
           "type": "paragraph",
-          "text": "初始普通模式300行，所有书未选。点击无关计数，普通行的提交诊断会增加。切到“memo + 不稳定函数”后重复，仍会增加；切到“memo + 稳定输入”后再点，行诊断保持不变。选中第0行则只有该行应增加，其他书仍保持原状态。模式切换会重建列表诊断，因此比较各模式内部的前后变化，不要跨模式比较绝对计数。"
-        },
-        {
-          "type": "paragraph",
-          "text": "窗口模式初始渲染9行：视口6行加后侧3行，前侧被0截断。滚到440px时渲染12行。先选中第0本，滚出去再回来，应仍已选；显示行的诊断计数可能重置，因为窗口确实卸载了它们。搜索会重置窗口位置，避免缩小结果后还停在空白的旧偏移。"
+          "text": "实验入口保留普通行、不稳定memo、稳定memo与窗口四组，按上一节诊断顺序验证前三组。随后开启窗口：初始9行，滚动到440px时12行；先选中第0本，滚出去再回来仍已选。搜索会重置窗口位置，避免结果变少后停在原来的空白偏移。"
         },
         {
           "type": "code",
@@ -492,16 +611,37 @@ export const reactPerformanceArticle: Article = {
     },
     {
       "id": "decision",
-      "title": "最后形成一条可重复的优化流程",
+      "title": "检查你是否已经分清：少做工作，还是只是看不到变化",
       "paragraphs": [],
       "blocks": [
         {
-          "type": "paragraph",
-          "text": "先描述可观察的慢：何时、什么规模、哪种设备、用户在等什么。再用工具定位等待属于哪一层。然后选择最小改动：调整状态归属、稳定真正需要的输入、减少挂载范围、优化算法或按需加载。修改后先检查行为，再重复同一套测量，把成本和收益一起记录。"
+          "type": "table",
+          "headers": [
+            "判断题",
+            "沿机制解释"
+          ],
+          "rows": [
+            [
+              "Fiber沿用，组件就一定没有重新执行吗？",
+              "不一定。身份复用保留节点关系与状态；是否跳过计算还取决于输入、更新与Context。"
+            ],
+            [
+              "actualDuration降低，就能说交互P95改善吗？",
+              "不能直接推出。它测量React渲染成本，输入等待、布局和绘制还需完整时间线或用户指标。"
+            ],
+            [
+              "第0行改变，其他行memo命中，是O(1)更新吗？",
+              "不是。上层map、元素协调等工作仍存在，只是减少了行组件计算。"
+            ],
+            [
+              "比较函数永远返回true，为什么按钮还会读到旧计数？",
+              "它继续沿用旧props，其中的回调捕获旧tick；输出外观一样，交互语义已不等价。"
+            ]
+          ]
         },
         {
           "type": "paragraph",
-          "text": "缓存需要说清缓存对象、命中条件、失效时机与维护成本。Fiber双缓冲保存工作记录，memo比较组件输入，useMemo保存计算结果，请求缓存保存远端数据；它们不能用一个“缓存优化”混为一谈。读完这篇，应当能解释某次优化到底省了哪项工作，也能在缺乏收益证据时坦率地说“目前只验证了机制，没有证明更快”。"
+          "text": "一份可靠的优化结论应该能补全这句话：在什么操作和规模下，哪一层原来做了什么工作，我改变了什么输入或工作范围，行为检查与测量分别证明了什么。这样即使最终没有明显提速，排查也留下了清楚的依据。"
         }
       ]
     }
