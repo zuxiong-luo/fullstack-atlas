@@ -6,6 +6,8 @@ on:
       - 'examples/node-execution-model/**'
       - 'examples/node-modules-tooling/**'
       - 'examples/node-http-lifecycle/**'
+      - 'examples/node-parallel-computing/**'
+      - 'examples/node-performance-memory/**'
       - 'examples/python-course/**'
       - '.github/workflows/article-examples.yml'
   workflow_dispatch:
@@ -21,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [node-execution-model, node-modules-tooling, node-http-lifecycle]
+        example: [node-execution-model, node-modules-tooling, node-http-lifecycle, node-parallel-computing, node-performance-memory]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -41,4 +43,5 @@ jobs:
         with:
           python-version: '3.12.14'
       - run: python --version
+      - run: python -m pip install -r examples/python-course/chapter07/requirements.lock
       - run: python -m unittest discover -s examples/python-course -v

@@ -1,0 +1,10 @@
+import {cp,mkdir,rm,access} from 'node:fs/promises';
+await access('.next/standalone/server.js');
+await rm('release',{recursive:true,force:true});
+await cp('.next/standalone','release',{recursive:true});
+await mkdir('release/.next',{recursive:true});
+await cp('.next/static','release/.next/static',{recursive:true});
+await cp('public','release/public',{recursive:true});
+await cp('boot.mjs','release/boot.mjs');await cp('runtime','release/runtime',{recursive:true});
+await access('release/assets/build-info.json');
+console.log('release/ 已包含standalone、static、public、显式追踪asset与启动校验');

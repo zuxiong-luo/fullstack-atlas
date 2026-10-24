@@ -1,0 +1,2 @@
+# No third-party Python dependencies. Verified CPython 3.12.14 + SQLite 3.53.1.
+# Python interpreter and its linked SQLite are external prerequisites, not installed by pip.

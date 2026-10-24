@@ -1,0 +1,3 @@
+include requirements.lock
+include build.lock
+include verify_install.py

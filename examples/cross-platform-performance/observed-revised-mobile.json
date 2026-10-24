@@ -1,0 +1,45 @@
+{
+  "observedAt": "2026-10-25",
+  "source": "parent actual built-in Chromium browser DOM read after partial-row/startup/Worker cleanup fixes",
+  "browser": "Codex built-in Chromium; exact release not exposed",
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "bodyWidth": 374,
+    "scrollWidth": 374
+  },
+  "cache": "navigate without manual clear; no-store local server; not OS cold start",
+  "startup": {
+    "supported": true,
+    "cacheCondition": "本页未强制清缓存；请记录首次或重复加载",
+    "begin": "HTML inline mark, before local JS bundle",
+    "end": "React layout effect / second requestAnimationFrame opportunity",
+    "htmlToCommitMs": 50.599999994039536,
+    "htmlToSecondFrameMs": 175.89999997615814,
+    "navigationType": "navigate"
+  },
+  "windowed": {
+    "platform": "Web DOM",
+    "mode": "window",
+    "rows": 2000,
+    "viewportPx": 320,
+    "rowHeightPx": 32,
+    "steps": 120,
+    "samples": 119,
+    "p50Ms": 16.700000000000045,
+    "p95Ms": 17.59999999999991,
+    "maxMs": 17.700000000000045,
+    "over16_7Ms": 60,
+    "elapsedMs": 2004.7000000178814,
+    "domRows": 13,
+    "scrollTop": 63680,
+    "note": "rAF callback intervals, not physical frame presentation or native FPS; identical fixed workload"
+  },
+  "lab": {
+    "startupSupported": false,
+    "reason": "HTML pre-bundle mark absent; independent local entry only",
+    "iframeBodyWidth": 356,
+    "iframeScrollWidth": 356
+  },
+  "limits": "new mobile observation; no full-list rerun on this viewport, no comparison with previous desktop metrics, not native performance"
+}

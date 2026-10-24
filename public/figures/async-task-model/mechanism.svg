@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="560" viewBox="0 0 1040 560" role="img" aria-labelledby="title desc"><title id="title">HTTP 接受与独立 Worker 的状态边界</title><desc id="desc">HTTP 接受与独立 Worker 的状态边界</desc><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#315c48"/></marker></defs><style>text{font-family:Arial,'PingFang SC',sans-serif;fill:#203f33;font-size:19px}.label{font-size:16px}.heading{font-size:27px;font-weight:700}.box{fill:#fff;stroke:#729984;stroke-width:2}.arrow{stroke:#315c48;stroke-width:2;fill:none;marker-end:url(#arrow)}.bad{fill:#fff4ec;stroke:#b96b39;stroke-width:2}</style><rect width="1040" height="560" rx="20" fill="#f2f7f3"/>
+<text x="35" y="48" class="heading">202 只确认接受，任务寿命由持久状态承接</text>
+<rect x="40" y="105" width="220" height="95" rx="12" class="box"/><text x="66" y="142">API 子进程</text><text x="66" y="175" class="label">校验 → 事务接受</text>
+<rect x="390" y="105" width="260" height="95" rx="12" class="box"/><text x="415" y="142">PostgreSQL jobs</text><text x="415" y="175" class="label">COMMIT queued</text>
+<path d="M260 145H386" class="arrow"/><text x="278" y="123" class="label">写入输入</text>
+<rect x="770" y="105" width="230" height="95" rx="12" class="box"/><text x="797" y="142">独立 Worker</text><text x="797" y="175" class="label">领取后短事务提交</text>
+<path d="M650 145H766" class="arrow"/><text x="669" y="123" class="label">claim</text>
+<path d="M520 200V248H150V205" class="arrow"/><text x="240" y="235" class="label">提交成功后才返回 202 + id</text>
+<rect x="40" y="300" width="290" height="110" rx="12" class="bad"/><text x="60" y="337">提交前杀 API</text><text x="60" y="370" class="label">连接断开 → 无任务记录</text>
+<rect x="375" y="300" width="290" height="110" rx="12" class="bad"/><text x="395" y="337">提交后、202 前杀 API</text><text x="395" y="370" class="label">响应丢失 → 同 key 找回 id</text>
+<rect x="710" y="300" width="290" height="110" rx="12" class="box"/><text x="730" y="337">running → 纯计算</text><text x="730" y="370" class="label">持有者条件更新终态</text>
+<path d="M885 200V295" class="arrow"/>
+<text x="45" y="462">API 退出，Worker 可继续；Worker 崩溃，本例保留 running。</text>
+<text x="45" y="501" class="label">没有自动租约恢复、FIFO 或外部副作用只执行一次的承诺。</text>
+</svg>

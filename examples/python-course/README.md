@@ -110,3 +110,13 @@ python3 chapter02/import_notes.py fixtures/duplicate.jsonl python
 ## 第5章新增：并发模型与有界处理
 
 新增 `chapter05/` 与 `test_chapter05.py`，运行 `python3 -m chapter05 threads fixtures/notes.jsonl`、`python3 -m chapter05 asyncio fixtures/notes.jsonl`、`python3 -m chapter05 processes fixtures/notes.jsonl`。I/O模式用本机临时回显服务，进程模式用纯Python计算，均不作性能排名。运行 `python3 -m unittest -v test_course test_chapter04 test_chapter05` 共33项。详见[第5章说明](chapter05/README.md)。未审校新增章节不应混入第一批冻结ZIP，统一打包由发布流程决定。
+
+## 后续独立阶段（尚待审稿，不自动进入发布聚合）
+
+第7章`chapter07/README.md`：FastAPI内存笔记与有界导入任务。独立安装`chapter07/requirements.lock`，从课程根运行`python -m chapter07`；本章依赖第4章Note，不要求第8/9章。作者CPython3.12.14下8/8测试与真实loopback CLI启动/请求/关闭通过。第6章仍保留原有独立`python-async-services`文章/示例ID，第7章组合第5章固定worker/Queue与第6章的超时/取消清理约定，没有重命名或改写第6章。
+
+第8章`chapter08/README.md`：真实SQLite文件、迁移、独占连接池与同步提交HTTP。复用第7章锁依赖，运行`python -m chapter08`前设置自己目录的ATLAS_DB；CPython3.12.14/SQLite3.53.1下12/12真实文件测试与CLI重启持久化通过。第8章/imports返回201已提交，与第7章202任务协议分开，不宣称兼容上线升级。
+
+仅标准库前五章可继续独立运行：`python -m unittest -v test_course test_chapter04 test_chapter05`（33项）；第六章仍在`examples/python-async-services`单独运行。安装第7章锁文件后，课程全范围命令为`python -m unittest discover -s . -p 'test_*.py' -v`，新增HTTP章节需要该锁依赖，不能在未安装FastAPI的标准库环境跑全发现。
+
+第9章`chapter09/README.md`：可安装src快照、配置/请求日志、wheel/sdist与干净环境验收；`chapter09/requirements.lock`为完整运行锁（与7相同），`chapter09/build.lock`为构建工具锁。实际安装产物离开源码运行，重启保留2条笔记；全课程61项与独立第六章9项通过。构建与fresh-venv离线安装验证命令见本章README，wheelhouse需按当前平台下载，不跨平台复制pydantic-core轮子。测试/构建产物不随源码ZIP交付。
