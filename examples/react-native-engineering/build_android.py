@@ -12,11 +12,37 @@ import tempfile
 ROOT = Path(__file__).resolve().parent
 
 
-def run(arguments, cwd, *, env=None, seconds=120):
-    result = subprocess.run(['timeout', '--signal=TERM', '--kill-after=30s', str(seconds)+'s', *arguments],
-                            cwd=cwd, env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    print(result.stdout, flush=True)
-    if result.returncode:
+def run(arguments, cwd, *, env=None, seconds=120, check=True):
+    # Own a session, not a timeout wrapper: interrupting Python must reap its command tree.
+    process = subprocess.Popen(arguments, cwd=cwd, env=env, text=True,
+                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                               start_new_session=True)
+    def stop_group(sig):
+        try:
+            os.killpg(process.pid, sig)
+        except ProcessLookupError:
+            pass
+    try:
+        output, _ = process.communicate(timeout=seconds)
+    except BaseException:
+        stop_group(signal.SIGTERM)
+        try:
+            output, _ = process.communicate(timeout=5)
+        except subprocess.TimeoutExpired:
+            stop_group(signal.SIGKILL)
+            output, _ = process.communicate(timeout=5)
+        finally:
+            # A leader can exit before a descendant that no longer owns the output pipe.
+            stop_group(signal.SIGKILL)
+            process.wait(timeout=5)
+        print(output, flush=True)
+        raise
+    else:
+        # Successful commands also cannot leave a background member of this owned group.
+        stop_group(signal.SIGKILL)
+    print(output, flush=True)
+    result = subprocess.CompletedProcess(arguments, process.returncode, output)
+    if check and result.returncode:
         raise RuntimeError('lab command failed: '+arguments[0]+' exit '+str(result.returncode))
     return result.stdout
 

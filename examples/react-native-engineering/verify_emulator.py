@@ -27,6 +27,10 @@ def adb(*arguments, check=True, seconds=20):
     return result.stdout
 
 
+def installed():
+    return 'package:'+PACKAGE in adb('shell','pm','list','packages',PACKAGE).splitlines()
+
+
 def record(event):
     with CONDITION:
         if len(EVENTS) >= 256:
@@ -53,6 +57,8 @@ def event(name, **fields):
 
 
 class Fixture(ThreadingHTTPServer):
+    daemon_threads = False
+    block_on_close = True
     permits = threading.BoundedSemaphore(8)
     def process_request(self, request, address):
         if not self.permits.acquire(blocking=False):
@@ -113,6 +119,28 @@ def link(path):
     adb('shell','am','start','-W','-a','android.intent.action.VIEW','-d','atlasrnlab:///'+path,'-p',PACKAGE)
 
 
+def native_ui_state(path, expected, screenshot):
+    deadline=time.monotonic()+12
+    while time.monotonic()<deadline:
+        adb('shell','uiautomator','dump',path,seconds=8)
+        tree=ET.fromstring(adb('shell','cat',path))
+        for node in tree.iter('node'):
+            raw=node.get('text','')
+            if not raw.startswith('{'):
+                continue
+            try:
+                value=json.loads(raw)
+            except ValueError:
+                continue
+            if all(value.get(key)==item for key,item in expected.items()):
+                result=subprocess.run(['adb','-s',SERIAL,'exec-out','screencap','-p'],capture_output=True,timeout=15,check=True)
+                assert result.stdout.startswith(b'\x89PNG\r\n\x1a\n')
+                screenshot.write_bytes(result.stdout)
+                return value
+        time.sleep(.15)
+    raise AssertionError('native hierarchy state not observed: '+json.dumps(expected))
+
+
 def deny_permission_dialog(path):
     deadline=time.monotonic()+12
     while time.monotonic()<deadline:
@@ -140,7 +168,7 @@ def main():
         raise SystemExit('refuse a physical or unidentified device')
     if adb('shell','getprop','ro.product.cpu.abi').strip()!='x86_64':
         raise SystemExit('this artifact targets x86_64 emulator only')
-    if adb('shell','pm','path',PACKAGE).strip():
+    if installed():
         raise SystemExit('refuse to overwrite an existing lab application')
     signal.signal(signal.SIGTERM,lambda *_:(_ for _ in ()).throw(KeyboardInterrupt()))
     artifact=Path(os.environ['ATLAS_LAB_ARTIFACT_DIR'])
@@ -168,7 +196,8 @@ def main():
         GATES[fresh['gate']].set()
         wait(event('note_rendered',status='ready',id='n2'),after=cursor)
         assert not any(event('note_rendered',status='ready',id='n1')(row) for row in EVENTS[cursor:])
-        print(json.dumps({'case':'native_navigation_and_late_result','old':'discarded','current':'n2'}),flush=True)
+        native_ui_state(ui_path,{'status':'ready','id':'n2'},artifact/'native-ui-n2.png')
+        print(json.dumps({'case':'native_navigation_and_late_result','old':'discarded','current':'n2','native_ui_hierarchy':True}),flush=True)
         cursor=len(EVENTS)
         adb('shell','input','keyevent','KEYCODE_HOME')
         wait(event('app_state',state='background'),after=cursor)
@@ -196,13 +225,15 @@ def main():
         (artifact/'runtime-events.json').write_text(json.dumps(EVENTS,ensure_ascii=False,indent=2))
         raise
     finally:
-        for gate in GATES:
-            gate.set()
+        with CONDITION:
+            AUTO_RELEASE=True
+            for gate in GATES:
+                gate.set()
         try:
             adb('shell','am','force-stop',PACKAGE,check=False)
-            if adb('shell','pm','path',PACKAGE).strip():
+            if installed():
                 adb('uninstall',PACKAGE)
-            assert not adb('shell','pm','path',PACKAGE).strip()
+            assert not installed()
             adb('shell','rm','-f',ui_path,check=False)
         finally:
             server.shutdown();server.server_close();thread.join(timeout=3)

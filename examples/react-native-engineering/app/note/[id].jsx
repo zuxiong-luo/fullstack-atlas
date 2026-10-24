@@ -2,7 +2,7 @@ import React from 'react';
 import {View, Text, Button} from 'react-native';
 import {router, useLocalSearchParams, useFocusEffect} from 'expo-router';
 import {Lifecycle} from '../../lib/lifecycle';
-import {createSession, noteId} from '../../lib/session.mjs';
+import {createSession, createCapabilitySession, noteId} from '../../lib/session.mjs';
 import {loadNote, nativeFiles, requestLocationPermission} from '../../lib/native-port';
 import {labBase, report} from '../../lib/report';
 export default function Note() {
@@ -10,7 +10,8 @@ export default function Note() {
   const [focused, setFocused] = React.useState(false), [state, setState] = React.useState({status:'paused'});
   const [capability, setCapability] = React.useState({status:'idle'});
   const appState = React.useContext(Lifecycle), eligible = focused && appState === 'active';
-  const eligibleRef = React.useRef(false), callGeneration = React.useRef(0), scenarioRan = React.useRef('');
+  const scenarioRan = React.useRef('');
+  const capabilities = React.useMemo(() => createCapabilitySession(setCapability, report), []);
   const session = React.useMemo(() => createSession(loadNote, value => {
     setState(value);report('note_state', {status:value.status, id:value.id ?? null});
   }), []);
@@ -20,29 +21,18 @@ export default function Note() {
   useFocusEffect(React.useCallback(() => {
     setFocused(true);report('screen_focus', {id});
     return () => {
-      eligibleRef.current = false;callGeneration.current += 1;session.dispose();
+      capabilities.dispose();session.dispose();
       setFocused(false);report('screen_blur', {id});
     };
-  }, [id, session]));
+  }, [id, session, capabilities]));
   React.useEffect(() => {
-    eligibleRef.current = eligible;
-    if (!eligible) callGeneration.current += 1;
+    capabilities.setEligible(Boolean(eligible && id));
     if (eligible && id) session.start(id);
-    else {session.pause();setCapability({status:'idle'});report('note_paused', {id});}
-    return () => session.dispose();
-  }, [session, eligible, id]);
-  async function run(kind) {
-    const generation = ++callGeneration.current;
-    setCapability({status:'running', kind});report('capability_started', {kind});
-    try {
-      const result = await (kind === 'files' ? nativeFiles(id) : requestLocationPermission());
-      const accepted = eligibleRef.current && callGeneration.current === generation;
-      report('capability_result', {kind, ...result, accepted});
-      if (accepted) setCapability(result);
-    } catch {
-      report('capability_result', {kind, status:'error'});
-      if (eligibleRef.current && callGeneration.current === generation) setCapability({status:'error', kind});
-    }
+    else {session.pause();report('note_paused', {id});}
+    return () => {session.dispose();capabilities.dispose();};
+  }, [session, capabilities, eligible, id]);
+  function run(kind) {
+    return capabilities.run(kind, () => kind === 'files' ? nativeFiles(id) : requestLocationPermission());
   }
   React.useEffect(() => {
     const scenario = parameters.case;

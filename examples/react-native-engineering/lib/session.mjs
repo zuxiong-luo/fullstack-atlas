@@ -43,3 +43,37 @@ export function observeAppState(source, publish) {
   publish(source.currentState);
   return () => subscription.remove();
 }
+
+export function createCapabilitySession(publish, observe = () => {}) {
+  let eligible = false, generation = 0, running = false;
+  function setEligible(value) {
+    const changed = eligible !== value;
+    eligible = value;
+    if (!value || changed) {generation += 1;running = false;publish({status:'idle'});}
+  }
+  function dispose() {eligible=false;generation+=1;running=false;}
+  function run(kind, operation) {
+    if (!eligible) return Promise.resolve('ineligible');
+    if (running) return Promise.resolve('busy');
+    const current = ++generation;
+    running = true;publish({status:'running',kind});observe('capability_started',{kind});
+    const finish = result => {
+      const accepted = eligible && current === generation;
+      observe('capability_result',{kind,...result,accepted});
+      if (accepted) {running=false;publish(result);}
+      return accepted ? 'published' : 'discarded';
+    };
+    return Promise.resolve().then(operation).then(finish, () => finish({status:'error'}));
+  }
+  return {setEligible, run, dispose};
+}
+
+let directoryOperation = 0;
+export function ownedDirectoryName(clock = Date.now) {
+  return 'atlas-rn-lab-' + clock() + '-' + (++directoryOperation);
+}
+export async function withOwnedDirectory(create, use) {
+  const directory = create();
+  try {return await use(directory);}
+  finally {if (directory.exists) directory.delete();}
+}

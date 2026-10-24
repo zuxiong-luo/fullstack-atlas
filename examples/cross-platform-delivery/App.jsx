@@ -35,7 +35,7 @@ export default function App() {
     } else if(state.status==='error')report('delivery_error',state);
   },[state]);
   return <View style={{padding:24,gap:16}}><Text>仅本地假数据交付实验，无生产签名或商店上传。</Text>
-    <Text>{JSON.stringify(state)}</Text><Button title="捕获一个教学JS错误并保留栈" onPress={capture}/>
+    <Text testID="delivery-state">{JSON.stringify(state)}</Text><Button title="捕获一个教学JS错误并保留栈" onPress={capture}/>
     <Text>{error?JSON.stringify(error):'尚未触发错误；捕获后应用仍运行。'}</Text>
   </View>;
 }

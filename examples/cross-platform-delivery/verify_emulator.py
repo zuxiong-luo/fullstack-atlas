@@ -10,6 +10,8 @@ import subprocess
 import sys
 import threading
 import time
+import xml.etree.ElementTree as ET
+from uuid import uuid4
 
 ROOT=Path(__file__).resolve().parent
 PACKAGE='com.atlaslab.delivery'
@@ -24,6 +26,10 @@ def adb(*arguments,check=True,seconds=25):
     return result
 
 
+def installed():
+    return 'package:'+PACKAGE in adb('shell','pm','list','packages',PACKAGE).stdout.splitlines()
+
+
 def wait(name,release,after=0):
     deadline=time.monotonic()+30
     with CONDITION:
@@ -33,6 +39,11 @@ def wait(name,release,after=0):
             remaining=deadline-time.monotonic()
             if remaining<=0:raise AssertionError('delivery event missing: '+json.dumps(EVENTS[-8:]))
             CONDITION.wait(remaining)
+
+
+class Fixture(ThreadingHTTPServer):
+    daemon_threads = False
+    block_on_close = True
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -48,12 +59,31 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200);self.send_header('Content-Length','2');self.end_headers();self.wfile.write(b'{}')
 
 
+def native_ui_state(path, expected, screenshot):
+    deadline=time.monotonic()+12
+    while time.monotonic()<deadline:
+        adb('shell','uiautomator','dump',path,seconds=8)
+        tree=ET.fromstring(adb('shell','cat',path).stdout)
+        for node in tree.iter('node'):
+            raw=node.get('text','')
+            if not raw.startswith('{'):continue
+            try:value=json.loads(raw)
+            except ValueError:continue
+            if all(value.get(key)==item for key,item in expected.items()):
+                result=subprocess.run(['adb','-s',SERIAL,'exec-out','screencap','-p'],capture_output=True,timeout=15,check=True)
+                assert result.stdout.startswith(b'\x89PNG\r\n\x1a\n')
+                screenshot.write_bytes(result.stdout)
+                return value
+        time.sleep(.15)
+    raise AssertionError('native hierarchy state missing: '+json.dumps(expected))
+
+
 def main():
     if sys.platform!='linux' or os.environ.get('CI')!='true' or not re.fullmatch(r'emulator-\d+',SERIAL):
         raise SystemExit('explicit disposable Linux emulator only')
     if adb('shell','getprop','ro.kernel.qemu').stdout.strip()!='1':raise SystemExit('refuse physical or unidentified device')
     if adb('shell','getprop','ro.product.cpu.abi').stdout.strip()!='x86_64':raise SystemExit('x86_64 artifact only')
-    if adb('shell','pm','path',PACKAGE).stdout.strip():raise SystemExit('refuse existing application')
+    if installed():raise SystemExit('refuse existing application')
     signal.signal(signal.SIGTERM,lambda *_:(_ for _ in ()).throw(KeyboardInterrupt()))
     output=Path(os.environ['ATLAS_LAB_ARTIFACT_DIR'])
     records=json.loads((output/'build-report.json').read_text())['artifacts']
@@ -62,8 +92,9 @@ def main():
         for extension in ['apk','map']:
             assert hashlib.sha256((output/(row['releaseId']+'.'+extension)).read_bytes()).hexdigest()==row[extension+'_sha256']
     assert records[0]['certificate_sha256']==records[1]['certificate_sha256']
-    server=ThreadingHTTPServer(('127.0.0.1',4355),Handler)
+    server=Fixture(('127.0.0.1',4355),Handler)
     thread=threading.Thread(target=server.serve_forever);thread.start()
+    ui_path='/sdcard/atlas-lab-'+uuid4().hex+'.xml'
     try:
         print(json.dumps({'emulator':SERIAL,'api':adb('shell','getprop','ro.build.version.sdk').stdout.strip(),
                           'abi':'x86_64','physical_device':False}),flush=True)
@@ -72,6 +103,7 @@ def main():
         first=wait('delivery_rendered','lab-v1')
         assert first['nativeCode']=='1' and first['created'] is True
         assert first['note']=={'schema':1,'title':'fake note persisted by lab-v1'}
+        native_ui_state(ui_path,{'status':'ready','releaseId':'lab-v1','nativeCode':'1'},output/'native-ui-v1.png')
         adb('shell','am','force-stop',PACKAGE)
         cursor=len(EVENTS)
         adb('install','-r','--no-streaming',str(output/'lab-v2.apk'),seconds=90)
@@ -79,6 +111,7 @@ def main():
         second=wait('delivery_rendered','lab-v2',after=cursor)
         assert second['nativeCode']=='2' and second['nativeName']=='1.1.0' and second['created'] is False
         assert second['note']==first['note']
+        native_ui_state(ui_path,{'status':'ready','releaseId':'lab-v2','nativeCode':'2'},output/'native-ui-v2.png')
         error=wait('controlled_js_error','lab-v2',after=cursor)
         assert error['message']=='ATLAS_CONTROLLED_JS_FAILURE'
         (output/'caught-error.json').write_text(json.dumps(error))
@@ -88,7 +121,7 @@ def main():
         print(correct.stdout+correct.stderr,flush=True)
         assert correct.returncode==0 and 'controlled-error.js' in correct.stdout and 'controlledFailure' in correct.stdout
         print(json.dumps({'case':'signed_upgrade_and_js_symbolication','data_retained':True,'native_version':'2',
-                          'same_debug_certificate':True,'wrong_release_map_rejected':True,'native_process_crash':False}),flush=True)
+                          'same_debug_certificate':True,'native_ui_hierarchy':True,'wrong_release_map_rejected':True,'native_process_crash':False}),flush=True)
         rejected=adb('install','-r','--no-streaming',str(output/'lab-v1.apk'),check=False,seconds=90)
         assert rejected.returncode!=0 and 'INSTALL_FAILED_VERSION_DOWNGRADE' in rejected.stdout+rejected.stderr
         cursor=len(EVENTS)
@@ -105,8 +138,9 @@ def main():
     finally:
         try:
             adb('shell','am','force-stop',PACKAGE,check=False)
-            if adb('shell','pm','path',PACKAGE).stdout.strip():adb('uninstall',PACKAGE)
-            assert not adb('shell','pm','path',PACKAGE).stdout.strip()
+            if installed():adb('uninstall',PACKAGE)
+            assert not installed()
+            adb('shell','rm','-f',ui_path,check=False)
         finally:
             server.shutdown();server.server_close();thread.join(timeout=3)
         assert not thread.is_alive()

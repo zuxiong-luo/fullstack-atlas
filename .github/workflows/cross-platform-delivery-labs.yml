@@ -14,7 +14,7 @@ concurrency:
 jobs:
   android-delivery-build:
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 110
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -33,3 +33,31 @@ jobs:
           ATLAS_LAB_BUILD_ONLY: '1'
           ATLAS_LAB_ARTIFACT_DIR: ${{ runner.temp }}/atlas-delivery-artifacts
         run: python3 scripts/platform-lab-ci.py --timeout 4500 -- bash examples/cross-platform-delivery/verify-android.sh
+      - name: Grant only this disposable runner user access to KVM
+        shell: bash
+        run: |
+          test -c /dev/kvm
+          sudo setfacl -m "u:$(id -un):rw" /dev/kvm
+      - name: Real API36 x86_64 emulator checks (no physical device)
+        uses: ReactiveCircus/android-emulator-runner@v2
+        env:
+          CI: 'true'
+          ATLAS_LAB_ARTIFACT_DIR: ${{ runner.temp }}/atlas-delivery-artifacts
+          ATLAS_LAB_EMULATOR_SERIAL: emulator-5554
+        with:
+          api-level: 36
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          emulator-boot-timeout: 600
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: python3 scripts/platform-lab-ci.py --timeout 240 -- python3 examples/cross-platform-delivery/verify_emulator.py
+      - name: Upload finite lab evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-delivery-artifacts-${{ github.sha }}
+          path: ${{ runner.temp }}/atlas-delivery-artifacts
+          if-no-files-found: ignore
+          retention-days: 3

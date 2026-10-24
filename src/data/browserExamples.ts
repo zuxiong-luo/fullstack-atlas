@@ -1,3 +1,6 @@
+import webglPerformance from '../../examples/webgl-performance-lifecycle/App.tsx?raw';
+import framebufferPost from '../../examples/webgl-framebuffer-postprocess/App.tsx?raw';
+import shaderLighting from '../../examples/webgl-shader-lighting/App.tsx?raw';
 import crossPerformance from '../../examples/cross-platform-performance/App.tsx?raw';
 import greedyIntervals from '../../examples/greedy-intervals/App.tsx?raw';
 import searchDp from '../../examples/search-dynamic-programming/App.tsx?raw';
@@ -93,3 +96,9 @@ browserExamples['search-dynamic-programming']={mode:'react',articleId:'search-dy
 browserExamples['greedy-intervals']={mode:'react',articleId:'greedy-intervals',title:'贪心与区间',description:'比较区间数量、权重、覆盖和房间分配。',task:'比较区间数量、权重、覆盖和房间分配。',code:greedyIntervals};
 
 browserExamples['cross-platform-performance']={mode:'react',articleId:'cross-platform-performance',title:'跨平台性能的测量边界',description:'在Web代表平台观察滚动工作量和真实Worker通信。',task:'固定工作量，对照全量与窗口化；记录测量条件，不推断原生手机性能。',code:crossPerformance};
+
+browserExamples['webgl-shader-lighting']={mode:'react',articleId:'webgl-shader-lighting',title:'法线与逐像素光照',description:'对照逆转置与错误法线，读取像素并验证恢复。',task:'对照逆转置与错误法线，读取像素并验证恢复。',code:shaderLighting};
+
+browserExamples['webgl-framebuffer-postprocess']={mode:'react',articleId:'webgl-framebuffer-postprocess',title:'离屏与后处理',description:'比较原色、灰度和边缘，触发无附件失败再恢复。',task:'比较原色、灰度和边缘，触发无附件失败再恢复。',code:framebufferPost};
+
+browserExamples['webgl-performance-lifecycle']={mode:'react',articleId:'webgl-performance-lifecycle',title:'提交批次与异步计时',description:'区分CPU提交、GPU查询和像素探针，观察上下文代际。',task:'区分CPU提交、GPU查询和像素探针，观察上下文代际。',code:webglPerformance};

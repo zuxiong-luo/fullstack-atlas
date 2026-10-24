@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createSession, noteId, observeAppState} from './lib/session.mjs';
+import {createSession, noteId, observeAppState, createCapabilitySession, ownedDirectoryName, withOwnedDirectory} from './lib/session.mjs';
 const deferred = () => {let resolve, reject;const promise = new Promise((a,b) => {resolve=a;reject=b;});return {promise,resolve,reject};};
 test('teaching IDs are business values, never filesystem paths', () => {
   for (const id of ['n1','n2']) assert.equal(noteId(id),id);
@@ -48,4 +48,43 @@ test('AppState subscription rereads an initial snapshot that changed before the 
   const values=[];const close=observeAppState(source,value=>values.push(value));
   assert.deepEqual(values,['active']);source.listener('background');assert.deepEqual(values,['active','background']);
   close();assert.equal(source.removed,true);
+});
+
+test('pending native result retires on pause and restored screen can invoke again',async()=>{
+ const first=deferred(),seen=[],observed=[];const session=createCapabilitySession(x=>seen.push(x),(event,fields)=>observed.push({event,...fields}));
+ session.setEligible(true);const old=session.run('files',()=>first.promise);await Promise.resolve();
+ session.setEligible(false);assert.equal(seen.at(-1).status,'idle');first.resolve({status:'ok',old:true});
+ assert.equal(await old,'discarded');assert.equal(seen.at(-1).status,'idle');
+ session.setEligible(true);assert.equal(await session.run('files',async()=>({status:'ok',fresh:true})),'published');
+ assert.equal(seen.at(-1).fresh,true);assert.equal(observed.find(x=>x.old)?.accepted,false);session.dispose();
+});
+test('current native capability rejects overlapping button work and recovers from errors',async()=>{
+ const work=deferred(),seen=[];const session=createCapabilitySession(x=>seen.push(x));session.setEligible(true);
+ const pending=session.run('files',()=>work.promise);assert.equal(await session.run('files',async()=>({status:'ok'})),'busy');
+ work.reject(new Error('controlled native error'));assert.equal(await pending,'published');assert.equal(seen.at(-1).status,'error');
+ assert.equal(await session.run('files',async()=>({status:'ok'})),'published');session.dispose();
+});
+test('two non-cancellable invocations own different directories and retire only their resource',async()=>{
+ const first=deferred(),second=deferred(),directories=[];
+ const create=()=>{const directory={name:ownedDirectoryName(()=>100),exists:true,delete(){this.exists=false;}};directories.push(directory);return directory;};
+ const a=withOwnedDirectory(create,()=>first.promise),b=withOwnedDirectory(create,()=>second.promise);
+ assert.notEqual(directories[0].name,directories[1].name);first.resolve();await a;
+ assert.equal(directories[0].exists,false);assert.equal(directories[1].exists,true);second.resolve();await b;
+ assert.equal(directories[1].exists,false);
+});
+
+test('dispose then direct resume resets the visible capability state before retry', async () => {
+  const seen = [];let finish;
+  const session = createCapabilitySession(value => seen.push(value));
+  session.setEligible(true);
+  const old = session.run('files', () => new Promise(resolve => {finish = resolve;}));
+  await Promise.resolve();
+  session.dispose();
+  assert.equal(seen.at(-1).status, 'running'); // Disposing an unmounted view is silent.
+  session.setEligible(true);
+  assert.equal(seen.at(-1).status, 'idle');
+  assert.equal(await session.run('files', async () => ({status:'ok',newCall:true})), 'published');
+  finish({status:'ok',oldCall:true});
+  assert.equal(await old, 'discarded');
+  assert.equal(seen.at(-1).newCall, true);
 });
