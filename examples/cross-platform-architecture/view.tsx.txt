@@ -1,0 +1,21 @@
+export default function App(){
+  const [state,setState]=useState(initialState);
+  const [respect,setRespect]=useState(true);
+  const controller=useRef<DeviceController|null>(null),adapter=useRef<TimerDeviceAdapter|null>(null);
+  useEffect(()=>{
+    const source=new TimerDeviceAdapter(),owner=new DeviceController(source,setState);
+    adapter.current=source;controller.current=owner;void owner.connect('A');
+    return()=>{controller.current=null;adapter.current=null;owner.dispose();};
+  },[]);
+  return <main style={{fontFamily:'system-ui',padding:20,lineHeight:1.6,maxWidth:720}}>
+    <h1>设备任务 · 架构实验</h1><p>全部数据来自本地计时器，不是蓝牙、RN 或 Flutter 真机。</p>
+    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>{['A','B','readonly','denied'].map(id=><button key={id} onClick={()=>void controller.current?.connect(id)}>选择 {id}</button>)}</div>
+    <label><input type="checkbox" checked={respect} onChange={event=>{const value=event.target.checked;setRespect(value);if(adapter.current)adapter.current.respectCancellation=value;}}/>新操作遵守取消（取消勾选可观察晚到结果）</label>
+    <p>选中：{state.deviceId??'无'} · 连接：{state.connection} · 命令：{state.command}</p>
+    <p>{state.label??'尚未取得当前设备数据'}</p>
+    <button disabled={state.connection!=='ready'||!state.canInspect||state.command==='running'} onClick={()=>void controller.current?.inspect()}>模拟只读巡检</button>{' '}
+    <button onClick={()=>controller.current?.cancel()}>取消当前操作</button>
+    <p role="status">{state.connectionError?.message??state.commandError?.message??state.result??'等待操作'}</p>
+    <p>实验：先取消勾选，选择 A 后迅速选择 B。B 先完成，A 晚到也不得覆盖 B。</p>
+  </main>;
+}

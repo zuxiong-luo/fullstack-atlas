@@ -24,14 +24,16 @@ def run(arguments, check=True):
     return result
 
 
-def request(port, path="/", post=False):
+def request(port, path="/", post=False, with_worker=False):
     target = Request(f"http://127.0.0.1:{port}{path}", data=b"" if post else None)
     try:
         with HTTP.open(target, timeout=8) as response:
-            return response.status, json.load(response)
+            result = response.status, json.load(response)
+            return (*result, int(response.headers["X-Atlas-Worker"])) if with_worker else result
     except HTTPError as error:
         with error:
-            return error.code, json.load(error)
+            result = error.code, json.load(error)
+            return (*result, int(error.headers["X-Atlas-Worker"])) if with_worker else result
 
 
 def eventually(predicate, label, seconds=10):
@@ -54,6 +56,14 @@ def event(process, expected):
         result = json.loads(process.stdout.readline())
         assert result["event"] == expected, result
         return result
+
+
+def process_identity(pid):
+    try:
+        stat = (Path("/proc") / str(pid) / "stat").read_text()
+    except FileNotFoundError:
+        return None
+    return int(stat[stat.rfind(")") + 2:].split()[19])
 
 
 def main():
@@ -96,6 +106,9 @@ def main():
                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             eventually(lambda: request(front)[1]["version"] == "v1", "initial proxy v1")
             assert int((work / "nginx.pid").read_text()) == proxy.pid
+            old_worker = request(front, with_worker=True)[2]
+            old_identity = process_identity(old_worker)
+            assert old_identity is not None
             backend("startup-failure", "v2", fail=True)
             bad, _ = backend("not-ready", "v2", mode="error")
             assert request(bad, "/health")[0] == 200 and request(bad, "/ready")[0] == 503
@@ -125,10 +138,19 @@ def main():
                 eventually(lambda: request(front)[1]["version"] == "v2", "new requests use v2")
                 assert request(first, "/release", post=True)[0] == 200
                 assert held.result(timeout=5)[1]["version"] == "v1"
+            eventually(lambda: process_identity(old_worker) != old_identity,
+                       "old nginx worker exited after drain")
+            new_worker = request(front, with_worker=True)[2]
+            assert new_worker != old_worker
             print(json.dumps({"case": "reload_drain", "held_request": "v1", "new_request": "v2",
-                              "invalid_config_left_active_unchanged": True}), flush=True)
+                              "invalid_config_left_active_unchanged": True, "old_worker": old_worker,
+                              "new_worker": new_worker, "old_worker_exited": True}), flush=True)
             (state / "mode.txt").write_text("error")
-            assert request(front)[0] == 500 and request(second, "/health")[0] == 200
+            failed = request(front, with_worker=True)
+            print(json.dumps({"case": "postcutover_observation", "response": failed,
+                              "candidate_health": request(second, "/health")}), flush=True)
+            assert failed == (500, {"version": "v2", "ok": False}, new_worker)
+            assert request(second, "/health")[0] == 200
             switch(previous)
             eventually(lambda: request(front) == (200, {"version": "v1", "ok": True}), "rollback v1")
             print(json.dumps({"case": "postcutover_rollback", "failed_business": 500, "recovered": "v1"}), flush=True)

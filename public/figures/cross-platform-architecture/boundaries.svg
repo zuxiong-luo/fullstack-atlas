@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="610" viewBox="0 0 1000 610" role="img">
+<title>平台差异在适配器，发布资格在控制器</title><desc>依赖结构示意；本项目只实现 TypeScript 与计时器模拟，未接入原生设备。</desc>
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#285443"/></marker></defs>
+<rect width="1000" height="610" rx="24" fill="#f3f7f4"/>
+<text x="32" y="45" font-family="system-ui,sans-serif" font-size="26" font-weight="700" fill="#173c2e">平台差异在适配器，发布资格在控制器</text>
+<text x="32" y="80" font-family="system-ui,sans-serif" font-size="16" fill="#496256">依赖结构示意；本项目只实现 TypeScript 与计时器模拟，未接入原生设备。</text>
+<rect x="35" y="135" width="250" height="145" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="50" y="164" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">视图 / 平台界面</text>
+<text x="50" y="190" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">显示 ViewState</text>
+<text x="50" y="216" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">提交选择、巡检、取消</text>
+<text x="50" y="242" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">拥有控制器生命周期</text>
+<rect x="370" y="135" width="260" height="145" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="385" y="164" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">DeviceController</text>
+<text x="385" y="190" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">领域规则和状态迁移</text>
+<text x="385" y="216" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">device + epoch + signal</text>
+<text x="385" y="242" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">判断结果能否发布</text>
+<rect x="715" y="135" width="250" height="145" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="730" y="164" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">DevicePort 接口</text>
+<text x="730" y="190" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">load / inspect</text>
+<text x="730" y="216" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">收发领域值</text>
+<text x="730" y="242" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">定义错误和取消契约</text>
+<rect x="365" y="390" width="270" height="130" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="380" y="419" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">模拟适配器（已实现）</text>
+<text x="380" y="445" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">定时器、DTO校验</text>
+<text x="380" y="471" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">可故意不遵守取消</text>
+<rect x="715" y="390" width="250" height="130" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="730" y="419" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">原生适配器（未实现）</text>
+<text x="730" y="445" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">RN / Flutter / Electron</text>
+<text x="730" y="471" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">权限、协议和真实释放</text>
+<path d="M285 180H367" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#a)"/>
+<path d="M370 240H288" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#a)"/>
+<path d="M630 180H712" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#a)"/>
+<path d="M715 240H633" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#a)"/>
+<path d="M500 390V325H825V283" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#a)"/>
+<path d="M840 390V283" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#a)"/>
+<text x="300" y="165" font-family="system-ui,sans-serif" font-size="15" fill="#285443">意图</text>
+<text x="300" y="231" font-family="system-ui,sans-serif" font-size="15" fill="#285443">快照</text>
+<text x="645" y="165" font-family="system-ui,sans-serif" font-size="15" fill="#285443">调用</text>
+<text x="645" y="231" font-family="system-ui,sans-serif" font-size="15" fill="#285443">结果</text>
+<text x="505" y="319" font-family="system-ui,sans-serif" font-size="15" fill="#285443">实现接口</text>
+<text x="850" y="335" font-family="system-ui,sans-serif" font-size="15" fill="#285443">待接入</text>
+</svg>

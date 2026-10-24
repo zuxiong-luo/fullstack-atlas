@@ -1,0 +1,30 @@
+const panel:React.CSSProperties={border:'1px solid #86a995',padding:16,borderRadius:12,margin:'12px 0',background:'#fff',color:'#173c2e'};
+export default function App(){
+  const [mode,setMode]=useState('vector'),[vector,setVector]=useState(()=>new Vector<number>()),[list,setList]=useState(()=>new SinglyList<number>()),[queue,setQueue]=useState(()=>new RingQueue<number>()),[stack,setStack]=useState(()=>new Stack<number>());
+  const [value,setValue]=useState('10'),[index,setIndex]=useState('0'),[message,setMessage]=useState('从空结构开始；每个按钮是一步。'),[revision,refresh]=useState(0),[step,setStep]=useState(0);
+  function reset(next=mode){setMode(next);setVector(new Vector());setList(new SinglyList());setQueue(new RingQueue());setStack(new Stack());setStep(0);setMessage('已重置为空结构');refresh(x=>x+1);}
+  function perform(op:string,v=Number(value),i=Number(index)){
+    try{
+      if(!Number.isFinite(v)||!value.trim())throw new Error('请输入有限数值');
+      let result:unknown='完成';
+      const size=mode==='vector'?vector.size:mode==='list'?list.size:mode==='queue'?queue.size:stack.size;
+      if(size>=256&&op==='add')throw new Error('教学视图最多256项，请先移除或重置');
+      if(mode==='vector'||mode==='list'){const model=mode==='vector'?vector:list;if(op==='add')model.insert(i,v);else if(op==='remove')result=model.remove(i);else result=model.get(i);model.assertInvariant();}
+      else if(mode==='queue'){if(op==='add')queue.enqueue(v);else result=queue.dequeue();queue.assertInvariant();}
+      else{if(op==='add')stack.push(v);else result=stack.pop();}
+      setMessage(`${op}(${mode==='vector'||mode==='list'?i+', ':''}${op==='add'?v:''}) → ${String(result)}`);refresh(x=>x+1);
+    }catch(e){setMessage((e as Error).message);}
+  }
+  const script=[['add',10],['add',20],['add',30],['add',40],['remove',0],['remove',0],['add',50],['add',60],['add',70]] as const;
+  const values=mode==='vector'?vector.values():mode==='list'?list.values():mode==='queue'?queue.values():stack.values();
+  const snapshot=mode==='vector'?{size:vector.size,capacity:vector.capacity,cost:vector.cost,slots:vector.slots()}:mode==='list'?{size:list.size,cost:list.cost,head:values[0]??null,tail:values.at(-1)??null}:mode==='queue'?{size:queue.size,capacity:queue.capacity,head:queue.head,copies:queue.copies,slots:queue.slots()}:{size:stack.size,top:values.at(-1)??null};
+  return <main style={{padding:16,maxWidth:1000,margin:'auto',fontFamily:'system-ui'}} data-revision={revision}>
+    <h1>线性结构：一步一步看操作代价</h1><p>拷贝、搬移和 next 跳转计数只描述本教学实现，不是 JS 引擎性能。栈/队列为空时返回 undefined。</p>
+    <label>结构 <select value={mode} onChange={e=>reset(e.target.value)}><option value="vector">动态数组</option><option value="list">单链表</option><option value="stack">栈（后进先出）</option><option value="queue">循环队列（先进先出）</option></select></label>
+    <section style={panel}><label>数值 <input value={value} onChange={e=>setValue(e.target.value)} style={{width:100}}/></label>{(mode==='vector'||mode==='list')&&<label> 下标 <input value={index} onChange={e=>setIndex(e.target.value)} style={{width:80}}/></label>}
+      <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}><button onClick={()=>perform('add')}>{mode==='queue'?'入队':mode==='stack'?'压栈':'按下标插入'}</button><button onClick={()=>perform('remove')}>{mode==='queue'?'出队':mode==='stack'?'出栈':'按下标删除'}</button>{(mode==='vector'||mode==='list')&&<button onClick={()=>perform('get')}>按下标读取</button>}<button onClick={()=>reset()}>重置</button></div>
+    </section>
+    {mode==='queue'&&<section style={panel}><p>队列预设：入10/20/30/40，出两项，再入50/60/70。请先重置，再按下一步；第9步触发扩容。</p><button disabled={step>=script.length} onClick={()=>{const [op,n]=script[step];perform(op,n);setStep(step+1);}}>队列脚本下一步（{step}/{script.length}）</button></section>}
+    <p role="status" aria-live="polite">{message}</p><section style={panel}><h2>逻辑顺序</h2><div style={{display:'flex',flexWrap:'wrap',gap:8}}>{values.map((v,i)=><span key={i} style={{padding:8,border:'1px solid #285443'}}>{i}: {v}{mode==='list'?' →':''}</span>)}{!values.length&&'空'}</div><p>{mode==='queue'?'左侧为下一项出队':mode==='stack'?'右侧为栈顶':'下标从0开始'}</p><h2>当前参数与累计代价</h2><pre style={{overflowX:'auto'}}>{JSON.stringify(snapshot,null,2)}</pre></section>
+  </main>;
+}

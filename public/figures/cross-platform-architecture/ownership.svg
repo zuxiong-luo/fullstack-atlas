@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="610" viewBox="0 0 1000 610" role="img">
+<title>取消请求和忽略晚到结果，各管一件事</title><desc>受控实验顺序，不按图中距离测量耗时；端口可以故意忽略取消。</desc>
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#285443"/></marker></defs>
+<rect width="1000" height="610" rx="24" fill="#f3f7f4"/>
+<text x="32" y="45" font-family="system-ui,sans-serif" font-size="26" font-weight="700" fill="#173c2e">取消请求和忽略晚到结果，各管一件事</text>
+<text x="32" y="80" font-family="system-ui,sans-serif" font-size="16" fill="#496256">受控实验顺序，不按图中距离测量耗时；端口可以故意忽略取消。</text>
+<rect x="35" y="140" width="290" height="120" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="50" y="169" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">① 选择 A，epoch=1</text>
+<text x="50" y="195" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">A load 尚未完成</text>
+<text x="50" y="221" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">状态 A / loading</text>
+<rect x="355" y="140" width="290" height="120" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="370" y="169" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">② 选择 B，epoch=2</text>
+<text x="370" y="195" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">先使 epoch1 失效</text>
+<text x="370" y="221" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">再 abort A、启动 B</text>
+<rect x="675" y="140" width="290" height="120" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="690" y="169" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">③ B 先完成</text>
+<text x="690" y="195" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">owns(2, B) = true</text>
+<text x="690" y="221" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">发布 B / ready</text>
+<rect x="355" y="385" width="290" height="120" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="370" y="414" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">④ A 晚到</text>
+<text x="370" y="440" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">owns(1, A) = false</text>
+<text x="370" y="466" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">丢弃，不覆盖 B</text>
+<path d="M325 200H352" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#a)"/>
+<path d="M645 200H672" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#a)"/>
+<path d="M820 260V330H500V382" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#a)"/>
+<text x="65" y="550" font-family="system-ui,sans-serif" font-size="15" fill="#285443">abort 请求适配器停止资源；epoch / deviceId / closed 检查阻止失效结果发布。</text>
+</svg>

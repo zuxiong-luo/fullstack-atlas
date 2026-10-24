@@ -10,6 +10,7 @@ http {
   upstream notes { server 127.0.0.1:@BACKEND@; }
   server {
     listen 127.0.0.1:@FRONT@;
+    add_header X-Atlas-Worker $pid always;
     location / {
       proxy_pass http://notes;
       proxy_http_version 1.1;

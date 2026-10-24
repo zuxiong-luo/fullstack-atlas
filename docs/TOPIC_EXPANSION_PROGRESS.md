@@ -26,8 +26,8 @@
 
 |顺序 / 阶段|文章 / 稳定ID|读完能做什么|示例目录|状态|
 |---|---|---|---|---|
-|1 / 1|HTTPS 与 TLS：从证书信任到加密通信<br>`https-tls`|验证证书、主机名与握手边界，定位信任失败。|`examples/https-tls/`|待审校|
-|2 / 1|登录态与会话：Cookie、Session、JWT，以及续期和退出<br>`sessions-lifecycle`|实现会话建立、轮换、到期与撤销，解释令牌取舍。|`examples/sessions-lifecycle/`|待审校|
+|1 / 1|HTTPS 与 TLS：从证书信任到加密通信<br>`https-tls`|验证证书、主机名与握手边界，定位信任失败。|`examples/https-tls/`|已完成|
+|2 / 1|登录态与会话：Cookie、Session、JWT，以及续期和退出<br>`sessions-lifecycle`|实现会话建立、轮换、到期与撤销，解释令牌取舍。|`examples/sessions-lifecycle/`|已完成|
 |3 / 既有|OAuth 授权码与 PKCE：从浏览器事务到本站会话<br>`oauth-login`|验证授权事务与本站会话之间的边界。|`examples/oauth-login/`|已有|
 |4 / 2|浏览器安全策略：同源、CORS、CSP 与 Cookie 属性<br>`browser-security-policies`|受控复现跨域与脚本限制，区分读取许可和服务端授权。|`examples/browser-security-policies/`|待编写|
 |5 / 既有|Web 安全的四条边界：XSS、CSRF、对象授权与受控出站<br>`web-security-boundaries`|沿信任边界复现并修复攻击路径。|`examples/web-security-boundaries/`|已有|
@@ -97,10 +97,10 @@
 
 |顺序 / 阶段|文章 / 稳定ID|读完能做什么|示例目录|状态|
 |---|---|---|---|---|
-|1 / 1|Next.js 请求与路由：App Router、布局和客户端导航<br>`next-routing`|对照首次请求和客户端导航跟踪路由树。|`examples/next-routing/`|待审校|
+|1 / 1|Next.js 请求与路由：App Router、布局和客户端导航<br>`next-routing`|对照首次请求和客户端导航跟踪路由树。|`examples/next-routing/`|已完成|
 |2 / 既有|Next.js 服务端与客户端边界：用账户页走通渲染、写入与缓存<br>`next-server-boundaries`|解释组件运行位置与服务端数据边界。|`examples/next-server-boundaries/`|已有|
-|3 / 1|Next.js 数据与缓存：缓存对象、作用域和失效<br>`next-data-cache`|在锁定版本下验证缓存命中和失效。|`examples/next-data-cache/`|待审校|
-|4 / 1|Server Actions 与 Route Handlers：表单、验证、鉴权和幂等<br>`next-server-writes`|验证服务端写入的身份、输入和重复提交。|`examples/next-server-writes/`|待审校|
+|3 / 1|Next.js 数据与缓存：缓存对象、作用域和失效<br>`next-data-cache`|在锁定版本下验证缓存命中和失效。|`examples/next-data-cache/`|已完成|
+|4 / 1|Server Actions 与 Route Handlers：表单、验证、鉴权和幂等<br>`next-server-writes`|验证服务端写入的身份、输入和重复提交。|`examples/next-server-writes/`|已完成|
 |5 / 2|流式渲染与错误恢复：Suspense、loading 与 error<br>`next-streaming-errors`|观察流式输出，验证异常边界和重试。|`examples/next-streaming-errors/`|待编写|
 |6 / 2|Next.js 生产工程：构建产物、环境配置、部署与请求追踪<br>`next-production`|以生产构建验证配置、启动和请求日志。|`examples/next-production/`|待编写|
 
@@ -126,8 +126,8 @@
 |1 / 1|Python 入门：语法、对象、容器、控制流与函数<br>`python-language-foundations`|从输入文本生成可验证的笔记导入结果。|`examples/python-course/`|已完成|
 |2 / 1|Python 函数与迭代：参数、作用域、闭包和生成器<br>`python-functions-iteration`|把导入流程拆成可组合、按需消费的处理步骤。|`examples/python-course/`|已完成|
 |3 / 1|Python 对象模型：类、dataclass、特殊方法与组合<br>`python-object-model`|建立领域对象并明确可变性、相等性和组合关系。|`examples/python-course/`|已完成|
-|4 / 1|Python 模块与边界：包、类型、异常和资源管理<br>`python-modules-boundaries`|把导入工具组织成有边界且正确释放资源的包。|`examples/python-course/`|待审校|
-|5 / 1|Python 并发选择：线程、进程、asyncio 与 GIL<br>`python-concurrency-models`|按 I/O、CPU 和隔离需求选择并发方式。|`examples/python-course/`|待审校|
+|4 / 1|Python 模块与边界：包、类型、异常和资源管理<br>`python-modules-boundaries`|把导入工具组织成有边界且正确释放资源的包。|`examples/python-course/`|已完成|
+|5 / 1|Python 并发选择：线程、进程、asyncio 与 GIL<br>`python-concurrency-models`|按 I/O、CPU 和隔离需求选择并发方式。|`examples/python-course/`|已完成|
 |6 / 既有|Python 异步工程：从类型边界到有界并发与取消清理<br>`python-async-services`|限制异步任务和队列，并验证取消清理。|`examples/python-async-services/`|已有|
 |7 / 2|FastAPI 服务：请求校验、依赖注入、鉴权与生命周期<br>`python-fastapi`|为笔记和导入任务提供可测试的 HTTP 接口。|`examples/python-course/`|待编写|
 |8 / 2|Python 数据访问：事务、连接池、迁移与集成测试<br>`python-data-access`|验证数据持久化、事务失败和连接生命周期。|`examples/python-course/`|待编写|
@@ -175,3 +175,4 @@
 ## 已发布批次
 
 2026-10-24：第一批9篇已完成，站点49篇。提交 `43b0e7a029709dd343a0b0a0ebf5f62e15751d04`，线上、ZIP、离线与CI证据见 `docs/validation/expansion-batch-01-release.md`。后续草稿不计入已发布数量。
+2026-10-24：第二批7篇已完成，站点56篇。实现提交 `4e663f7`，依赖软链接清理提交 `ea021a67e36c07c4df6860cf1c112d5c5c88cbc1`；证据见 `docs/validation/expansion-batch-02-release.md`。

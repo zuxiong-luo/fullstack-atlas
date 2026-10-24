@@ -1,3 +1,10 @@
+import crossArchitecture from '../../examples/cross-platform-architecture/App.tsx?raw';
+import linearStructures from '../../examples/linear-data-structures/App.tsx?raw';
+import hashLru from '../../examples/hash-lru/App.tsx?raw';
+import sortingSearch from '../../examples/sorting-binary-search/App.tsx?raw';
+import transforms3d from '../../examples/webgl-3d-transforms/App.tsx?raw';
+import geometryBuffers from '../../examples/webgl-geometry-buffers/App.tsx?raw';
+import textureSampling from '../../examples/webgl-texture-sampling/App.tsx?raw';
 import algorithmLab from '../../examples/algorithms-invariants/App.tsx?raw';
 import webglLab from '../../examples/webgl-pipeline/App.tsx?raw';
 import stateEffects from '../../examples/react-state-effects/App.tsx?raw';
@@ -51,3 +58,17 @@ browserExamples['react-identity-events']={mode:'react',articleId:'react-identity
 
 browserExamples['algorithms-invariants']={mode:'react',articleId:'algorithms-invariants',title:'算法区间与不变量',description:'逐步观察lower_bound候选区间',task:'改变排序数组与目标，先预测边界，再逐步观察lo/hi/mid。',code:algorithmLab};
 browserExamples['webgl-pipeline']={mode:'react',articleId:'webgl-pipeline',title:'WebGL三角形与坐标变换',description:'真实着色器、缓冲、矩阵与绘制',task:'调整角度/缩放，再切换编译错误、链接错误和正常恢复。',code:webglLab};
+
+browserExamples['cross-platform-architecture']={mode:'react',articleId:'cross-platform-architecture',title:'平台适配与生命周期',description:'比较成功、能力缺失、迟到回调和卸载。',task:'比较成功、能力缺失、迟到回调和卸载。',code:crossArchitecture};
+
+browserExamples['linear-data-structures']={mode:'react',articleId:'linear-data-structures',title:'线性结构逐步操作',description:'对照数组、链表、栈和环形队列的状态变化。',task:'对照数组、链表、栈和环形队列的状态变化。',code:linearStructures};
+
+browserExamples['hash-lru']={mode:'react',articleId:'hash-lru',title:'哈希碰撞与LRU',description:'切换碰撞函数，逐次访问并检查淘汰顺序。',task:'切换碰撞函数，逐次访问并检查淘汰顺序。',code:hashLru};
+
+browserExamples['sorting-binary-search']={mode:'react',articleId:'sorting-binary-search',title:'归并排序与二分',description:'逐步合并带身份的值，观察候选区间收缩。',task:'逐步合并带身份的值，观察候选区间收缩。',code:sortingSearch};
+
+browserExamples['webgl-3d-transforms']={mode:'react',articleId:'webgl-3d-transforms',title:'三维变换与深度',description:'对照透视、正交和深度开关，读取中心像素。',task:'对照透视、正交和深度开关，读取中心像素。',code:transforms3d};
+
+browserExamples['webgl-geometry-buffers']={mode:'react',articleId:'webgl-geometry-buffers',title:'GPU缓冲与布局',description:'调整实例数，观察交错顶点与索引；构造越界索引并恢复。',task:'调整实例数，观察交错顶点与索引；构造越界索引并恢复。',code:geometryBuffers};
+
+browserExamples['webgl-texture-sampling']={mode:'react',articleId:'webgl-texture-sampling',title:'纹理与采样',description:'比较过滤、寻址和mipmap，再交换透明混合的绘制顺序。',task:'比较过滤、寻址和mipmap，再交换透明混合的绘制顺序。',code:textureSampling};

@@ -105,12 +105,23 @@ def main():
         docker("run", "--detach", "--name", names[2], "--env", "APP_START_FAIL=1", image)
         assert docker("wait", names[2]).stdout.strip() == "42"
         docker("run", "--detach", "--name", names[3], "--memory", "64m", "--memory-swap", "64m",
-               "--pids-limit", "16", "--cpus", "0.5", image, "python", "-c",
-               "payload=bytearray(256*1024*1024);print(len(payload))")
-        docker("wait", names[3], timeout=30)
-        assert inspect(names[3])["State"]["OOMKilled"] is True
-        assert inspect(names[3])["State"]["ExitCode"] == 137
-        print(json.dumps({"case": "bounded_failures", "startup_exit": 42, "oom_killed": True, "oom_exit": 137}), flush=True)
+               "--pids-limit", "16", "--cpus", "0.5", image, "python", "-u", "/app/oom_fixture.py")
+        waited = docker("wait", names[3], timeout=30).stdout.strip()
+        logs = docker("logs", names[3], check=False)
+        state = inspect(names[3])["State"]
+        print(json.dumps({"case": "oom_diagnostic", "wait_exit": waited, "state": state,
+                          "stdout": logs.stdout, "stderr": logs.stderr}), flush=True)
+        events = [json.loads(line) for line in logs.stdout.splitlines() if line.startswith("{")]
+        after = next(event for event in events if event["event"] == "oom_after")
+        assert after["allocator_exit"] == -9 and after["oom_kill_delta"] >= 1
+        assert after["cgroup"]["memory.max"] == str(64 * 1024 * 1024)
+        assert after["cgroup"]["memory.swap.max"] == "0"
+        eventually(lambda: inspect(names[3])["State"]["OOMKilled"] is True,
+                   "Docker cgroup OOM event reflected in state", seconds=5)
+        assert waited == "137" and inspect(names[3])["State"]["ExitCode"] == 137
+        print(json.dumps({"case": "bounded_failures", "startup_exit": 42, "oom_killed": True,
+                          "allocator_sigkill": True, "cgroup_oom_kill_delta": after["oom_kill_delta"],
+                          "fixture_exit": 137}), flush=True)
     finally:
         failures = []
         for name in names:
