@@ -1,0 +1,43 @@
+name: Verify isolated Android article labs
+on:
+  push:
+    branches: [main, 'content-validation/native-labs']
+    paths:
+      - 'examples/react-native-engineering/**'
+      - 'examples/cross-platform-delivery/**'
+      - '.github/workflows/cross-platform-native-labs.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-labs-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  android-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.14.1'
+          package-manager-cache: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Inspect SDK and install fixed native prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v sdkmanager
+          command -v adb
+          java -version
+          node --version
+          sdkmanager --install 'platforms;android-37' 'build-tools;37.0.0' 'ndk;27.1.12297006' 'cmake;3.30.5'
+      - name: Build actual x86_64 Android release and inspect template-only signing
+        env:
+          CI: 'true'
+          ATLAS_LAB_BUILD_ONLY: '1'
+          ATLAS_LAB_ARTIFACT_DIR: ${{ runner.temp }}/atlas-rn-artifacts
+        run: python3 scripts/platform-lab-ci.py --timeout 2400 -- bash examples/react-native-engineering/verify-android.sh
