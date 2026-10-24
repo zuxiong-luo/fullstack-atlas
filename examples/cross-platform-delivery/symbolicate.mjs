@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';import {readFile,writeFile} from 'node:fs/promises';import {join} from 'node:path';import {execFileSync} from 'node:child_process';import {createRequire} from 'node:module';
+import {verifyArtifact} from './verify-artifact.mjs';
+const require=createRequire(import.meta.url),[directory,selectedRelease]=process.argv.slice(2);
+const error=JSON.parse(await readFile(join(directory,'caught-error.json'),'utf8'));
+assert.equal(error.releaseId,selectedRelease,'MAP_RELEASE_MISMATCH');
+await verifyArtifact(directory,selectedRelease);
+const result=execFileSync(process.execPath,[require.resolve('metro-symbolicate'),join(directory,selectedRelease+'.map')],{input:error.stack,encoding:'utf8',timeout:15000});
+assert.ok(result.includes('controlled-error.js')&&result.includes('controlledFailure'),'original controlled function and source required');
+await writeFile(join(directory,'symbolicated.txt'),result);
+console.log(result);

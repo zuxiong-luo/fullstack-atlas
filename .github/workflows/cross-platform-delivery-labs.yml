@@ -1,0 +1,35 @@
+name: Verify isolated Android delivery lab
+on:
+  push:
+    branches: [main, 'content-validation/native-labs']
+    paths:
+      - 'examples/cross-platform-delivery/**'
+      - '.github/workflows/cross-platform-delivery-labs.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: delivery-labs-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  android-delivery-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.14.1'
+          package-manager-cache: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install fixed official Android prerequisites
+        run: python3 scripts/platform-lab-ci.py --timeout 600 -- bash scripts/install-native-tools.sh
+      - name: Build two actual release APKs with source-map and public-certificate evidence
+        env:
+          CI: 'true'
+          ATLAS_LAB_BUILD_ONLY: '1'
+          ATLAS_LAB_ARTIFACT_DIR: ${{ runner.temp }}/atlas-delivery-artifacts
+        run: python3 scripts/platform-lab-ci.py --timeout 4500 -- bash examples/cross-platform-delivery/verify-android.sh

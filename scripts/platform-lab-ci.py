@@ -10,8 +10,8 @@ parser.add_argument('--timeout', type=int, required=True)
 parser.add_argument('command', nargs=argparse.REMAINDER)
 args = parser.parse_args()
 command = args.command[1:] if args.command[:1] == ['--'] else args.command
-if not command or not 1 <= args.timeout <= 2700:
-    parser.error('a command and timeout in 1..2700 seconds are required')
+if not command or not 1 <= args.timeout <= 5400:
+    parser.error('a command and timeout in 1..5400 seconds are required')
 process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                            text=True, errors='replace', start_new_session=True)
 try:
