@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createSession, noteId} from './lib/session.mjs';
+import {createSession, noteId, observeAppState} from './lib/session.mjs';
 const deferred = () => {let resolve, reject;const promise = new Promise((a,b) => {resolve=a;reject=b;});return {promise,resolve,reject};};
 test('teaching IDs are business values, never filesystem paths', () => {
   for (const id of ['n1','n2']) assert.equal(noteId(id),id);
@@ -41,4 +41,11 @@ test('a later eligible generation can recover after an error', async () => {
   const seen=[];let calls=0;const session=createSession(async id=>{if(calls++===0)throw new Error('first');return {id};},s=>seen.push(s));
   assert.equal(await session.start('n1'),'failed');assert.equal(await session.start('n1'),'published');
   assert.equal(seen.at(-1).status,'ready');session.dispose();
+});
+
+test('AppState subscription rereads an initial snapshot that changed before the effect', () => {
+  const source={currentState:null,addEventListener(type,listener){assert.equal(type,'change');this.listener=listener;this.currentState='active';return {remove:()=>{this.removed=true;}};}};
+  const values=[];const close=observeAppState(source,value=>values.push(value));
+  assert.deepEqual(values,['active']);source.listener('background');assert.deepEqual(values,['active','background']);
+  close();assert.equal(source.removed,true);
 });

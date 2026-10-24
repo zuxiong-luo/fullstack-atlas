@@ -36,3 +36,10 @@ export function createSession(load, publish) {
   }
   return {start, pause, dispose: () => pause(false)};
 }
+
+export function observeAppState(source, publish) {
+  const subscription = source.addEventListener('change', publish);
+  // Subscribe before rereading: a render-time null snapshot may already be active.
+  publish(source.currentState);
+  return () => subscription.remove();
+}
