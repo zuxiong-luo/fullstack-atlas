@@ -35,10 +35,7 @@ jobs:
           result=$?
           cat "$RUNNER_TEMP/atlas-linux.log"
           if [ "$result" -ne 0 ]; then
-            while IFS= read -r line; do
-              line="${line//'%'/'%25'}"
-              printf '::error::%s\n' "$line"
-            done < <(tail -50 "$RUNNER_TEMP/atlas-linux.log")
+            python -c 'import os,pathlib; s=pathlib.Path(os.environ["RUNNER_TEMP"],"atlas-linux.log").read_text(); print("::error::"+s[-16000:].replace("%","%25").replace("\r","%0D").replace("\n","%0A"))'
           fi
           exit "$result"
       - name: DNS, TCP, TLS and HTTP failure recovery

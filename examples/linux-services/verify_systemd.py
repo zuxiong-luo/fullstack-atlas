@@ -36,6 +36,8 @@ def eventually(predicate, label, seconds=12):
 def main():
     if sys.platform != "linux" or not Path("/run/systemd/system").is_dir():
         raise SystemExit("Linux booted with systemd is required")
+    if Path("/proc/1/comm").read_text().strip() != "systemd":
+        raise SystemExit("PID 1 must be systemd in the disposable VM")
     if os.geteuid() == 0:
         raise SystemExit("Run as the CI user with passwordless sudo, not as root")
     run(SUDO + ["true"])

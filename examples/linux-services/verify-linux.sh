@@ -11,6 +11,7 @@ python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), sys.version'
 sudo -n true
 root_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 python3 --version
+cat /etc/os-release
 systemctl --version
 uname -r
 timeout 45s python3 "$root_dir/test_process.py"
