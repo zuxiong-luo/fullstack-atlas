@@ -6,6 +6,7 @@ on:
       - 'examples/linux-services/**'
       - 'examples/network-troubleshooting/**'
       - 'examples/linux-performance/**'
+      - 'examples/docker-engineering/**'
       - '.github/workflows/article-platform-labs.yml'
   workflow_dispatch:
 permissions:
@@ -35,3 +36,14 @@ jobs:
         run: python scripts/platform-lab-ci.py --timeout 90 -- bash examples/network-troubleshooting/verify-linux.sh
       - name: Controlled Linux CPU, RSS and logical I/O observations
         run: python scripts/platform-lab-ci.py --timeout 60 -- bash examples/linux-performance/verify-linux.sh
+  docker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12.14'
+      - run: docker version
+      - name: Image, namespace, volume, shutdown and cgroup boundaries
+        run: python scripts/platform-lab-ci.py --timeout 360 -- bash examples/docker-engineering/verify-linux.sh

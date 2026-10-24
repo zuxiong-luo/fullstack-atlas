@@ -19,7 +19,7 @@ try:
 except subprocess.TimeoutExpired:
     os.killpg(process.pid, signal.SIGTERM)
     try:
-        output, _ = process.communicate(timeout=10)
+        output, _ = process.communicate(timeout=45)
     except subprocess.TimeoutExpired:
         os.killpg(process.pid, signal.SIGKILL)
         output, _ = process.communicate()
