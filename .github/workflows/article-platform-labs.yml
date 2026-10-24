@@ -1,0 +1,34 @@
+name: Verify isolated platform labs
+on:
+  push:
+    branches: [main, 'content-validation/**']
+    paths:
+      - 'examples/linux-services/**'
+      - 'examples/network-troubleshooting/**'
+      - '.github/workflows/article-platform-labs.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: platform-labs-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12.14'
+      - name: Install isolated lab prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dbus-user-session util-linux passwd openssl
+          python --version
+          systemctl --version
+          uname -a
+      - name: Process, signals and systemd lifecycle
+        run: timeout --signal=TERM --kill-after=30s 240s bash examples/linux-services/verify-linux.sh
+      - name: DNS, TCP, TLS and HTTP failure recovery
+        run: timeout 90s bash examples/network-troubleshooting/verify-linux.sh

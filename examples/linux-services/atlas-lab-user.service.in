@@ -1,0 +1,21 @@
+[Unit]
+Description=Atlas isolated user service lifecycle laboratory
+StartLimitIntervalSec=10s
+StartLimitBurst=3
+
+[Service]
+Type=exec
+WorkingDirectory=@ROOT@
+EnvironmentFile=-@STATE@/service.env
+ExecStart="@PYTHON@" -u "@APP@" --state "@STATE@"
+Restart=on-failure
+RestartSec=200ms
+KillSignal=SIGTERM
+KillMode=control-group
+TimeoutStopSec=4s
+NoNewPrivileges=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
