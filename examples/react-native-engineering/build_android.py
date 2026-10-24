@@ -26,7 +26,7 @@ def main():
         raise SystemExit('disposable Linux CI required; no SDK mutation on this host')
     signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
     sdk = Path(os.environ.get('ANDROID_HOME') or os.environ['ANDROID_SDK_ROOT'])
-    for relative in ['platforms/android-37', 'build-tools/37.0.0', 'ndk/27.1.12297006', 'cmake/3.30.5']:
+    for relative in ['platforms/android-37.0', 'build-tools/37.0.0', 'ndk/27.1.12297006', 'cmake/3.30.5']:
         if not (sdk/relative).is_dir():
             raise RuntimeError('CI must preinstall SDK component: '+relative)
     output = Path(os.environ['ATLAS_LAB_ARTIFACT_DIR']).resolve()
