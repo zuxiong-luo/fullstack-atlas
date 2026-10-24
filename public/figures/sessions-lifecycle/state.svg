@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="690" viewBox="0 0 1120 690" role="img" aria-labelledby="title desc">
+<title id="title">会话凭据在浏览器和服务器之间的生命周期</title><desc id="desc">教学凭据验证后服务端创建随机会话ID，在Cookie返回；每次请求服务端校验会话状态与资源所有权。刷新使旧ID立即失效、保留绝对截止，退出删除服务端记录并清浏览器Cookie。JWT签发后仍需校验签名与声明，立即撤销需要额外状态。</desc>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#355f50"/></marker></defs>
+<rect width="1120" height="690" rx="20" fill="#f3f7f4"/>
+<g font-family="system-ui,sans-serif" fill="#1b332b">
+<text x="34" y="43" font-size="24" font-weight="700">登录是建立状态；每次请求仍要验证，退出必须使凭据失效</text>
+<text x="34" y="75" font-size="17">本例服务端 Map 是单进程教学存储；Cookie 只携带随机 ID，不存账户权限</text>
+<rect x="35" y="120" width="290" height="118" rx="12" fill="white" stroke="#557e66"/><text x="57" y="151" font-size="20">客户端提交教学凭据</text><text x="57" y="182" font-size="17">HTTPS + 正确 Origin</text><text x="57" y="211" font-size="17">JSON 输入校验与口令验证</text>
+<path d="M325 178 H420" stroke="#355f50" stroke-width="2" marker-end="url(#a)"/>
+<rect x="427" y="120" width="291" height="118" rx="12" fill="#dcebdc" stroke="#557e66"/><text x="449" y="151" font-size="20">建立服务端会话</text><text x="449" y="182" font-size="17">随机 ID → 哈希键 → 用户</text><text x="449" y="211" font-size="17">CSRF 值 / 两种期限</text>
+<path d="M718 178 H804" stroke="#355f50" stroke-width="2" marker-end="url(#a)"/>
+<rect x="811" y="120" width="274" height="118" rx="12" fill="white" stroke="#557e66"/><text x="831" y="151" font-size="20">Set-Cookie</text><text x="831" y="182" font-size="16">Secure / HttpOnly / Lax</text><text x="831" y="211" font-size="16">__Host- 前缀，无 Domain</text>
+<path d="M949 238 V291 H571 V320" stroke="#355f50" stroke-width="2" fill="none" marker-end="url(#a)"/><text x="627" y="282" font-size="17">后续请求带 ID；不能只相信前端“已登录”</text>
+<rect x="340" y="328" width="463" height="88" rx="12" fill="#dcebdc" stroke="#557e66"/><text x="363" y="359" font-size="20">服务端查记录、校验到期与所有权</text><text x="363" y="390" font-size="17">写操作再核对 Origin 与 CSRF 值</text>
+<g stroke="#355f50" fill="none" stroke-width="2" marker-end="url(#a)"><path d="M340 372 H175 V461"/><path d="M571 416 V461"/><path d="M803 372 H945 V461"/></g>
+<rect x="35" y="469" width="290" height="99" rx="12" fill="#fff0d8" stroke="#9b763f"/><text x="57" y="499" font-size="20">刷新：新 ID + 新 CSRF</text><text x="57" y="530" font-size="17">旧 ID 立即删除</text><text x="57" y="553" font-size="15">保持原绝对截止，不能无限续期</text>
+<rect x="426" y="469" width="291" height="99" rx="12" fill="white" stroke="#557e66"/><text x="448" y="499" font-size="20">到期：服务器拒绝</text><text x="448" y="530" font-size="17">空闲期限或绝对期限到达</text><text x="448" y="553" font-size="15">客户端改 Cookie 时间不能续命</text>
+<rect x="811" y="469" width="274" height="99" rx="12" fill="white" stroke="#557e66"/><text x="831" y="499" font-size="20">退出：撤销两侧</text><text x="831" y="530" font-size="17">删除记录 + Max-Age=0</text><text x="831" y="553" font-size="15">旧 ID 重放仍须被拒绝</text>
+<text x="34" y="623" font-size="18">JWT 分支：验 MAC / iss / aud / exp 后才信任；即刻退出用 jti 撤销表，重新引入服务端状态。</text>
+<text x="34" y="658" font-size="15">逻辑示意，不表示真实时间比例；Node 客户端测试不等同浏览器 Cookie / SameSite 策略验收。</text>
+</g></svg>

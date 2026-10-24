@@ -1,6 +1,6 @@
-# Python 笔记导入课程：第1～3章
+# Python 笔记导入课程
 
-本目录保留三份可以独立运行的阶段入口。三个阶段处理同样的 `id`、`title`、`tags`，依次学习语言基础、函数与迭代、对象模型。脚本只读取指定本地文件并写到标准输出，没有数据库或网络服务。
+第1～3章保留三份可以独立运行的阶段入口；第4～5章新增内容在页末独立列出。前三个阶段处理同样的 `id`、`title`、`tags`，依次学习语言基础、函数与迭代、对象模型。脚本只读取指定本地文件并写到标准输出，没有数据库或网络服务。
 
 ## 环境与文件
 
@@ -24,7 +24,7 @@ python-course/
   test_course.py
 ```
 
-三份脚本有意独立，避免学习某章还必须先运行前一章；它们重复的业务规则会在后续包与边界章节收拢。当前成果到第3章，后续模块、并发、FastAPI、数据访问和交付不在此包中。
+三份脚本有意独立，避免学习某章还必须先运行前一章；它们重复的业务规则会在后续包与边界章节收拢。下文首先记录前三章。新增阶段入口见页末独立章节说明；FastAPI、数据访问和交付尚未实现。
 
 ## 输入契约
 
@@ -100,3 +100,13 @@ python3 chapter02/import_notes.py fixtures/duplicate.jsonl python
 - [Python3.12对象协议](https://docs.python.org/3.12/reference/datamodel.html)
 
 已验证：CPython3.12.14上的17项标准库测试与真实CLI，包括流式部分输出、实例隔离、值相等/身份、运行时校验。没有性能收益结论。未验证：Windows/Linux与其他补丁版本、浏览器/手机视觉呈现、生产规模内存限制、真实数据库或HTTP服务。
+
+
+## 第4章新增：模块与边界
+
+新增 `chapter04/notes_tool/` 与 `test_chapter04.py`，通过 `python3 -m chapter04.notes_tool fixtures/notes.jsonl` 调用，运行 `python3 -m unittest -v test_course test_chapter04` 共23项通过。详见[第4章说明](chapter04/README.md)。前三章文件保持原样，第四章收拢领域、转换、应用与CLI；完整消费后返回，文件拥有权与异常链均有独立验证。
+
+
+## 第5章新增：并发模型与有界处理
+
+新增 `chapter05/` 与 `test_chapter05.py`，运行 `python3 -m chapter05 threads fixtures/notes.jsonl`、`python3 -m chapter05 asyncio fixtures/notes.jsonl`、`python3 -m chapter05 processes fixtures/notes.jsonl`。I/O模式用本机临时回显服务，进程模式用纯Python计算，均不作性能排名。运行 `python3 -m unittest -v test_course test_chapter04 test_chapter05` 共33项。详见[第5章说明](chapter05/README.md)。未审校新增章节不应混入第一批冻结ZIP，统一打包由发布流程决定。

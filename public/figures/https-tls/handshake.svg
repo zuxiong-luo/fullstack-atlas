@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="770" viewBox="0 0 1120 770" role="img" aria-labelledby="title desc">
+<title id="title">TLS 1.3完整握手中的身份、协商与加密</title><desc id="desc">客户端和服务器交换临时密钥份额，派生握手密钥；服务器发送加密证书、持钥证明和Finished；客户端核对证书链和主机名后完成握手，使用流量密钥保护HTTP。CA签证书、服务端签握手、临时密钥协商是三件事。</desc>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#355f50"/></marker></defs>
+<rect width="1120" height="770" rx="20" fill="#f3f7f4"/>
+<g font-family="system-ui,sans-serif" fill="#1b332b">
+<text x="34" y="43" font-size="24" font-weight="700">TLS 1.3：密钥协商、身份认证、应用加密各有职责</text>
+<text x="34" y="75" font-size="16">普通证书认证完整握手的教学顺序；省略 TCP、可选消息与兼容字段，不画 0-RTT / PSK 恢复</text>
+<rect x="70" y="103" width="270" height="52" rx="10" fill="#dcebdc" stroke="#557e66"/><text x="92" y="136" font-size="20">客户端：目标 localhost</text>
+<rect x="780" y="103" width="270" height="52" rx="10" fill="#dcebdc" stroke="#557e66"/><text x="804" y="136" font-size="21">HTTPS 服务端</text>
+<g stroke="#879d92" stroke-width="2" stroke-dasharray="6 5"><path d="M205 155 V622"/><path d="M915 155 V622"/></g>
+<g fill="none" stroke="#355f50" stroke-width="2.2" marker-end="url(#a)"><path d="M205 195 H915"/><path d="M915 255 H205"/><path d="M915 345 H205"/><path d="M205 500 H915"/><path d="M205 579 H915"/><path d="M915 611 H205"/></g>
+<text x="290" y="182" font-size="18">ClientHello：支持版本 / 临时公钥份额 / 名称等</text>
+<text x="310" y="241" font-size="18">ServerHello：选定参数 / 服务端临时份额</text>
+<rect x="355" y="277" width="411" height="38" rx="8" fill="#fff0d8" stroke="#9b763f"/><text x="375" y="302" font-size="17">双方以协商结果与 HKDF 派生握手密钥</text>
+<text x="281" y="332" font-size="17">加密的 EncryptedExtensions / Certificate / CertificateVerify / Finished</text>
+<rect x="55" y="371" width="1011" height="81" rx="10" fill="white" stroke="#879d92"/><text x="77" y="399" font-size="18">客户端验证：信任路径与有效期 + SAN 名称 + 服务端持钥证明 + Finished</text><text x="77" y="429" font-size="17">证书由可信 CA 签发还不够：它必须属于这次访问的目标，握手也必须完整可信。</text>
+<text x="355" y="484" font-size="18">客户端 Finished（本例不做客户端证书认证）</text>
+<rect x="322" y="522" width="477" height="34" rx="8" fill="#dcebdc" stroke="#557e66"/><text x="342" y="545" font-size="17">使用对应方向的应用流量密钥保护 HTTP</text>
+<text x="413" y="572" font-size="17">加密请求：GET /</text><text x="410" y="604" font-size="17">加密响应：200 JSON</text>
+<rect x="34" y="650" width="1052" height="83" rx="10" fill="white" stroke="#879d92"/><text x="56" y="679" font-size="18">本例证书签名：ECDSA P-256；临时协商组：X25519；记录保护：AES-GCM</text><text x="56" y="710" font-size="16">三者不由同一把“公钥加密”概括；图表示协议逻辑，未声称进行逐包抓包。</text>
+</g></svg>

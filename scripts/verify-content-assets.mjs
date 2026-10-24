@@ -13,6 +13,8 @@ assert.ok(Array.isArray(resources),'offline manifest resources');
 const urls=new Set(resources.map(r=>typeof r==='string'?r:r.url));
 const normalize=relative=>relative.replace(/^\.\//,'').replace(/^\//,'');
 const checkManifest=relative=>assert.ok([...urls].some(url=>normalize(url)===normalize(relative)),relative+' missing from offline manifest');
+// unzip treats entry names as patterns; escape literal route brackets, ? and *.
+const zipEntry = (file, entry) => execFileSync('unzip', ['-p', file, entry.replace(/[\[\]*?]/g, '\\$&')]);
 const archives=new Map();
 let downloads=0,figures=0,mapped=0;
 for(const article of articles){
@@ -34,7 +36,7 @@ for(const article of articles){
         try{source=await readFile(path.join('examples',root,name));}catch(error){if(error.code==='ENOENT')continue;throw error;}
         const entry=root+'/'+name;
         assert.ok(entries.includes(entry),entry+' missing from ZIP');
-        assert.deepEqual(execFileSync('unzip',['-p',file,entry]),source,entry+' ZIP metadata differs');
+        assert.deepEqual(zipEntry(file,entry),source,entry+' ZIP metadata differs');
       }
     }
   }
@@ -54,7 +56,7 @@ for(const article of articles){
     const archive=archives.get(root+'.zip');
     if(archive){
       assert.ok(archive.entries.has(relative),relative+' missing from ZIP');
-      assert.deepEqual(execFileSync('unzip',['-p',archive.file,relative]),original,relative+' ZIP source differs');
+      assert.deepEqual(zipEntry(archive.file,relative),original,relative+' ZIP source differs');
     }
   }
 }
@@ -65,12 +67,12 @@ async function inspectFixtures(directory,inside=false){
     const file=path.join(directory,entry.name);
     const fixture=inside||['fixtures','shared'].includes(entry.name);
     if(entry.isDirectory())await inspectFixtures(file,fixture);
-    else if(fixture&&/\.(jsonl?|txt|sql)$/.test(entry.name)){
+    else if((fixture&&/\.(jsonl?|txt|sql)$/.test(entry.name))||entry.name.endsWith('.service.in')){
       const relative=file.slice('examples/'.length);
       const archive=archives.get(relative.split('/')[0]+'.zip');
       if(!archive)continue;
       assert.ok(archive.entries.has(relative),relative+' fixture missing from ZIP');
-      assert.deepEqual(execFileSync('unzip',['-p',archive.file,relative]),await readFile(file),relative+' fixture differs');
+      assert.deepEqual(zipEntry(archive.file,relative),await readFile(file),relative+' fixture differs');
       checkManifest('downloads/'+relative);
     }
   }

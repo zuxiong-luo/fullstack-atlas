@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img">
+<title>修改数据与使缓存失效是两个动作</title><desc>真实实验先保留旧值，再用 revalidateTag(tag, {expire:0}) 使下次读取重新取源。</desc>
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#285443"/></marker></defs>
+<rect width="960" height="560" rx="24" fill="#f3f7f4"/>
+<text x="32" y="45" font-family="system-ui,sans-serif" font-size="26" font-weight="700" fill="#173c2e">修改数据与使缓存失效是两个动作</text>
+<text x="32" y="79" font-family="system-ui,sans-serif" font-size="16" fill="#496256">真实实验先保留旧值，再用 revalidateTag(tag, {expire:0}) 使下次读取重新取源。</text>
+<rect x="35" y="140" width="270" height="170" rx="12" stroke="#5a8b73" stroke-width="2" fill="#fff"/>
+<text x="51" y="168" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">① GET /api/catalog</text>
+<text x="51" y="195" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">源 revision=1</text>
+<text x="51" y="222" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">缓存 readId=A</text>
+<text x="51" y="249" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">再读命中 A</text>
+<rect x="345" y="140" width="270" height="170" rx="12" stroke="#5a8b73" stroke-width="2" fill="#fff"/>
+<text x="361" y="168" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">② POST /api/source</text>
+<text x="361" y="195" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">源改成 revision=2</text>
+<text x="361" y="222" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">缓存仍是 A / revision=1</text>
+<text x="361" y="249" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">尚未执行失效</text>
+<rect x="655" y="140" width="270" height="170" rx="12" stroke="#5a8b73" stroke-width="2" fill="#fff"/>
+<text x="671" y="168" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">③ POST /api/invalidate</text>
+<text x="671" y="195" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">标记立即过期</text>
+<text x="671" y="222" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">下一 GET 读源 revision=2</text>
+<text x="671" y="249" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">得到 readId=B</text>
+<path d="M305 225H342" stroke="#285443" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M615 225H652" stroke="#285443" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<text x="150" y="390" font-family="system-ui,sans-serif" font-size="15" fill="#285443">失效标签不负责提交数据库，也不自动更新已经显示在浏览器里的页面。</text>
+</svg>
