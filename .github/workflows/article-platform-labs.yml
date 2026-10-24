@@ -30,16 +30,8 @@ jobs:
           systemctl --version
           uname -a
       - name: Process, signals and systemd lifecycle
-        run: |
-          set +e
-          timeout --signal=TERM --kill-after=30s 240s bash examples/linux-services/verify-linux.sh > "$RUNNER_TEMP/atlas-linux.log" 2>&1
-          result=$?
-          cat "$RUNNER_TEMP/atlas-linux.log"
-          if [ "$result" -ne 0 ]; then
-            python -c 'import os,pathlib; s=pathlib.Path(os.environ["RUNNER_TEMP"],"atlas-linux.log").read_text(); print("::error::"+s[-16000:].replace("%","%25").replace("\r","%0D").replace("\n","%0A"))'
-          fi
-          exit "$result"
+        run: python scripts/platform-lab-ci.py --timeout 240 -- bash examples/linux-services/verify-linux.sh
       - name: DNS, TCP, TLS and HTTP failure recovery
-        run: timeout 90s bash examples/network-troubleshooting/verify-linux.sh
+        run: python scripts/platform-lab-ci.py --timeout 90 -- bash examples/network-troubleshooting/verify-linux.sh
       - name: Controlled Linux CPU, RSS and logical I/O observations
-        run: timeout --signal=TERM --kill-after=5s 60s bash examples/linux-performance/verify-linux.sh
+        run: python scripts/platform-lab-ci.py --timeout 60 -- bash examples/linux-performance/verify-linux.sh
