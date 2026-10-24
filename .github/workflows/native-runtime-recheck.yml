@@ -13,12 +13,13 @@ jobs:
     timeout-minutes: 25
     env:
       CI: 'true'
-      ATLAS_LAB_ARTIFACT_DIR: ${{ runner.temp }}/atlas-runtime-recheck
       ATLAS_LAB_EMULATOR_SERIAL: emulator-5554
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      - name: Set private runtime artifact path
+        run: echo "ATLAS_LAB_ARTIFACT_DIR=$RUNNER_TEMP/atlas-runtime-recheck" >> "$GITHUB_ENV"
       - name: Verify runtime source still equals the original APK build snapshot
         run: git diff --exit-code 9280ec30b31ecc08568e515ff10631dc06262db8 -- examples/cross-platform-delivery examples/react-native-engineering
       - uses: actions/setup-node@v7
