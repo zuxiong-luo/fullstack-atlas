@@ -18,6 +18,8 @@ SUDO = ["sudo", "-n"]
 
 
 def run(arguments, *, check=True, timeout=15):
+    if arguments[:3] == ["sudo", "-n", "useradd"]:
+        arguments = ["sudo", "-n", "strace", "-ff", "-tt", "-s", "140", "-o", "/var/tmp/atlas-useradd-trace", "-e", "trace=process,network,openat,flock,fcntl", "/usr/sbin/useradd", *arguments[3:]]
     result = subprocess.run(arguments, capture_output=True, text=True, timeout=timeout)
     if check and result.returncode:
         raise RuntimeError(f"{arguments!r}: {result.returncode}\n{result.stdout}\n{result.stderr}")

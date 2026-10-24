@@ -24,7 +24,7 @@ jobs:
       - name: Install isolated lab prerequisites
         run: |
           sudo apt-get update
-          sudo apt-get install -y dbus-user-session util-linux passwd openssl
+          sudo apt-get install -y dbus-user-session util-linux passwd openssl strace
           python --version
           systemctl --version
           uname -a
@@ -33,6 +33,7 @@ jobs:
           set +e
           timeout --signal=TERM --kill-after=30s 240s bash examples/linux-services/verify-linux.sh > "$RUNNER_TEMP/atlas-linux.log" 2>&1
           result=$?
+          sudo cat /var/tmp/atlas-useradd-trace* 2>/dev/null | tail -100 >> "$RUNNER_TEMP/atlas-linux.log"
           cat "$RUNNER_TEMP/atlas-linux.log"
           if [ "$result" -ne 0 ]; then
             python -c 'import os,pathlib; s=pathlib.Path(os.environ["RUNNER_TEMP"],"atlas-linux.log").read_text(); print("::error::"+s[-16000:].replace("%","%25").replace("\r","%0D").replace("\n","%0A"))'
