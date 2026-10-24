@@ -63,3 +63,5 @@ Type=exec只表示程序成功exec，不承诺HTTP业务就绪；Restart=on-fail
 模拟回归可单独运行：`python3 examples/linux-services/tests/test_cleanup.py`。这些测试拦截所有系统命令，不启动或删除宿主用户/服务。
 
 第三轮隔离[run40095286144](https://github.com/zuxiong-luo/fullstack-atlas/actions/runs/40095286144)：模拟部分清理3/3与Linux proc/信号3/3均通过；修复后的useradd成功，实际账户清理complete。下一失败是普通runner直接Path.exists读取0700的/run/user/20000被PermissionError拒绝，尚未证明unit生命周期。已改为既有sudo -n test -S /run/user/UID/bus，以退出码轮询真正socket；不chmod或削弱runtime目录权限。完整两scope仍待下一轮CI。
+
+后续useradd仍30秒超时，不能将--no-log-init当已证根因。根代理18c1c46隔离strace annotation实际看到openat循环读取Rust工具链rlib/rmeta并创建输出（例如librustc_literal_escaper）；这证明账户创建在复制工具文件。现明确在本次work下创建空skel目录，传useradd --skel，以免教学用户复制镜像默认dotfiles/工具链；保留--no-log-init、有限UID/home/超时与严格清理。默认skeleton是慢点的解释仍待无strace新实验确认，两scope仍保持受阻。

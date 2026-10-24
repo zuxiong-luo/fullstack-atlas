@@ -18,8 +18,6 @@ SUDO = ["sudo", "-n"]
 
 
 def run(arguments, *, check=True, timeout=15):
-    if arguments[:3] == ["sudo", "-n", "useradd"]:
-        arguments = ["sudo", "-n", "strace", "-ff", "-tt", "-s", "140", "-o", "/var/tmp/atlas-useradd-trace", "-e", "trace=process,network,openat,flock,fcntl", "/usr/sbin/useradd", *arguments[3:]]
     result = subprocess.run(arguments, capture_output=True, text=True, timeout=timeout)
     if check and result.returncode:
         raise RuntimeError(f"{arguments!r}: {result.returncode}\n{result.stdout}\n{result.stderr}")
@@ -70,10 +68,13 @@ def main():
 
     signal.signal(signal.SIGTERM, interrupted)
     try:
+        skeleton = work / "skel"
+        skeleton.mkdir(mode=0o755)
+        # Avoid copying the VM image's default skeleton/toolchains.
         # Avoid sparse lastlog initialization; keep even a partially created home
         # under the directory owned by this run. Timeout is not proof of rollback.
         run(SUDO + ["useradd", "--no-log-init", "--uid", str(uid), "--user-group",
-                    "--home-dir", str(work / "home"), "--create-home",
+                    "--home-dir", str(work / "home"), "--skel", str(skeleton), "--create-home",
                     "--shell", "/usr/sbin/nologin", prefix], timeout=30)
         account = pwd.getpwnam(prefix)
         if account.pw_uid != uid or account.pw_dir != str(work / "home"):

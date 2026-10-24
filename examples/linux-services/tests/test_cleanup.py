@@ -41,6 +41,9 @@ class PartialCreationTests(unittest.TestCase):
         def run(arguments, **options):
             calls.append((arguments, options))
             if "useradd" in arguments:
+                skeleton = Path(arguments[arguments.index("--skel") + 1])
+                self.assertTrue(skeleton.is_dir())
+                self.assertEqual(list(skeleton.iterdir()), [])
                 uid = int(arguments[arguments.index("--uid") + 1])
                 home = arguments[arguments.index("--home-dir") + 1]
                 state["work"] = Path(home).parent
