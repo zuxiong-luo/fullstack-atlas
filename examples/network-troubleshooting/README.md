@@ -2,7 +2,7 @@
 
 **Ubuntu24.04运行待CI，暂不聚合发布。** macOS14.5上的CPython3.12.14可移植预检10/10通过；不能把它写成Linux验收。Linux脚本在mac先退出77，不修改宿主网络配置。
 
-固定协议资料：DNS RFC1035、TCP RFC9293、TLS1.3 RFC8446、HTTP语义RFC9110；工具资料OpenSSL3.0与Python3.12。目标Python3.12.14、Ubuntu24.04/OpenSSL3；实际Linux内核与OpenSSL补丁版本由CI输出补记。
+固定协议资料：DNS RFC1035、TCP RFC9293、TLS1.3 RFC8446、HTTP语义RFC9110、HTTP/1.1消息RFC9112；工具资料OpenSSL3.0与Python3.12。目标Python3.12.14、Ubuntu24.04/OpenSSL3；实际Linux内核与OpenSSL补丁版本由CI输出补记。
 
 ## CI
 

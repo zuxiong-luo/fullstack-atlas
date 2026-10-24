@@ -16,7 +16,7 @@ async function copy(from,to){
   if(entry.isDirectory()){
    if(runtimeDataRoots.has(from)&&entry.name==='data')continue;
    await copy(src,dst);
-  }else if(entry.isFile()&&(extensions.has(extname(entry.name))||explicitFiles.has(entry.name)))await copyFile(src,dst);
+  }else if(entry.isFile()&&(extensions.has(extname(entry.name))||explicitFiles.has(entry.name)||entry.name.endsWith('.service.in')))await copyFile(src,dst);
  }
 }
 await copy('examples','public/downloads');

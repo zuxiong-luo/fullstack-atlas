@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img">
+<title>两种传输入口，共用一条可信写入路径</title><desc>演示只在单进程受控文件上验证；多实例应把唯一性与事务交给数据库。</desc>
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#285443"/></marker></defs>
+<rect width="960" height="560" rx="24" fill="#f3f7f4"/>
+<text x="32" y="45" font-family="system-ui,sans-serif" font-size="26" font-weight="700" fill="#173c2e">两种传输入口，共用一条可信写入路径</text>
+<text x="32" y="79" font-family="system-ui,sans-serif" font-size="16" fill="#496256">演示只在单进程受控文件上验证；多实例应把唯一性与事务交给数据库。</text>
+<rect x="35" y="125" width="270" height="125" rx="12" stroke="#5a8b73" stroke-width="2" fill="#fff"/>
+<text x="51" y="153" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">HTML form → Server Action</text>
+<text x="51" y="180" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">框架负责表单调用</text>
+<text x="51" y="207" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">仍须校验身份和输入</text>
+<rect x="35" y="325" width="270" height="125" rx="12" stroke="#5a8b73" stroke-width="2" fill="#fff"/>
+<text x="51" y="353" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">JSON → Route Handler</text>
+<text x="51" y="380" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">自己设计 HTTP 契约</text>
+<text x="51" y="407" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">仍须校验来源和输入</text>
+<rect x="360" y="225" width="250" height="150" rx="12" stroke="#5a8b73" stroke-width="2" fill="#fff"/>
+<text x="376" y="253" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">服务端共同边界</text>
+<text x="376" y="280" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">会话 → owner</text>
+<text x="376" y="307" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">字段 → title / key</text>
+<text x="376" y="334" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">客户端不指定 owner</text>
+<rect x="665" y="225" width="260" height="150" rx="12" stroke="#5a8b73" stroke-width="2" fill="#fff"/>
+<text x="681" y="253" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">同 owner + key 查回执</text>
+<text x="681" y="280" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">同内容：返回原 note</text>
+<text x="681" y="307" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">异内容：409</text>
+<text x="681" y="334" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">新 key：保存 note + 回执</text>
+<path d="M305 185H332V270H357" stroke="#285443" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M305 385H332V320H357" stroke="#285443" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M610 300H662" stroke="#285443" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<text x="35" y="510" font-family="system-ui,sans-serif" font-size="15" fill="#285443">Action ID、隐藏按钮和客户端校验，都不能代替服务端授权。</text>
+</svg>

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img">
+<title>URL 选择路由树，布局包住页面</title><desc>示意路径 /notes/n1 → /notes/n2：共享 notes 布局，切换最终动态页面。</desc>
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#285443"/></marker></defs>
+<rect width="960" height="560" rx="24" fill="#f3f7f4"/>
+<text x="32" y="45" font-family="system-ui,sans-serif" font-size="26" font-weight="700" fill="#173c2e">URL 选择路由树，布局包住页面</text>
+<text x="32" y="79" font-family="system-ui,sans-serif" font-size="16" fill="#496256">示意路径 /notes/n1 → /notes/n2：共享 notes 布局，切换最终动态页面。</text>
+<rect x="35" y="125" width="270" height="125" rx="12" stroke="#5a8b73" stroke-width="2" fill="#fff"/>
+<text x="51" y="153" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">app/layout.tsx</text>
+<text x="51" y="180" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">根 html / body</text>
+<text x="51" y="207" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">应用外壳</text>
+<rect x="345" y="125" width="270" height="125" rx="12" stroke="#5a8b73" stroke-width="2" fill="#fff"/>
+<text x="361" y="153" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">app/notes/layout.tsx</text>
+<text x="361" y="180" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">共享导航和 Counter</text>
+<text x="361" y="207" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">不是每个页面复制一份</text>
+<rect x="655" y="125" width="270" height="125" rx="12" stroke="#5a8b73" stroke-width="2" fill="#fff"/>
+<text x="671" y="153" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">app/notes/[id]/page.tsx</text>
+<text x="671" y="180" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">params.id = n1 或 n2</text>
+<text x="671" y="207" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">选取笔记并渲染</text>
+<rect x="35" y="350" width="400" height="110" rx="12" stroke="#5a8b73" stroke-width="2" fill="#fff"/>
+<text x="51" y="378" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">首次访问：请求文档</text>
+<text x="51" y="405" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">服务端 HTML + RSC + JS 资源</text>
+<rect x="525" y="350" width="400" height="110" rx="12" stroke="#5a8b73" stroke-width="2" fill="#fff"/>
+<text x="541" y="378" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">客户端导航：请求目标 RSC</text>
+<text x="541" y="405" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">协调路由树，保留共享布局状态</text>
+<path d="M305 187H342" stroke="#285443" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M615 187H652" stroke="#285443" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<text x="311" y="172" font-family="system-ui,sans-serif" font-size="15" fill="#285443">包住</text>
+<text x="620" y="172" font-family="system-ui,sans-serif" font-size="15" fill="#285443">包住</text>
+</svg>

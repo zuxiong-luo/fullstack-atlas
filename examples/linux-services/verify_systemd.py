@@ -1,4 +1,5 @@
 """Linux disposable-VM integration: own units/user only; every command is bounded."""
+import grp
 import json
 import os
 from pathlib import Path
@@ -42,22 +43,39 @@ def main():
         raise SystemExit("Run as the CI user with passwordless sudo, not as root")
     run(SUDO + ["true"])
     prefix = "atlas-lab-" + uuid.uuid4().hex[:10]
+    # Refuse pre-existing identities; this run may delete only its own random name.
+    for lookup in (pwd.getpwnam, grp.getgrnam):
+        try:
+            lookup(prefix)
+        except KeyError:
+            continue
+        raise RuntimeError("temporary identity already exists: " + prefix)
+    uid = None
+    for candidate in range(20000, 60000):
+        try:
+            pwd.getpwuid(candidate)
+        except KeyError:
+            uid = candidate
+            break
+    if uid is None:
+        raise RuntimeError("no unused ordinary UID in 20000..59999")
     work = Path(tempfile.mkdtemp(prefix=prefix + "-", dir="/var/tmp"))
     work.chmod(0o755)
-    user_created = False
-    uid = None
     installed = []
-    managers = []
 
     def interrupted(number, frame):
         raise KeyboardInterrupt(f"signal {number}")
 
     signal.signal(signal.SIGTERM, interrupted)
     try:
-        run(SUDO + ["useradd", "--create-home", "--shell", "/usr/sbin/nologin", prefix])
-        user_created = True
+        # Avoid sparse lastlog initialization; keep even a partially created home
+        # under the directory owned by this run. Timeout is not proof of rollback.
+        run(SUDO + ["useradd", "--no-log-init", "--uid", str(uid), "--user-group",
+                    "--home-dir", str(work / "home"), "--create-home",
+                    "--shell", "/usr/sbin/nologin", prefix], timeout=30)
         account = pwd.getpwnam(prefix)
-        uid = account.pw_uid
+        if account.pw_uid != uid or account.pw_dir != str(work / "home"):
+            raise RuntimeError("temporary identity does not match the reserved UID/home")
         app = work / "service.py"
         shutil.copyfile(ROOT / "service.py", app)
         app.chmod(0o644)
@@ -68,7 +86,6 @@ def main():
                            f"DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{uid}/bus",
                            "systemctl", "--user"]
         system_ctl = SUDO + ["systemctl"]
-        managers = [user_ctl, system_ctl]
         for scope, ctl in (("user", user_ctl), ("system", system_ctl)):
             unit = f"{prefix}-{scope}.service"
             state = work / scope
@@ -138,28 +155,68 @@ def main():
             print(run(journal).stdout, flush=True)
             print(json.dumps({"scope": scope, "phase": "recovery", "healthy": True}), flush=True)
     finally:
-        for scope, ctl, unit, destination in reversed(installed):
-            run(ctl + ["stop", unit], check=False)
-            run(ctl + ["reset-failed", unit], check=False)
-            run(SUDO + ["rm", "-f", "--", str(destination)], check=False)
-            run(ctl + ["daemon-reload"], check=False)
-        if uid is not None:
-            run(SUDO + ["systemctl", "stop", f"user@{uid}.service",
-                        f"user-runtime-dir@{uid}.service"], check=False)
-        if user_created:
-            run(SUDO + ["userdel", "--remove", prefix], check=False)
-        assert work.parent == Path("/var/tmp") and work.name.startswith(prefix + "-")
-        run(SUDO + ["rm", "-rf", "--", str(work)])
-        for scope, ctl, unit, destination in installed:
-            assert not destination.exists(), destination
-        if user_created:
+        cleanup_errors = []
+
+        def cleanup(arguments):
             try:
-                pwd.getpwnam(prefix)
+                run(arguments, check=False, timeout=30)
+            except (OSError, subprocess.TimeoutExpired) as error:
+                cleanup_errors.append(str(error))
+
+        for scope, ctl, unit, destination in reversed(installed):
+            cleanup(ctl + ["stop", unit])
+            cleanup(ctl + ["reset-failed", unit])
+            cleanup(SUDO + ["rm", "-f", "--", str(destination)])
+            cleanup(ctl + ["daemon-reload"])
+        # Query the actual account even when useradd failed or timed out. Never
+        # remove a different UID/home, including a pre-existing unrelated account.
+        try:
+            account = pwd.getpwnam(prefix)
+        except KeyError:
+            account = None
+        identity_matches = (account is None or
+                            (account.pw_uid == uid and account.pw_dir == str(work / "home")))
+        if identity_matches:
+            cleanup(SUDO + ["systemctl", "stop", f"user@{uid}.service",
+                            f"user-runtime-dir@{uid}.service"])
+            if account is not None:
+                cleanup(SUDO + ["userdel", "--remove", prefix])
+            # useradd may have created the private group before the passwd entry.
+            try:
+                grp.getgrnam(prefix)
             except KeyError:
                 pass
             else:
-                raise AssertionError("temporary user still exists: " + prefix)
-        print(json.dumps({"cleanup": "complete", "prefix": prefix}), flush=True)
+                cleanup(SUDO + ["groupdel", prefix])
+        else:
+            cleanup_errors.append("refused to remove mismatched temporary identity: " + prefix)
+        assert work.parent == Path("/var/tmp") and work.name.startswith(prefix + "-")
+        cleanup(SUDO + ["rm", "-rf", "--", str(work)])
+        for scope, ctl, unit, destination in installed:
+            if destination.exists():
+                cleanup_errors.append("unit remains: " + str(destination))
+        for lookup in (pwd.getpwnam, grp.getgrnam):
+            try:
+                lookup(prefix)
+            except KeyError:
+                continue
+            cleanup_errors.append("temporary identity remains: " + prefix)
+        # The reserved UID was unused before this run; no process may remain.
+        remaining = []
+        for entry in Path("/proc").iterdir():
+            if entry.name.isdecimal():
+                try:
+                    if entry.stat().st_uid == uid:
+                        remaining.append(entry.name)
+                except FileNotFoundError:
+                    pass
+        if remaining:
+            cleanup_errors.append("temporary UID still owns processes: " + repr(remaining))
+        if work.exists():
+            cleanup_errors.append("temporary directory remains: " + str(work))
+        if cleanup_errors:
+            raise RuntimeError("cleanup incomplete: " + "; ".join(cleanup_errors))
+        print(json.dumps({"cleanup": "complete", "prefix": prefix, "uid": uid}), flush=True)
 
 
 if __name__ == "__main__":

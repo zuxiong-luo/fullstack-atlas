@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img">
+<title>先问缓存对象，再问如何失效</title><desc>本例 cacheComponents 关闭；Data Cache 用 unstable_cache 显式创建。</desc>
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#285443"/></marker></defs>
+<rect width="960" height="560" rx="24" fill="#f3f7f4"/>
+<text x="32" y="45" font-family="system-ui,sans-serif" font-size="26" font-weight="700" fill="#173c2e">先问缓存对象，再问如何失效</text>
+<text x="32" y="79" font-family="system-ui,sans-serif" font-size="16" fill="#496256">本例 cacheComponents 关闭；Data Cache 用 unstable_cache 显式创建。</text>
+<rect x="35" y="125" width="400" height="130" rx="12" stroke="#5a8b73" stroke-width="2" fill="#fff"/>
+<text x="51" y="153" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">React cache(readCatalog)</text>
+<text x="51" y="180" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">同次 Server Component 渲染</text>
+<text x="51" y="207" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">共享同一读取结果；下次请求重置</text>
+<rect x="525" y="125" width="400" height="130" rx="12" stroke="#5a8b73" stroke-width="2" fill="#fff"/>
+<text x="541" y="153" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">unstable_cache(readCatalog)</text>
+<text x="541" y="180" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">跨请求保存结果</text>
+<text x="541" y="207" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">键含数据文件路径，标签可失效</text>
+<rect x="35" y="350" width="400" height="130" rx="12" stroke="#5a8b73" stroke-width="2" fill="#fff"/>
+<text x="51" y="378" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">底层 JSON 数据源</text>
+<text x="51" y="405" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">修改文件不会自动更新已有结果</text>
+<text x="51" y="432" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">演示有意保留这段不一致窗口</text>
+<rect x="525" y="350" width="400" height="130" rx="12" stroke="#5a8b73" stroke-width="2" fill="#fff"/>
+<text x="541" y="378" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">HTTP / 浏览器路由缓存</text>
+<text x="541" y="405" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">与服务端数据缓存不是同一层</text>
+<text x="541" y="432" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">API no-store 不会清除 Data Cache</text>
+<path d="M235 255V347" stroke="#285443" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M725 255V315H435V350" stroke="#285443" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<text x="245" y="310" font-family="system-ui,sans-serif" font-size="15" fill="#285443">真实读取</text>
+<text x="500" y="303" font-family="system-ui,sans-serif" font-size="15" fill="#285443">miss 时读取数据源</text>
+</svg>

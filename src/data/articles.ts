@@ -21,6 +21,8 @@ import {curriculumRank} from './topicCurricula';
 import {nodeExpansionArticles} from './articles/nodejs';
 import {dataExpansionArticles} from './articles/data';
 import {pythonExpansionArticles} from './articles/python';
+import {identityExpansionArticles} from './articles/identity';
+import {nextExpansionArticles} from './articles/nextjs';
 export type {Article,ArticleSection} from './articleTypes';
 export const articleTopics=[
 {id:'identity',name:'身份认证与安全',description:'从安全连接到可信身份，厘清每一层的责任。'},
@@ -39,7 +41,7 @@ export const articleTopics=[
 
 const rewritten = [reactFiberArticle,agentFoundationsArticle];
 export const reactSourceArticles = [reactFiberStructureArticle,reactHooksQueueArticle,reactLaneSelectionArticle,reactWorkLoopArticle,reactDoubleBufferArticle,reactRootSchedulingArticle,reactBailoutMemoArticle,reactHookMemoizationArticle];
-export const articles = [reactFoundationsArticle,reactHooksInteractionsArticle,reactStateManagementArticle,reactFiberReconciliationArticle,reactConcurrencyArticle,reactPerformanceArticle,reactModernEngineeringArticle,...legacyArticles.map(a=>rewritten.find(r=>r.id===a.id)??a),...reactSourceArticles,...nodeExpansionArticles,...dataExpansionArticles,...pythonExpansionArticles];
+export const articles = [reactFoundationsArticle,reactHooksInteractionsArticle,reactStateManagementArticle,reactFiberReconciliationArticle,reactConcurrencyArticle,reactPerformanceArticle,reactModernEngineeringArticle,...legacyArticles.map(a=>rewritten.find(r=>r.id===a.id)??a),...reactSourceArticles,...nodeExpansionArticles,...dataExpansionArticles,...pythonExpansionArticles,...identityExpansionArticles,...nextExpansionArticles];
 export const readingPaths=[
 {id:'request',name:'从身份到数据',description:'理解一次请求如何建立信任，再保证数据变更正确。',articleIds:['oauth-login','transactions-locks'],prerequisites:'HTTP 与 SQL 基础'},
 {id:'interface',name:'从状态到交互',description:'对照 Web 与 Flutter，理解状态、生命周期与通信。',articleIds:['react-state-effects','flutter-engineering'],prerequisites:'JavaScript / Dart 基础'},

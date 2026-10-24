@@ -1,8 +1,8 @@
 # Linux服务：进程、线程、信号与systemd隔离实验
 
-**验证状态：Linux/systemd运行受阻，等待Ubuntu24.04 CI。** 当前作者机器是macOS，没有Linux VM；仅做Python3.12.14语法检查、Bash语法检查和非Linux保护返回77，不能视为Linux实验通过。
+**验证状态：proc/信号3项已在隔离Ubuntu CI通过；systemd编排在useradd超时处失败，修复后待重验。** 作者macOS没有Linux VM；本机语法/guard77和3项模拟清理测试不能替代Linux/systemd验收。
 
-文档基线：systemd255固定版本文档、Linux内核v6.8的proc文档、Linux man-pages6.19的signal/pthreads页面。目标Python3.12.14、Ubuntu24.04；实际内核/systemd补丁版由CI的版本输出补记，尚不填造数值。
+文档基线：systemd255固定版本文档、Linux内核v6.8的proc文档、Linux man-pages6.19的signal/pthreads页面。实际CI为Ubuntu24.04.5 LTS、systemd255（255.4-1ubuntu8.17）、kernel6.17.0-1022-azure、CPython3.12.14。内核v6.8只是所引用文档版本。
 
 ## CI依赖与运行
 
@@ -17,12 +17,13 @@ sudo apt-get install -y systemd dbus-user-session util-linux passwd coreutils op
 timeout --signal=TERM --kill-after=30s 240s bash examples/linux-services/verify-linux.sh
 ```
 
-不访问公司服务、不改现有账户与服务配置。脚本随机创建`atlas-lab-<随机串>`临时用户、同前缀system/user服务及`/var/tmp/atlas-lab-*`目录；只启停自己创建的unit和该临时UID的user manager。system unit放`/run/systemd/system`，不enable开机启动；user unit放临时用户的`~/.config/systemd/user`。结束移除unit、重读管理器、停止自己的user manager、删除临时用户与目录。命令与轮询均有期限，SIGTERM触发Python的finally；强制SIGKILL/断电不保证用户态清理。
+不访问公司服务、不改现有账户与服务配置。脚本随机创建`atlas-lab-<随机串>`临时用户、同前缀system/user服务及`/var/tmp/atlas-lab-*`目录；只启停自己创建的unit和该临时UID的user manager。system unit放`/run/systemd/system`，不enable开机启动；user unit放临时用户的`~/.config/systemd/user`。UID显式选20000..59999之间未占用值，home放本次/var/tmp目录下；--no-log-init跳过lastlog/faillog初始化，useradd期限30秒。结束移除unit、重读管理器、停止自己的user manager、重新查询并核对临时账户UID/home、删除账户/私有组与目录；即使useradd超时也清理部分创建结果。最终核验账户、组、unit、该UID进程及目录无残留后才报cleanup=complete，失败报cleanup incomplete。命令与轮询均有期限，SIGTERM触发Python的finally；强制SIGKILL/断电不保证用户态清理。
 
 ## 文件
 
 - `service.py`：完整loopback HTTP服务，动态空闲端口，一个主线程与一个等待Event的工作线程；SIGTERM/SIGINT只请求退出，finally join线程、关闭socket、删除ready并记录停止。
 - `inspect.py`：只读`/proc/PID/status`、task、fd与cgroup，PID来自本实验ready文件，不发送信号。
+- `tests/test_cleanup.py`：3项模拟系统命令测试，不更改宿主账户/服务；覆盖useradd超时后的部分创建清理、删除失败不误报成功、身份不匹配拒绝删除。可在mac运行，不等于Linux实测。
 - `test_process.py`：Linux专用3项真实子进程测试，覆盖proc/线程/描述符、优雅TERM、KILL绕过清理及恢复、退出42。
 - `atlas-lab-system.service.in`、`atlas-lab-user.service.in`：可编辑unit模板；编排器替换绝对路径与临时用户名，不是直接可安装的成品unit。
 - `verify_systemd.py`：真实user/system两种服务，各执行启动/HTTP健康、TERM停止、启动失败42/有限重启耗尽、恢复与日志读取；finally只清理本次命名资源。
@@ -45,7 +46,7 @@ cat "$lab_state/stopped.json"
 rm -rf -- "$lab_state"
 ```
 
-正常应观察：task_ids包含主PID和worker_tid；每个线程的Tgid相同；HTTP健康PID等于进程PID；TERM后退出0、ready消失、stopped.signals为`["SIGTERM"]`。这些是**待Linux CI验证的断言契约，不是当前Linux实测输出**。自动测试不靠“等两秒”认定就绪，而是读ready中的本次PID和真实HTTP响应。
+正常应观察：task_ids包含主PID和worker_tid；每个线程的Tgid相同；HTTP健康PID等于进程PID；TERM后退出0、ready消失、stopped.signals为`["SIGTERM"]`。这些断言已在隔离Ubuntu CI的3项proc/信号测试通过；两个systemd范围仍待重验。自动测试不靠“等两秒”认定就绪，而是读ready中的本次PID和真实HTTP响应。
 
 KILL测试只杀自己Popen得到的子进程：退出状态为负SIGKILL，stopped不存在，ready可能残留；重新启动清理旧标记并恢复健康。因此ready文件存在不等于进程仍活着，也不能替代健康检查。
 
@@ -57,4 +58,6 @@ Type=exec只表示程序成功exec，不承诺HTTP业务就绪；Restart=on-fail
 
 ## 待回填
 
-CI返回后记录：run链接、Ubuntu发行版、uname-r、systemctl-version、Python版本、proc3项和两scope实际JSON/日志、清理确认。当前不把文章加入聚合发布，不把mac退出77写作“通过Linux测试”。
+[run40094537231](https://github.com/zuxiong-luo/fullstack-atlas/actions/runs/40094537231)实际trace由根代理取得：上述Ubuntu环境，proc3项通过；旧useradd15秒超时，原cleanup标志不足以证明账户不存在。当前修复和模拟回归已完成，仍需重跑两scope实际JSON/日志、账户创建与清理确认。当前不把文章加入聚合发布，不把mac退出77写作“通过Linux测试”。
+
+模拟回归可单独运行：`python3 examples/linux-services/tests/test_cleanup.py`。这些测试拦截所有系统命令，不启动或删除宿主用户/服务。

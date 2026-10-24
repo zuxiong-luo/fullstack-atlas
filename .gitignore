@@ -17,3 +17,5 @@ examples/**/node_modules/
 examples/**/dist/
 public/downloads/
 examples/**/.test/
+# Local dependency symlinks are files too; ignore both links and directories.
+examples/**/node_modules
