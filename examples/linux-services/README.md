@@ -61,3 +61,5 @@ Type=exec只表示程序成功exec，不承诺HTTP业务就绪；Restart=on-fail
 [run40094537231](https://github.com/zuxiong-luo/fullstack-atlas/actions/runs/40094537231)实际trace由根代理取得：上述Ubuntu环境，proc3项通过；旧useradd15秒超时，原cleanup标志不足以证明账户不存在。当前修复和模拟回归已完成，仍需重跑两scope实际JSON/日志、账户创建与清理确认。当前不把文章加入聚合发布，不把mac退出77写作“通过Linux测试”。
 
 模拟回归可单独运行：`python3 examples/linux-services/tests/test_cleanup.py`。这些测试拦截所有系统命令，不启动或删除宿主用户/服务。
+
+第三轮隔离[run40095286144](https://github.com/zuxiong-luo/fullstack-atlas/actions/runs/40095286144)：模拟部分清理3/3与Linux proc/信号3/3均通过；修复后的useradd成功，实际账户清理complete。下一失败是普通runner直接Path.exists读取0700的/run/user/20000被PermissionError拒绝，尚未证明unit生命周期。已改为既有sudo -n test -S /run/user/UID/bus，以退出码轮询真正socket；不chmod或削弱runtime目录权限。完整两scope仍待下一轮CI。

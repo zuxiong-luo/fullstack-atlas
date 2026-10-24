@@ -80,7 +80,8 @@ def main():
         shutil.copyfile(ROOT / "service.py", app)
         app.chmod(0o644)
         run(SUDO + ["systemctl", "start", f"user@{uid}.service"])
-        eventually(lambda: Path(f"/run/user/{uid}/bus").exists(), "isolated user bus")
+        eventually(lambda: run(SUDO + ["test", "-S", f"/run/user/{uid}/bus"],
+                               check=False).returncode == 0, "isolated user bus")
         user_ctl = SUDO + ["runuser", "-u", prefix, "--", "env",
                            f"XDG_RUNTIME_DIR=/run/user/{uid}",
                            f"DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{uid}/bus",
