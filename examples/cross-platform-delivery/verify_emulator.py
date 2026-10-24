@@ -11,6 +11,7 @@ import sys
 import threading
 import time
 import xml.etree.ElementTree as ET
+import zipfile
 from uuid import uuid4
 
 ROOT=Path(__file__).resolve().parent
@@ -78,6 +79,69 @@ def native_ui_state(path, expected, screenshot):
     raise AssertionError('native hierarchy state missing: '+json.dumps(expected))
 
 
+def apk_report_probe(apk):
+    with zipfile.ZipFile(apk) as archive:
+        bundles=[name for name in archive.namelist() if name.startswith('assets/') and name.endswith(('.bundle','.hbc'))]
+        values=[]
+        for name in bundles:
+            data=archive.read(name)
+            values.append({'entry':name,'bytes':len(data),
+                           'report_url_literal':b'http://10.0.2.2:4355' in data,
+                           'report_marker_literal':b'ATLAS_DELIVERY_LAB' in data})
+    print(json.dumps({'case':'retained_apk_bundle_probe','bundles':values}),flush=True)
+
+
+def startup_diagnostics(output, ui_path):
+    # Independent observations of this disposable emulator; never replace the original error.
+    result={}
+    def capture(key, arguments, limit=8000):
+        try:
+            value=adb(*arguments,check=False,seconds=8)
+            result[key]={'exit':value.returncode,'text':(value.stdout+value.stderr)[-limit:]}
+        except Exception as error:
+            result[key]={'diagnostic_error':type(error).__name__+': '+str(error)}
+    capture('pid',['shell','pidof',PACKAGE],1000)
+    capture('focused_activity',['shell','dumpsys','activity','activities'],32000)
+    if 'text' in result['focused_activity']:
+        result['focused_activity']['text']='\n'.join(line for line in result['focused_activity']['text'].splitlines()
+            if PACKAGE in line or any(key in line for key in ['mResumedActivity','topResumedActivity','mFocusedApp']))[-3000:]
+    capture('js_and_crash',['logcat','-d','-v','brief','-t','600','ReactNativeJS:V','AndroidRuntime:V','libc:F','*:S'],12000)
+    pid=result.get('pid',{}).get('text','').strip()
+    if re.fullmatch(r'\d+',pid):
+        capture('own_process_log',['logcat','-d','--pid='+pid,'-v','brief','-t','160'],10000)
+    request_body=json.dumps({'event':'harness_transport_probe'}).encode()
+    request=(b'POST /events HTTP/1.0\r\nHost: 10.0.2.2\r\nContent-Type: application/json\r\nContent-Length: '
+             +str(len(request_body)).encode()+b'\r\n\r\n'+request_body)
+    try:
+        transport=subprocess.run(['adb','-s',SERIAL,'shell','toybox','nc','-w','3','10.0.2.2','4355'],
+                                 input=request,capture_output=True,timeout=8)
+        result['emulator_transport_probe']={'exit':transport.returncode,
+            'response':(transport.stdout+transport.stderr).decode(errors='replace')[:1200]}
+    except Exception as error:
+        result['emulator_transport_probe']={'diagnostic_error':type(error).__name__+': '+str(error)}
+    capture('ui_dump',['shell','uiautomator','dump',ui_path],1000)
+    capture('ui_xml',['shell','cat',ui_path],30000)
+    raw=result.get('ui_xml',{}).get('text','')
+    try:
+        result['visible_text']=[node.get('text') for node in ET.fromstring(raw).iter('node') if node.get('text')][:40]
+    except (ValueError,ET.ParseError):
+        pass
+    try:
+        image=subprocess.run(['adb','-s',SERIAL,'exec-out','screencap','-p'],capture_output=True,timeout=10,check=True)
+        if image.stdout.startswith(b'\x89PNG\r\n\x1a\n'):
+            (output/'startup-failure.png').write_bytes(image.stdout)
+    except Exception as error:
+        result['screenshot_error']=type(error).__name__+': '+str(error)
+    (output/'startup-diagnostics.json').write_text(json.dumps(result,indent=2))
+    summary={key:value for key,value in result.items() if key not in ['ui_xml','visible_text']}
+    summary['visible_text_excerpt']=json.dumps(result.get('visible_text',[]),ensure_ascii=False)[:1800]
+    for key in ['js_and_crash','own_process_log','focused_activity']:
+        if key in summary and 'text' in summary[key]:
+            value=summary[key]['text']
+            summary[key]={**summary[key],'text':value[:1800]+('\n...\n'+value[-1500:] if len(value)>1800 else '')}
+    print(json.dumps({'case':'independent_startup_diagnostics','observations':summary}),flush=True)
+
+
 def main():
     if sys.platform!='linux' or os.environ.get('CI')!='true' or not re.fullmatch(r'emulator-\d+',SERIAL):
         raise SystemExit('explicit disposable Linux emulator only')
@@ -98,8 +162,10 @@ def main():
     try:
         print(json.dumps({'emulator':SERIAL,'api':adb('shell','getprop','ro.build.version.sdk').stdout.strip(),
                           'abi':'x86_64','physical_device':False}),flush=True)
+        apk_report_probe(output/'lab-v1.apk')
         adb('install','--no-streaming',str(output/'lab-v1.apk'),seconds=90)
-        adb('shell','am','start','-W','-n',PACKAGE+'/.MainActivity')
+        launched=adb('shell','am','start','-W','-n',PACKAGE+'/.MainActivity')
+        print(json.dumps({'case':'native_launch_command','stdout':launched.stdout,'stderr':launched.stderr}),flush=True)
         first=wait('delivery_rendered','lab-v1')
         assert first['nativeCode']=='1' and first['created'] is True
         assert first['note']=={'schema':1,'title':'fake note persisted by lab-v1'}
@@ -132,8 +198,11 @@ def main():
         print(json.dumps({'case':'downgrade_rejected','still_version':2,'fake_data_unchanged':True}),flush=True)
         (output/'runtime-events.json').write_text(json.dumps(EVENTS,indent=2))
     except BaseException:
-        print(adb('logcat','-d','-t','120',check=False).stdout[-16000:],flush=True)
         (output/'runtime-events.json').write_text(json.dumps(EVENTS,indent=2))
+        try:
+            startup_diagnostics(output,ui_path)
+        except Exception as diagnostic_error:
+            print(json.dumps({'diagnostic_error':type(diagnostic_error).__name__+': '+str(diagnostic_error)}),flush=True)
         raise
     finally:
         try:

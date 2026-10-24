@@ -21,7 +21,9 @@ jobs:
       - name: Set private runtime artifact path
         run: echo "ATLAS_LAB_ARTIFACT_DIR=$RUNNER_TEMP/atlas-runtime-recheck" >> "$GITHUB_ENV"
       - name: Verify runtime source still equals the original APK build snapshot
-        run: git diff --exit-code 9280ec30b31ecc08568e515ff10631dc06262db8 -- examples/cross-platform-delivery examples/react-native-engineering
+        run: |
+          git diff --exit-code 9280ec30b31ecc08568e515ff10631dc06262db8 -- examples/cross-platform-delivery examples/react-native-engineering ':(exclude)examples/cross-platform-delivery/verify_emulator.py'
+          echo 'f387b8feb7437092bf2b96825fb5553304d44e0db474f4d6e3f6f090f0e87db4  examples/cross-platform-delivery/verify_emulator.py' | sha256sum -c -
       - uses: actions/setup-node@v7
         with:
           node-version: '24.14.1'
