@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 820" role="img" aria-labelledby="title desc">
+<title id="title">进程信号与systemd服务生命周期</title><desc id="desc">exec成功后还要观察HTTP就绪；TERM请求收尾后停止，KILL绕过收尾；启动42触发受限重启，失败后修复并reset-failed恢复。系统与用户管理器分别拥有unit范围。</desc>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#315d85"/></marker></defs>
+<rect width="820" height="820" fill="white"/>
+<g font-family="-apple-system,BlinkMacSystemFont,PingFang SC,sans-serif" fill="#17324d" font-size="20">
+<text x="30" y="42" font-size="28" font-weight="700">服务生命周期：进程、健康与管理器分开看</text>
+<rect x="30" y="82" width="340" height="85" rx="12" fill="#f0f6ff" stroke="#456f9a"/><text x="50" y="115">系统管理器</text><text x="50" y="146">system unit → User=实验用户</text>
+<rect x="450" y="82" width="340" height="85" rx="12" fill="#f0f6ff" stroke="#456f9a"/><text x="470" y="115">用户管理器</text><text x="470" y="146">临时UID → 自己的user unit</text>
+<text x="30" y="212" font-size="18">两个范围分别验证；随机atlas-lab名称，不复用宿主已有服务。</text>
+<rect x="30" y="255" width="210" height="80" rx="12" fill="#f0f6ff" stroke="#456f9a"/><text x="50" y="287">Type=exec成功</text><text x="50" y="317">程序已执行</text>
+<rect x="310" y="255" width="210" height="80" rx="12" fill="#f0f6ff" stroke="#456f9a"/><text x="330" y="287">观察HTTP健康</text><text x="330" y="317">本次PID匹配</text>
+<rect x="590" y="255" width="200" height="80" rx="12" fill="#f0f6ff" stroke="#456f9a"/><text x="610" y="287">处理请求</text><text x="610" y="317">主线程+worker</text>
+<path d="M240 295H310" stroke="#315d85" stroke-width="2" marker-end="url(#a)"/><path d="M520 295H590" stroke="#315d85" stroke-width="2" marker-end="url(#a)"/>
+<path d="M690 335V410" stroke="#315d85" stroke-width="2" marker-end="url(#a)"/><text x="705" y="380" font-size="17">TERM</text>
+<rect x="510" y="410" width="280" height="90" rx="12" fill="#eef8ee" stroke="#456f9a"/><text x="530" y="444">Event → join → 关闭监听</text><text x="530" y="476">记录stopped，退出0</text>
+<path d="M135 335V410" stroke="#315d85" stroke-width="2" marker-end="url(#a)"/><text x="151" y="380" font-size="17">启动退出42</text>
+<rect x="30" y="410" width="315" height="90" rx="12" fill="#fff8e8" stroke="#9c751a"/><text x="50" y="444">on-failure受限重启</text><text x="50" y="476">预算耗尽 → failed</text>
+<path d="M185 500V555" stroke="#315d85" stroke-width="2" marker-end="url(#a)"/>
+<rect x="30" y="555" width="390" height="85" rx="12" fill="#eef8ee" stroke="#456f9a"/><text x="50" y="590">修复环境 → reset-failed → start</text><text x="50" y="621">重新验证HTTP，不只看start返回0</text>
+<rect x="30" y="685" width="760" height="90" rx="12" fill="#fff8e8" stroke="#9c751a"/><text x="50" y="718">KILL绕过应用收尾：ready可能残留，不代表仍在服务。</text><text x="50" y="750" font-size="18">停止范围由ControlGroup约定；本图为状态示意，无耗时数据。</text>
+</g></svg>

@@ -1,0 +1,64 @@
+import React, {useState} from 'react';
+
+export type MergeStep<T>={lo:number;mid:number;hi:number;values:T[];comparisons:number;writes:number};
+export function mergeSort<T>(input:readonly T[],compare:(a:T,b:T)=>number,onMerge?:(step:MergeStep<T>)=>void):T[]{
+  const values=[...input],aux=new Array<T>(values.length);
+  let comparisons=0,writes=0;
+  function sort(lo:number,hi:number){
+    if(hi-lo<2)return;
+    const mid=lo+Math.floor((hi-lo)/2);sort(lo,mid);sort(mid,hi);
+    for(let k=lo;k<hi;k++)aux[k]=values[k];
+    let left=lo,right=mid;
+    for(let k=lo;k<hi;k++){
+      if(left===mid)values[k]=aux[right++];
+      else if(right===hi)values[k]=aux[left++];
+      else{comparisons++;values[k]=compare(aux[left],aux[right])<=0?aux[left++]:aux[right++];}
+      writes++;
+    }
+    onMerge?.({lo,mid,hi,values:[...values],comparisons,writes});
+  }
+  sort(0,values.length);return values;
+}
+export type BoundStep={lo:number;hi:number;mid:number;value:number;move:'lo'|'hi';nextLo:number;nextHi:number};
+// Precondition: ascending finite numbers; checked at the UI boundary, not inside each query.
+export function bound(values:readonly number[],target:number,upper=false,onStep?:(step:BoundStep)=>void):number{
+  let lo=0,hi=values.length;
+  while(lo<hi){
+    const mid=lo+Math.floor((hi-lo)/2),value=values[mid];
+    const goRight=upper?value<=target:value<target;
+    const nextLo=goRight?mid+1:lo,nextHi=goRight?hi:mid;
+    onStep?.({lo,hi,mid,value,move:goRight?'lo':'hi',nextLo,nextHi});
+    lo=nextLo;hi=nextHi;
+  }
+  return lo;
+}
+export function equalRange(values:readonly number[],target:number):[number,number]{return [bound(values,target),bound(values,target,true)];}
+export function parseFiniteList(text:string):number[]{
+  if(!text.trim())return [];
+  const tokens=text.split(',');if(tokens.length>32)throw new RangeError('最多32项');
+  return tokens.map(token=>{if(!token.trim())throw new Error('逗号之间不能为空');const n=Number(token.trim());if(!Number.isFinite(n))throw new Error('必须是有限数字');return n;});
+}
+export function assertSorted(values:readonly number[]):void{
+  for(let i=0;i<values.length;i++)if(!Number.isFinite(values[i])||(i>0&&values[i-1]>values[i]))throw new Error('二分输入必须按升序排列');
+}
+
+type Row={key:number;id:number};
+function prepare(text:string,targetText:string){
+  const input=parseFiniteList(text);if(!targetText.trim()||!Number.isFinite(Number(targetText)))throw new Error('目标必须是有限数字');const target=Number(targetText);
+  const source=input.map((key,id)=>({key,id})),merges:MergeStep<Row>[]=[];
+  const sorted=mergeSort(source,(a,b)=>a.key-b.key,s=>merges.push(s)),values=sorted.map(x=>x.key);
+  const lower:BoundStep[]=[],upper:BoundStep[]=[];const result=[bound(values,target,false,s=>lower.push(s)),bound(values,target,true,s=>upper.push(s))];
+  return {source,merges,sorted,values,target,lower,upper,result};
+}
+const panel:React.CSSProperties={border:'1px solid #86a995',padding:16,borderRadius:12,margin:'12px 0',background:'#fff',color:'#173c2e'};
+export default function App(){
+  const [text,setText]=useState('4,2,2,7,1'),[target,setTarget]=useState('2'),[data,setData]=useState(()=>prepare('4,2,2,7,1','2')),[mergeIndex,setMergeIndex]=useState(0),[boundIndex,setBoundIndex]=useState(0),[upperMode,setUpperMode]=useState(false),[message,setMessage]=useState('先看概念，再点击每一步。');
+  const merge=mergeIndex?data.merges[mergeIndex-1]:null,rows=merge?.values??data.source,steps=upperMode?data.upper:data.lower,current=steps[boundIndex];
+  function build(){try{setData(prepare(text,target));setMergeIndex(0);setBoundIndex(0);setMessage('轨迹已重新生成；尚未执行合并/二分步骤');}catch(e){setMessage((e as Error).message);}}
+  return <main style={{padding:16,maxWidth:1000,margin:'auto',fontFamily:'system-ui'}}><h1>归并排序与边界二分</h1><p>每个数字的 #编号是原始位置，用来观察稳定性。轨迹只为最多32项教学视图保存，不代表基础算法的空间成本。</p>
+    <section style={panel}><label>原始数组（逗号分隔） <input value={text} onChange={e=>setText(e.target.value)} style={{maxWidth:'100%',width:280}}/></label><label> 目标 <input value={target} onChange={e=>setTarget(e.target.value)} style={{width:70}}/></label><div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}><button onClick={build}>重新生成轨迹</button><button onClick={()=>{try{assertSorted(parseFiniteList(text));setMessage('原始输入已升序，可直接二分；查询前只校验一次。');}catch(e){setMessage((e as Error).message);}}}>检查原始输入能否直接二分</button></div><p role="status" aria-live="polite">{message}</p></section>
+    <section style={panel}><h2>1. 归并：两个有序区间合成一个</h2><button disabled={mergeIndex>=data.merges.length} onClick={()=>setMergeIndex(mergeIndex+1)}>下一次合并</button><button onClick={()=>setMergeIndex(0)}>回到原始数组</button><p>步骤 {mergeIndex}/{data.merges.length}；{merge?`合并 [${merge.lo},${merge.mid}) 与 [${merge.mid},${merge.hi})；累计比较 ${merge.comparisons}，输出写入 ${merge.writes}`:'尚未合并'}</p><div style={{display:'flex',flexWrap:'wrap',gap:8}}>{rows.map((row,i)=><span key={row.id} style={{padding:10,border:'1px solid #285443',background:merge&&i>=merge.lo&&i<merge.hi?'#dbecd9':'#fff'}}>{row.key}<small> #{row.id}</small></span>)}{!rows.length&&'空数组'}</div></section>
+    <section style={panel}><h2>2. 在排序结果中找边界</h2><p>固定数据：[{data.values.join(', ')}]，固定目标：{data.target}。更改输入后请重新生成。</p><label><input type="checkbox" checked={upperMode} onChange={e=>{setUpperMode(e.target.checked);setBoundIndex(0);}}/>upper_bound（首个 &gt; target），不勾选为 lower_bound（首个 ≥ target）</label><div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}><button disabled={boundIndex>=steps.length} onClick={()=>setBoundIndex(boundIndex+1)}>执行二分下一步</button><button onClick={()=>setBoundIndex(0)}>重置二分</button></div>
+    <p>{current?`下一步：lo=${current.lo}，hi=${current.hi}，mid=${current.mid}，a[mid]=${current.value}；移动${current.move}，新区间[${current.nextLo},${current.nextHi})`:`结束：lo=hi=${data.result[upperMode?1:0]}`}</p><div style={{display:'flex',flexWrap:'wrap',gap:8}}>{data.values.map((v,i)=><span key={i} style={{padding:10,border:'1px solid #285443',background:current&&i>=current.lo&&i<current.hi?'#dbecd9':'#eee'}}>{i}:{v}{current?.mid===i?' ← mid':''}</span>)}</div><p>等值区间 [{data.result[0]},{data.result[1]})，数量={data.result[1]-data.result[0]}。返回 n 是合法边界，不是可以读取的元素下标。</p></section>
+  </main>;
+}

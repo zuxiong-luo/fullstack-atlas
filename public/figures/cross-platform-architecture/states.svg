@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="610" viewBox="0 0 1000 610" role="img">
+<title>连接与命令是两个相互约束的状态</title><desc>只列可观察路径；切换设备清空旧结果，巡检失败不自动否定已加载设备。</desc>
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#285443"/></marker></defs>
+<rect width="1000" height="610" rx="24" fill="#f3f7f4"/>
+<text x="32" y="45" font-family="system-ui,sans-serif" font-size="26" font-weight="700" fill="#173c2e">连接与命令是两个相互约束的状态</text>
+<text x="32" y="80" font-family="system-ui,sans-serif" font-size="16" fill="#496256">只列可观察路径；切换设备清空旧结果，巡检失败不自动否定已加载设备。</text>
+<rect x="35" y="140" width="210" height="105" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="50" y="169" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">connection: idle</text>
+<text x="50" y="195" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">尚无可用设备快照</text>
+<rect x="360" y="140" width="250" height="105" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="375" y="169" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">connection: loading</text>
+<text x="375" y="195" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">清空 label / command</text>
+<rect x="745" y="140" width="220" height="105" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="760" y="169" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">connection: ready</text>
+<text x="760" y="195" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">可检查 canInspect</text>
+<rect x="360" y="390" width="250" height="110" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="375" y="419" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">connection: error</text>
+<text x="375" y="445" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">只发布受控连接错误</text>
+<rect x="745" y="390" width="220" height="110" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="760" y="419" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">command: running</text>
+<text x="760" y="445" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">成功 → success</text>
+<text x="760" y="471" font-family="system-ui,sans-serif" font-size="18" fill="#173c2e">失败 → error</text>
+<path d="M245 192H357" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#a)"/>
+<path d="M610 192H742" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#a)"/>
+<path d="M485 245V387" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#a)"/>
+<path d="M855 245V387" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#a)"/>
+<text x="270" y="176" font-family="system-ui,sans-serif" font-size="15" fill="#285443">connect</text>
+<text x="630" y="176" font-family="system-ui,sans-serif" font-size="15" fill="#285443">当前结果</text>
+<text x="497" y="320" font-family="system-ui,sans-serif" font-size="15" fill="#285443">当前失败</text>
+<text x="865" y="320" font-family="system-ui,sans-serif" font-size="15" fill="#285443">inspect</text>
+<text x="35" y="550" font-family="system-ui,sans-serif" font-size="15" fill="#285443">取消加载 → idle；取消命令 → 保留 ready，command 回 idle；dispose → 不再发布。</text>
+</svg>

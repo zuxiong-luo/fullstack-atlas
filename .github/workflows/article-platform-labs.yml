@@ -1,0 +1,42 @@
+name: Verify isolated platform labs
+on:
+  push:
+    branches: [main, 'content-validation/**']
+    paths:
+      - 'examples/linux-services/**'
+      - 'examples/network-troubleshooting/**'
+      - '.github/workflows/article-platform-labs.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: platform-labs-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12.14'
+      - name: Install isolated lab prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dbus-user-session util-linux passwd openssl
+          python --version
+          systemctl --version
+          uname -a
+      - name: Process, signals and systemd lifecycle
+        run: |
+          set +e
+          timeout --signal=TERM --kill-after=30s 240s bash examples/linux-services/verify-linux.sh > "$RUNNER_TEMP/atlas-linux.log" 2>&1
+          result=$?
+          cat "$RUNNER_TEMP/atlas-linux.log"
+          if [ "$result" -ne 0 ]; then
+            python -c 'import os,pathlib; s=pathlib.Path(os.environ["RUNNER_TEMP"],"atlas-linux.log").read_text(); print("::error::"+s[-16000:].replace("%","%25").replace("\r","%0D").replace("\n","%0A"))'
+          fi
+          exit "$result"
+      - name: DNS, TCP, TLS and HTTP failure recovery
+        run: timeout 90s bash examples/network-troubleshooting/verify-linux.sh
