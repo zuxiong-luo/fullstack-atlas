@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="620" viewBox="0 0 1120 620" role="img" aria-labelledby="title desc">
+<title id="title">死锁等待环与统一加锁顺序</title><desc id="desc">事务A持有账户1并等待账户2，事务B持有账户2并等待账户1，构成环。统一按账户id升序获取锁后，一方在第一把锁等待，另一方可以继续完成，没有这个双向环。</desc>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#355f50"/></marker><marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#a14d37"/></marker></defs>
+<rect width="1120" height="620" rx="20" fill="#f3f7f4"/>
+<g font-family="system-ui, sans-serif" fill="#1b332b">
+<text x="34" y="44" font-size="24" font-weight="700">等待不一定是死锁；关键在于等待关系是否形成环</text>
+<text x="34" y="76" font-size="17">账户初始余额均为 100；A 转 10 给账户 2，B 转 20 给账户 1</text>
+<rect x="34" y="104" width="1052" height="227" rx="12" fill="white" stroke="#879d92"/>
+<rect x="93" y="158" width="300" height="88" rx="12" fill="#dcebdc" stroke="#557e66"/><text x="117" y="191" font-size="21">事务 A：持有账户 1</text><text x="117" y="221" font-size="18">下一步需要账户 2</text>
+<rect x="729" y="158" width="300" height="88" rx="12" fill="#fff0d8" stroke="#9b763f"/><text x="753" y="191" font-size="21">事务 B：持有账户 2</text><text x="753" y="221" font-size="18">下一步需要账户 1</text>
+<path d="M393 180 C490 128 630 128 729 180" stroke="#a14d37" stroke-width="2.5" fill="none" marker-end="url(#r)"/><text x="466" y="142" font-size="17">A 等 B 释放账户 2</text>
+<path d="M729 232 C630 286 490 286 393 232" stroke="#a14d37" stroke-width="2.5" fill="none" marker-end="url(#r)"/><text x="466" y="294" font-size="17">B 等 A 释放账户 1</text>
+<text x="58" y="318" font-size="16">检测到环 → PostgreSQL 中止其中一笔事务（40P01）；受害者不能预先假定。</text>
+<rect x="34" y="362" width="1052" height="195" rx="12" fill="white" stroke="#879d92"/>
+<text x="58" y="397" font-size="21" font-weight="600">修复这一类环：双方先锁 1，再锁 2</text>
+<rect x="62" y="424" width="265" height="86" rx="10" fill="#dcebdc" stroke="#557e66"/><text x="82" y="455" font-size="18">A：锁 1 → 锁 2 → 提交</text><text x="82" y="484" font-size="16">提交后释放事务内锁</text>
+<path d="M327 468 H445" stroke="#355f50" stroke-width="2" marker-end="url(#a)"/><text x="344" y="448" font-size="16">释放 1</text>
+<rect x="458" y="424" width="269" height="86" rx="10" fill="#fff0d8" stroke="#9b763f"/><text x="478" y="455" font-size="18">B：先在账户 1 等待</text><text x="478" y="484" font-size="16">没有先占住账户 2</text>
+<path d="M727 468 H811" stroke="#355f50" stroke-width="2" marker-end="url(#a)"/>
+<text x="833" y="454" font-size="18">B 获锁并继续</text><text x="833" y="485" font-size="17">随后锁 2 → 提交</text>
+<text x="58" y="540" font-size="16">统一顺序消除本例的交叉持有；其他表、触发器、外键和路径仍须遵守协调约定。</text>
+<text x="34" y="599" font-size="15">上半图为等待图，箭头是“等待谁”；下半图为顺序示意，不表示测量耗时。</text>
+</g></svg>

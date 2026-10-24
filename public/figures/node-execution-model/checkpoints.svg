@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="480" viewBox="0 0 960 480" role="img">
+<title>同一段调度代码，入口上下文不同</title>
+<desc>以下仅描述示例 order.cjs / order.mjs 的顶层；不推导所有异步回调的顺序。</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#285443"/></marker></defs>
+<rect width="960" height="480" rx="24" fill="#f3f7f4"/>
+<text x="38" y="48" font-family="system-ui,sans-serif" font-size="25" fill="#173c2e" font-weight="700">同一段调度代码，入口上下文不同</text>
+<text x="38" y="80" font-family="system-ui,sans-serif" font-size="16" fill="#496256">以下仅描述示例 order.cjs / order.mjs 的顶层；不推导所有异步回调的顺序。</text>
+<rect x="35" y="125" width="890" height="100" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="53" y="155" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">CJS 顶层：sync → nextTick → promise → microtask</text>
+<text x="53" y="182" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">当前入口返回后，观察本例的 nextTick 与微任务检查点</text>
+<rect x="35" y="270" width="890" height="100" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="53" y="300" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">ESM 顶层：sync → promise → microtask → nextTick</text>
+<text x="53" y="327" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">模块求值本身处在异步模块执行上下文，不能套用上面一行</text>
+
+</svg>

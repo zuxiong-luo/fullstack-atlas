@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="610" viewBox="0 0 1120 610" role="img" aria-labelledby="title desc">
+<title id="title">快照生命周期与旧版本保留</title><desc id="desc">读者先建立快照看到10，写者提交20。Read Committed下一条语句看到20；Repeatable Read事务保持10。旧快照释放前，VACUUM不能移除仍需可见的旧版本。</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#355f50"/></marker></defs>
+<rect width="1120" height="610" rx="20" fill="#f3f7f4"/>
+<g font-family="system-ui, sans-serif" fill="#1b332b">
+<text x="34" y="45" font-size="24" font-weight="700">同一条业务记录，读到哪个版本取决于快照</text>
+<text x="34" y="78" font-size="17">初始余额 10；写者 UPDATE 到 20 并提交；横向仅表示事件顺序，不表示真实耗时</text>
+<g stroke="#92a69b" stroke-width="1" stroke-dasharray="6 5"><path d="M300 106 V373"/><path d="M560 106 V373"/><path d="M830 106 V373"/></g>
+<text x="246" y="116" font-size="17">首次读取</text><text x="503" y="116" font-size="17">写者提交</text><text x="774" y="116" font-size="17">再次读取</text>
+<text x="34" y="171" font-size="19">写者</text><path d="M210 165 H1040" stroke="#355f50" stroke-width="2" marker-end="url(#arrow)"/><rect x="463" y="141" width="198" height="46" rx="8" fill="#dcebdc" stroke="#557e66"/><text x="486" y="170" font-size="18">10 → 20，COMMIT</text>
+<text x="34" y="252" font-size="19">Read Committed</text><path d="M210 245 H1040" stroke="#355f50" stroke-width="2" marker-end="url(#arrow)"/><rect x="237" y="220" width="126" height="48" rx="8" fill="white" stroke="#557e66"/><text x="259" y="250" font-size="18">快照一：10</text><rect x="757" y="220" width="174" height="48" rx="8" fill="#dcebdc" stroke="#557e66"/><text x="773" y="250" font-size="18">新语句快照：20</text>
+<text x="34" y="334" font-size="19">Repeatable Read</text><path d="M210 328 H1040" stroke="#355f50" stroke-width="2" marker-end="url(#arrow)"/><rect x="237" y="303" width="666" height="48" rx="8" fill="#fff0d8" stroke="#9b763f"/><text x="258" y="334" font-size="18">首次非事务控制语句建立事务快照：10；再次读取仍是 10</text>
+<rect x="34" y="399" width="1052" height="158" rx="12" fill="white" stroke="#879d92"/>
+<text x="57" y="430" font-size="20" font-weight="600">更新产生新元组版本；清理不能破坏仍有效的观察</text>
+<rect x="59" y="456" width="260" height="64" rx="8" fill="#fff0d8" stroke="#9b763f"/><text x="79" y="482" font-size="17">旧版本：balance=10</text><text x="79" y="506" font-size="16">长快照仍需要 → 暂时保留</text>
+<path d="M330 487 H431" stroke="#355f50" stroke-width="2" marker-end="url(#arrow)"/><text x="338" y="471" font-size="15">新版本</text>
+<rect x="446" y="456" width="253" height="64" rx="8" fill="#dcebdc" stroke="#557e66"/><text x="466" y="482" font-size="17">当前版本：balance=20</text><text x="466" y="506" font-size="16">新快照可见</text>
+<text x="735" y="480" font-size="17">释放旧快照 → 再运行 VACUUM</text><text x="735" y="508" font-size="17">旧空间可复用，文件未必缩小</text>
+<text x="34" y="590" font-size="15">图只画本例更新；真实可见性还涉及提交状态、快照中的活动事务和事务自身操作。</text>
+</g></svg>

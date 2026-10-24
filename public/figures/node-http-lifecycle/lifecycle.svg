@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="480" viewBox="0 0 960 480" role="img">
+<title>请求有入口、预算，也必须有清理出口</title>
+<desc>实际示例：POST /notes 仅返回确认，不写数据库；预算从 request 回调开始。</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#285443"/></marker></defs>
+<rect width="960" height="480" rx="24" fill="#f3f7f4"/>
+<text x="38" y="48" font-family="system-ui,sans-serif" font-size="25" fill="#173c2e" font-weight="700">请求有入口、预算，也必须有清理出口</text>
+<text x="38" y="80" font-family="system-ui,sans-serif" font-size="16" fill="#496256">实际示例：POST /notes 仅返回确认，不写数据库；预算从 request 回调开始。</text>
+<rect x="35" y="120" width="250" height="130" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="53" y="150" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">入口边界</text>
+<text x="53" y="177" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">路由 / Content-Type</text>
+<text x="53" y="204" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">并发名额 / 字节上限</text>
+<rect x="350" y="120" width="250" height="130" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="368" y="150" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">受控执行</text>
+<text x="368" y="177" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">JSON → 业务校验</text>
+<text x="368" y="204" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">可取消等待 → 响应</text>
+<rect x="665" y="120" width="255" height="130" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="683" y="150" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">统一 finally</text>
+<text x="683" y="177" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">清计时器 / 移除监听</text>
+<text x="683" y="204" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">释放 active 名额</text>
+<rect x="35" y="325" width="390" height="100" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="53" y="355" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">客户端提前断开 / 预算到期</text>
+<text x="53" y="382" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">AbortSignal 传入可取消操作</text>
+<rect x="515" y="325" width="405" height="100" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="533" y="355" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">停机：停止接入 → 等待在途</text>
+<text x="533" y="382" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">宽限期耗尽：取消并关闭连接</text>
+<path d="M285 185H348" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M600 185H663" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M225 325V280H450V253" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M720 325V253" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#arrow)"/>
+</svg>

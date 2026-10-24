@@ -26,8 +26,8 @@
 
 |顺序 / 阶段|文章 / 稳定ID|读完能做什么|示例目录|状态|
 |---|---|---|---|---|
-|1 / 1|HTTPS 与 TLS：从证书信任到加密通信<br>`https-tls`|验证证书、主机名与握手边界，定位信任失败。|`examples/https-tls/`|待编写|
-|2 / 1|登录态与会话：Cookie、Session、JWT，以及续期和退出<br>`sessions-lifecycle`|实现会话建立、轮换、到期与撤销，解释令牌取舍。|`examples/sessions-lifecycle/`|待编写|
+|1 / 1|HTTPS 与 TLS：从证书信任到加密通信<br>`https-tls`|验证证书、主机名与握手边界，定位信任失败。|`examples/https-tls/`|编写中|
+|2 / 1|登录态与会话：Cookie、Session、JWT，以及续期和退出<br>`sessions-lifecycle`|实现会话建立、轮换、到期与撤销，解释令牌取舍。|`examples/sessions-lifecycle/`|编写中|
 |3 / 既有|OAuth 授权码与 PKCE：从浏览器事务到本站会话<br>`oauth-login`|验证授权事务与本站会话之间的边界。|`examples/oauth-login/`|已有|
 |4 / 2|浏览器安全策略：同源、CORS、CSP 与 Cookie 属性<br>`browser-security-policies`|受控复现跨域与脚本限制，区分读取许可和服务端授权。|`examples/browser-security-policies/`|待编写|
 |5 / 既有|Web 安全的四条边界：XSS、CSRF、对象授权与受控出站<br>`web-security-boundaries`|沿信任边界复现并修复攻击路径。|`examples/web-security-boundaries/`|已有|
@@ -40,11 +40,11 @@
 |顺序 / 阶段|文章 / 稳定ID|读完能做什么|示例目录|状态|
 |---|---|---|---|---|
 |1 / 2|数据模型与约束：把业务规则落实到数据库<br>`data-model-constraints`|用键、检查约束和关系表达业务不变量。|`examples/data-model-constraints/`|待编写|
-|2 / 1|数据库索引：B-tree、联合索引与访问路径<br>`database-indexes`|从访问路径推导索引选择，并读取真实执行计划。|`examples/database-indexes/`|编写中|
+|2 / 1|数据库索引：B-tree、联合索引与访问路径<br>`database-indexes`|从访问路径推导索引选择，并读取真实执行计划。|`examples/database-indexes/`|待审校|
 |3 / 2|SQL 与执行计划：JOIN、排序、聚合和分页怎样变慢<br>`sql-execution-plans`|解释实际行数与估算偏差，验证查询改写。|`examples/sql-execution-plans/`|待编写|
 |4 / 既有|库存事务与行锁：从条件扣减到隔离级别的实际边界<br>`transactions-locks`|通过并发连接验证库存不变量和事务失败。|`examples/transactions-locks/`|已有|
-|5 / 1|MVCC 与并发可见性：快照、版本和旧数据清理<br>`database-mvcc`|推演快照可见性、隔离级别与旧版本回收。|`examples/database-mvcc/`|编写中|
-|6 / 1|数据库锁与死锁：锁范围、等待关系和重试<br>`database-locks-deadlocks`|构造可控等待与死锁，设计完整事务重试。|`examples/database-locks-deadlocks/`|编写中|
+|5 / 1|MVCC 与并发可见性：快照、版本和旧数据清理<br>`database-mvcc`|推演快照可见性、隔离级别与旧版本回收。|`examples/database-mvcc/`|待审校|
+|6 / 1|数据库锁与死锁：锁范围、等待关系和重试<br>`database-locks-deadlocks`|构造可控等待与死锁，设计完整事务重试。|`examples/database-locks-deadlocks/`|待审校|
 |7 / 2|乐观并发控制：版本号、条件更新、唯一约束与幂等写入<br>`optimistic-concurrency`|验证冲突检测、并发唯一性与幂等写入边界。|`examples/optimistic-concurrency/`|待编写|
 |8 / 2|数据库与缓存一致性：失效、并发回填和更新顺序<br>`cache-consistency`|复现过期回填与双写失败，明确一致性承诺。|`examples/cache-consistency/`|待编写|
 
@@ -97,10 +97,10 @@
 
 |顺序 / 阶段|文章 / 稳定ID|读完能做什么|示例目录|状态|
 |---|---|---|---|---|
-|1 / 1|Next.js 请求与路由：App Router、布局和客户端导航<br>`next-routing`|对照首次请求和客户端导航跟踪路由树。|`examples/next-routing/`|待编写|
+|1 / 1|Next.js 请求与路由：App Router、布局和客户端导航<br>`next-routing`|对照首次请求和客户端导航跟踪路由树。|`examples/next-routing/`|编写中|
 |2 / 既有|Next.js 服务端与客户端边界：用账户页走通渲染、写入与缓存<br>`next-server-boundaries`|解释组件运行位置与服务端数据边界。|`examples/next-server-boundaries/`|已有|
-|3 / 1|Next.js 数据与缓存：缓存对象、作用域和失效<br>`next-data-cache`|在锁定版本下验证缓存命中和失效。|`examples/next-data-cache/`|待编写|
-|4 / 1|Server Actions 与 Route Handlers：表单、验证、鉴权和幂等<br>`next-server-writes`|验证服务端写入的身份、输入和重复提交。|`examples/next-server-writes/`|待编写|
+|3 / 1|Next.js 数据与缓存：缓存对象、作用域和失效<br>`next-data-cache`|在锁定版本下验证缓存命中和失效。|`examples/next-data-cache/`|编写中|
+|4 / 1|Server Actions 与 Route Handlers：表单、验证、鉴权和幂等<br>`next-server-writes`|验证服务端写入的身份、输入和重复提交。|`examples/next-server-writes/`|编写中|
 |5 / 2|流式渲染与错误恢复：Suspense、loading 与 error<br>`next-streaming-errors`|观察流式输出，验证异常边界和重试。|`examples/next-streaming-errors/`|待编写|
 |6 / 2|Next.js 生产工程：构建产物、环境配置、部署与请求追踪<br>`next-production`|以生产构建验证配置、启动和请求日志。|`examples/next-production/`|待编写|
 
@@ -110,9 +110,9 @@
 
 |顺序 / 阶段|文章 / 稳定ID|读完能做什么|示例目录|状态|
 |---|---|---|---|---|
-|1 / 1|Node.js 执行模型：进程、事件循环与异步 I/O<br>`node-execution-model`|区分 JS 执行、事件循环、系统 I/O 与线程池。|`examples/node-execution-model/`|编写中|
-|2 / 1|Node.js 模块与工程：ESM、CommonJS 和 TypeScript 构建<br>`node-modules-tooling`|解释模块解析、格式边界与编译后的运行行为。|`examples/node-modules-tooling/`|编写中|
-|3 / 1|Node.js HTTP 服务：请求边界、错误处理与优雅关闭<br>`node-http-lifecycle`|实现有输入边界、取消和关闭预算的 HTTP 服务。|`examples/node-http-lifecycle/`|编写中|
+|1 / 1|Node.js 执行模型：进程、事件循环与异步 I/O<br>`node-execution-model`|区分 JS 执行、事件循环、系统 I/O 与线程池。|`examples/node-execution-model/`|待审校|
+|2 / 1|Node.js 模块与工程：ESM、CommonJS 和 TypeScript 构建<br>`node-modules-tooling`|解释模块解析、格式边界与编译后的运行行为。|`examples/node-modules-tooling/`|待审校|
+|3 / 1|Node.js HTTP 服务：请求边界、错误处理与优雅关闭<br>`node-http-lifecycle`|实现有输入边界、取消和关闭预算的 HTTP 服务。|`examples/node-http-lifecycle/`|待审校|
 |4 / 既有|Node.js：事件循环、流背压与有边界的导出服务<br>`node-capacity`|验证背压、断开连接与容量约束。|`examples/node-capacity/`|已有|
 |5 / 2|Node.js 并行计算：Worker、进程池与通信边界<br>`node-parallel-computing`|通过有界 Worker 池隔离 CPU 工作并处理任务失败。|`examples/node-parallel-computing/`|待编写|
 |6 / 2|Node.js 性能与内存：延迟、堆快照、GC 和压测<br>`node-performance-memory`|定义测量口径，区分延迟、吞吐和存活对象。|`examples/node-performance-memory/`|待编写|
@@ -169,3 +169,5 @@
 - 2026-10-23：目录落盘；工作树起点 a6768cf。第一批9篇开始。待审校，不宣称正文或发布已完成。
 - 每批记录：官方资料与确切版本、测试环境和命令结果、失败案例、独立审稿、桌面/手机视口、ZIP与离线清单、回归、提交和线上资源版本。
 - 当前专用环境限制：无本机Docker/K8s；Android/iOS原生与真机未验；真实付费模型未调用。RN上游依赖问题沿用既有记录，进入新章前重新核对。
+
+- 2026-10-24：Node三篇已独立交叉审稿与真实示例复现；桌面/390手机视口图形、高亮、复制、SIGTERM入口通过。数据三篇作者交稿，主代理独立复现6/8/8通过，独立作者审稿待补。Python前三章示例17项已由两人复现，正文由接续作者补齐。批二安全2篇、Next3篇开始；未推送未宣称上线。

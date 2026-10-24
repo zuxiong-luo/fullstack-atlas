@@ -11,7 +11,8 @@ const manifest=JSON.parse(await readFile('dist/offline-manifest.json','utf8'));
 const resources=manifest.resources ?? manifest.files;
 assert.ok(Array.isArray(resources),'offline manifest resources');
 const urls=new Set(resources.map(r=>typeof r==='string'?r:r.url));
-const checkManifest=relative=>assert.ok([...urls].some(url=>url.replace(/^\.\//,'').replace(/^\//,'')===relative),relative+' missing from offline manifest');
+const normalize=relative=>relative.replace(/^\.\//,'').replace(/^\//,'');
+const checkManifest=relative=>assert.ok([...urls].some(url=>normalize(url)===normalize(relative)),relative+' missing from offline manifest');
 const archives=new Map();
 let downloads=0,figures=0,mapped=0;
 for(const article of articles){
@@ -25,7 +26,16 @@ for(const article of articles){
       assert.ok(entries.length>0,file+' is empty');
       assert.ok(!entries.some(e=>/(^|\/)(node_modules|\.venv|__pycache__|\.test|\.git)(\/|$)/.test(e)),file+' includes a local environment');
       assert.ok(!entries.some(e=>/(^|\/)\.env(?:$|\.)/.test(e)&&!e.endsWith('/.env.example')),file+' includes an environment secret');
+      assert.ok(!entries.some(e=>/^next-(?:server-boundaries|data-cache|server-writes)\/data\//.test(e)),file+' includes local demo runtime data');
       archives.set(example.path,{file,entries:new Set(entries)});
+      const root=example.path.slice(0,-4);
+      for(const name of ['README.md','package-lock.json','pyproject.toml','requirements.txt','.nvmrc','.python-version','.dockerignore']){
+        let source;
+        try{source=await readFile(path.join('examples',root,name));}catch(error){if(error.code==='ENOENT')continue;throw error;}
+        const entry=root+'/'+name;
+        assert.ok(entries.includes(entry),entry+' missing from ZIP');
+        assert.deepEqual(execFileSync('unzip',['-p',file,entry]),source,entry+' ZIP metadata differs');
+      }
     }
   }
   for(const section of article.sections)for(const block of section.blocks??[]){

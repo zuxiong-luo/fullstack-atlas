@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="480" viewBox="0 0 960 480" role="img">
+<title>一个 Node 进程怎样安排工作</title>
+<desc>职责示意：JavaScript 回调继续在所属事件循环线程执行；本图不是性能比例图。</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#285443"/></marker></defs>
+<rect width="960" height="480" rx="24" fill="#f3f7f4"/>
+<text x="38" y="48" font-family="system-ui,sans-serif" font-size="25" fill="#173c2e" font-weight="700">一个 Node 进程怎样安排工作</text>
+<text x="38" y="80" font-family="system-ui,sans-serif" font-size="16" fill="#496256">职责示意：JavaScript 回调继续在所属事件循环线程执行；本图不是性能比例图。</text>
+<rect x="35" y="120" width="250" height="120" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="53" y="150" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">JavaScript / V8</text>
+<text x="53" y="177" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">当前调用栈</text>
+<text x="53" y="204" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">短回调与微任务</text>
+<rect x="350" y="120" width="250" height="120" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="368" y="150" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">libuv 事件循环</text>
+<text x="368" y="177" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">计时器 / I/O 回调</text>
+<text x="368" y="204" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">决定何时继续执行</text>
+<rect x="665" y="120" width="255" height="120" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="683" y="150" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">操作系统网络能力</text>
+<text x="683" y="177" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">连接与就绪通知</text>
+<text x="683" y="204" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">具体方式随平台变化</text>
+<rect x="350" y="320" width="250" height="110" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="368" y="350" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">libuv 工作线程池</text>
+<text x="368" y="377" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">部分 fs / crypto 等</text>
+<text x="368" y="404" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">完成后通知事件循环</text>
+<rect x="35" y="320" width="250" height="110" rx="12" fill="#fff" stroke="#5a8b73" stroke-width="2"/>
+<text x="53" y="350" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">显式 Worker 线程</text>
+<text x="53" y="377" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">独立 JS 执行环境</text>
+<text x="53" y="404" font-family="system-ui,sans-serif" font-size="18" fill="#183e2e">本文不实现工作池</text>
+<path d="M285 180H348" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M600 180H663" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M475 320V243" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="302" y="166" font-family="system-ui,sans-serif" font-size="14" fill="#285443">注册</text>
+<path d="M348 220H288" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="302" y="212" font-family="system-ui,sans-serif" font-size="14" fill="#285443">回调</text>
+<text x="617" y="166" font-family="system-ui,sans-serif" font-size="14" fill="#285443">交付</text>
+<path d="M663 220H603" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="617" y="212" font-family="system-ui,sans-serif" font-size="14" fill="#285443">就绪</text>
+<text x="486" y="284" font-family="system-ui,sans-serif" font-size="14" fill="#285443">完成</text>
+<path d="M440 243V317" fill="none" stroke="#285443" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="400" y="284" font-family="system-ui,sans-serif" font-size="14" fill="#285443">排队</text>
+</svg>

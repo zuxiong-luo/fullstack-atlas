@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {articles,articleTopics,findArticles} from '../data/articles';
 import {sectionBlocks} from '../data/articleTypes';
-import {topicCurricula,curriculumRank} from '../data/topicCurricula';
+import {topicCurricula} from '../data/topicCurricula';
 import baseline from '../../docs/validation/article-identities-baseline.json';
 
 it('preserves every original article route, anchor and training relationship',()=>{
@@ -25,7 +25,7 @@ it('keeps planned chapters out of routes while ordering available chapters by cu
     expect(articleTopics.some(t=>t.id===curriculum.topic)).toBe(true);
     expect(curriculum.prerequisites.length).toBeGreaterThan(0);
     const visible=findArticles('',curriculum.topic);
-    expect(visible.map(a=>a.id)).toEqual([...visible].sort((a,b)=>curriculumRank(curriculum.topic,a.id)-curriculumRank(curriculum.topic,b.id)).map(a=>a.id));
+    expect(visible.map(a=>a.id)).toEqual(curriculum.chapters.filter(ch=>articles.some(a=>a.id===ch.id)).map(ch=>ch.id));
     for(const chapter of curriculum.chapters){
       expect(chapter.outcome.trim()).not.toBe('');
       const published=articles.find(a=>a.id===chapter.id);
