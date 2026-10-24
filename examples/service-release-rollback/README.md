@@ -17,3 +17,9 @@ backend仅本地教学夹具：最多4个请求线程、接受socket2s期限，h
 ## 首轮真实结果与修后待验
 
 run40101256933/6ac22f0，Ubuntu24.04.5、kernel6.17.0-1022-azure、Python3.12.14、Nginx1.24.0：preflight_reject与reload_drain通过，随后立即要求入口500失败。观察到一次v2响应并不代表旧worker已经退出；当前加入X-Atlas-Worker实际PID响应头，保存旧PID/start_ticks，在hold释放后等待旧worker身份消失，再检查带新worker身份的v2业务500与存活200。轮询有截止时间，不用sleep宣称切换成立。修后仍待CI。
+
+## 文件与源码映射
+
+`.python-version`, `README.md`, `backend.py`, `nginx.conf.in`, `verify-article.py`, `verify-linux.sh`, `verify.py`。无第三方Python依赖；`.python-version`固定作者解释器版本。
+
+仓库中运行 `python3 examples/service-release-rollback/verify-article.py` 核对正文代码连续原文；下载独立包不含文章TS，脚本明确提示跳过映射，不假装已验证正文。

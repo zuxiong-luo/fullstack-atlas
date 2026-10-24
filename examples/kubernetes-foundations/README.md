@@ -22,3 +22,9 @@ timeout --signal=TERM --kill-after=160s 1080s bash examples/kubernetes-foundatio
 Manifest给runAsUser/Group10001与fsGroup10001以写自己的emptyDir；readonly rootfs、drop ALL、no-new-privileges；requests CPU50m/内存64Mi，limits250m/128Mi。requests是调度请求，CPU limit是配额，memory limit可能触发容器OOM，不能互当“预留物理核”。emptyDir sizeLimit不是事务/数据库备份，也不能当成跨Pod共享持久存储；Pod删除会丢失自己的数据。/counter仅单Pod夹具，集群测试只查无状态版本，不宣称Service自动共享计数。
 
 startup/readiness/liveness各有职责：启动期等待、从就绪端点移除、重启容器；Service和Deployment职责不同。没有Ingress、TLS、持久卷、真实多节点故障、云负载均衡/生产安全或跨区域SLA。CI结果返回前文章保持review/集群运行受阻；真实手机不涉及本例。
+
+## 文件与源码映射
+
+`.dockerignore`, `.python-version`, `Dockerfile`, `README.md`, `app.py`, `kind.yaml`, `verify-article.py`, `verify-linux.sh`, `verify.py`, `workload.yaml.in`。无第三方Python依赖；`.python-version`固定作者解释器版本。
+
+仓库中运行 `python3 examples/kubernetes-foundations/verify-article.py` 核对正文代码连续原文；下载独立包不含文章TS，脚本明确提示跳过映射，不假装已验证正文。
