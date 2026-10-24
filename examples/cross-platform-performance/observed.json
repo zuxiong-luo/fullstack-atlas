@@ -1,0 +1,158 @@
+{
+  "observedAt": "2026-10-24",
+  "observer": "parent agent through actual Codex built-in Chromium browser; exact browser release not exposed",
+  "viewport": "approximately 607x954; effective body width591",
+  "cache": "first navigate, not manually cleared; lab HTML/JS no-store; not OS cold start",
+  "startup": {
+    "cacheCondition": "本页未强制清缓存；请记录首次或重复加载",
+    "begin": "HTML inline mark, before local JS bundle",
+    "end": "React layout effect / second requestAnimationFrame opportunity",
+    "htmlToCommitMs": 40.30000001192093,
+    "htmlToSecondFrameMs": 173.7000000178814,
+    "navigationType": "navigate"
+  },
+  "windowed": {
+    "platform": "Web DOM",
+    "mode": "window",
+    "rows": 2000,
+    "viewportPx": 320,
+    "rowHeightPx": 32,
+    "steps": 120,
+    "samples": 119,
+    "p50Ms": 16.69999999999709,
+    "p95Ms": 17.10000000000582,
+    "maxMs": 17.69999999999709,
+    "over16_7Ms": 50,
+    "elapsedMs": 2005.5999999940395,
+    "domRows": 13,
+    "scrollTop": 63680,
+    "note": "rAF callback intervals, not physical frame presentation or native FPS; identical fixed workload"
+  },
+  "clone": {
+    "transport": "real browser Worker",
+    "mode": "clone",
+    "warmup": 1,
+    "payloadBytes": 1048576,
+    "samples": 8,
+    "p50Ms": 2.699999988079071,
+    "p95Ms": 3.300000011920929,
+    "maxMs": 3.300000011920929,
+    "over16_7Ms": 0,
+    "records": [
+      {
+        "id": 1,
+        "senderBytes": 1048576,
+        "receivedBytes": 1048576
+      },
+      {
+        "id": 2,
+        "senderBytes": 1048576,
+        "receivedBytes": 1048576
+      },
+      {
+        "id": 3,
+        "senderBytes": 1048576,
+        "receivedBytes": 1048576
+      },
+      {
+        "id": 4,
+        "senderBytes": 1048576,
+        "receivedBytes": 1048576
+      },
+      {
+        "id": 5,
+        "senderBytes": 1048576,
+        "receivedBytes": 1048576
+      },
+      {
+        "id": 6,
+        "senderBytes": 1048576,
+        "receivedBytes": 1048576
+      },
+      {
+        "id": 7,
+        "senderBytes": 1048576,
+        "receivedBytes": 1048576
+      },
+      {
+        "id": 8,
+        "senderBytes": 1048576,
+        "receivedBytes": 1048576
+      }
+    ],
+    "note": "round trip includes dispatch, clone/transfer, worker response; no claim of universal zero-copy or speed ranking"
+  },
+  "transfer": {
+    "transport": "real browser Worker",
+    "mode": "transfer",
+    "warmup": 1,
+    "payloadBytes": 1048576,
+    "samples": 8,
+    "p50Ms": 0.09999999403953552,
+    "p95Ms": 0.20000001788139343,
+    "maxMs": 0.20000001788139343,
+    "over16_7Ms": 0,
+    "records": [
+      {
+        "id": 1,
+        "senderBytes": 0,
+        "receivedBytes": 1048576
+      },
+      {
+        "id": 2,
+        "senderBytes": 0,
+        "receivedBytes": 1048576
+      },
+      {
+        "id": 3,
+        "senderBytes": 0,
+        "receivedBytes": 1048576
+      },
+      {
+        "id": 4,
+        "senderBytes": 0,
+        "receivedBytes": 1048576
+      },
+      {
+        "id": 5,
+        "senderBytes": 0,
+        "receivedBytes": 1048576
+      },
+      {
+        "id": 6,
+        "senderBytes": 0,
+        "receivedBytes": 1048576
+      },
+      {
+        "id": 7,
+        "senderBytes": 0,
+        "receivedBytes": 1048576
+      },
+      {
+        "id": 8,
+        "senderBytes": 0,
+        "receivedBytes": 1048576
+      }
+    ],
+    "note": "round trip includes dispatch, clone/transfer, worker response; no claim of universal zero-copy or speed ranking"
+  },
+  "memory": {
+    "supported": true,
+    "usedJSHeapSize": 57867833,
+    "totalJSHeapSize": 62207201,
+    "jsHeapSizeLimit": 4395630592,
+    "note": "non-standard approximate JS heap of this browser context; not RSS, not retained size, no forced GC"
+  },
+  "full": {
+    "source": "parent actual browser tool output summarized, not retained raw DOM JSON",
+    "samples": 119,
+    "p50Ms": 16.7,
+    "p95Ms": 17.4,
+    "maxMs": 32.8,
+    "over16_7Ms": 60,
+    "elapsedMs": 2048.9,
+    "domRows": 2000,
+    "scrollTop": 63680
+  },
+  "limits": "one short instrumented desktop browser run; no cross-framework ranking, physical FPS, native runtime or exact heap claim"
+}

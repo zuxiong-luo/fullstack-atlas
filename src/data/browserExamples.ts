@@ -1,3 +1,10 @@
+import crossPerformance from '../../examples/cross-platform-performance/App.tsx?raw';
+import greedyIntervals from '../../examples/greedy-intervals/App.tsx?raw';
+import searchDp from '../../examples/search-dynamic-programming/App.tsx?raw';
+import shortestPaths from '../../examples/shortest-paths/App.tsx?raw';
+import graphTraversal from '../../examples/graph-traversal-dependencies/App.tsx?raw';
+import treesHeaps from '../../examples/trees-heaps-recursion/App.tsx?raw';
+import slidingMonotonic from '../../examples/sliding-monotonic/App.tsx?raw';
 import crossArchitecture from '../../examples/cross-platform-architecture/App.tsx?raw';
 import linearStructures from '../../examples/linear-data-structures/App.tsx?raw';
 import hashLru from '../../examples/hash-lru/App.tsx?raw';
@@ -72,3 +79,17 @@ browserExamples['webgl-3d-transforms']={mode:'react',articleId:'webgl-3d-transfo
 browserExamples['webgl-geometry-buffers']={mode:'react',articleId:'webgl-geometry-buffers',title:'GPU缓冲与布局',description:'调整实例数，观察交错顶点与索引；构造越界索引并恢复。',task:'调整实例数，观察交错顶点与索引；构造越界索引并恢复。',code:geometryBuffers};
 
 browserExamples['webgl-texture-sampling']={mode:'react',articleId:'webgl-texture-sampling',title:'纹理与采样',description:'比较过滤、寻址和mipmap，再交换透明混合的绘制顺序。',task:'比较过滤、寻址和mipmap，再交换透明混合的绘制顺序。',code:textureSampling};
+
+browserExamples['sliding-monotonic']={mode:'react',articleId:'sliding-monotonic',title:'双指针与单调结构',description:'调整窗口与边界，对照不变量逐步推演。',task:'调整窗口与边界，对照不变量逐步推演。',code:slidingMonotonic};
+
+browserExamples['trees-heaps-recursion']={mode:'react',articleId:'trees-heaps-recursion',title:'树、堆与递归',description:'逐步观察遍历栈、堆序和递归预算。',task:'逐步观察遍历栈、堆序和递归预算。',code:treesHeaps};
+
+browserExamples['graph-traversal-dependencies']={mode:'react',articleId:'graph-traversal-dependencies',title:'图遍历与依赖关系',description:'对照BFS、DFS和拓扑排序，区分环与被阻塞节点。',task:'对照BFS、DFS和拓扑排序，区分环与被阻塞节点。',code:graphTraversal};
+
+browserExamples['shortest-paths']={mode:'react',articleId:'shortest-paths',title:'最短路径',description:'逐步观察松弛、候选堆和不可达节点。',task:'逐步观察松弛、候选堆和不可达节点。',code:shortestPaths};
+
+browserExamples['search-dynamic-programming']={mode:'react',articleId:'search-dynamic-programming',title:'搜索与动态规划',description:'对照递归、记忆化和动态规划的状态。',task:'对照递归、记忆化和动态规划的状态。',code:searchDp};
+
+browserExamples['greedy-intervals']={mode:'react',articleId:'greedy-intervals',title:'贪心与区间',description:'比较区间数量、权重、覆盖和房间分配。',task:'比较区间数量、权重、覆盖和房间分配。',code:greedyIntervals};
+
+browserExamples['cross-platform-performance']={mode:'react',articleId:'cross-platform-performance',title:'跨平台性能的测量边界',description:'在Web代表平台观察滚动工作量和真实Worker通信。',task:'固定工作量，对照全量与窗口化；记录测量条件，不推断原生手机性能。',code:crossPerformance};

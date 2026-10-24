@@ -14,6 +14,7 @@ export default function Note() {
   const session = React.useMemo(() => createSession(loadNote, value => {
     setState(value);report('note_state', {status:value.status, id:value.id ?? null});
   }), []);
+  React.useEffect(() => {report('note_rendered', {status:state.status, id:state.id ?? null});}, [state]);
   let id;
   try {id = noteId(parameters.id);} catch {id = null;}
   useFocusEffect(React.useCallback(() => {
@@ -27,7 +28,7 @@ export default function Note() {
     eligibleRef.current = eligible;
     if (!eligible) callGeneration.current += 1;
     if (eligible && id) session.start(id);
-    else {session.pause();report('note_paused', {id});}
+    else {session.pause();setCapability({status:'idle'});report('note_paused', {id});}
     return () => session.dispose();
   }, [session, eligible, id]);
   async function run(kind) {

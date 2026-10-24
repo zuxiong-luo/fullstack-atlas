@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -23,6 +24,7 @@ def run(arguments, cwd, *, env=None, seconds=120):
 def main():
     if sys.platform != 'linux' or os.environ.get('CI') != 'true':
         raise SystemExit('disposable Linux CI required; no SDK mutation on this host')
+    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
     sdk = Path(os.environ.get('ANDROID_HOME') or os.environ['ANDROID_SDK_ROOT'])
     for relative in ['platforms/android-37', 'build-tools/37.0.0', 'ndk/27.1.12297006', 'cmake/3.30.5']:
         if not (sdk/relative).is_dir():

@@ -67,7 +67,7 @@ async function inspectFixtures(directory,inside=false){
     const file=path.join(directory,entry.name);
     const fixture=inside||['fixtures','shared'].includes(entry.name);
     if(entry.isDirectory())await inspectFixtures(file,fixture);
-    else if((fixture&&/\.(jsonl?|txt|sql)$/.test(entry.name))||entry.name.endsWith('.service.in')||entry.name.endsWith('.lock')||entry.name==='MANIFEST.in'){
+    else if((fixture&&/\.(jsonl?|txt|sql)$/.test(entry.name))||entry.name.endsWith('.service.in')||entry.name.endsWith('.conf.in')||entry.name.endsWith('.yaml.in')||entry.name.endsWith('.lock')||entry.name==='MANIFEST.in'){
       const relative=file.slice('examples/'.length);
       const archive=archives.get(relative.split('/')[0]+'.zip');
       if(!archive)continue;

@@ -1,7 +1,10 @@
-import type {Article} from '../../articleTypes';
-import foundations from './python-language-foundations';
-import iteration from './python-functions-iteration';
-import objects from './python-object-model';
-import modules from './python-modules-boundaries';
-import concurrency from './python-concurrency-models';
-export const pythonExpansionArticles: Article[] = [foundations, iteration, objects, modules, concurrency];
+import type { Article } from '../../articleTypes';
+import a0 from './python-language-foundations';
+import a1 from './python-functions-iteration';
+import a2 from './python-object-model';
+import a3 from './python-modules-boundaries';
+import a4 from './python-concurrency-models';
+import a5 from './python-fastapi';
+import a6 from './python-data-access';
+import a7 from './python-delivery';
+export const pythonExpansionArticles: Article[] = [a0, a1, a2, a3, a4, a5, a6, a7];

@@ -5,6 +5,10 @@ on:
     paths:
       - 'examples/linux-services/**'
       - 'examples/network-troubleshooting/**'
+      - 'examples/linux-performance/**'
+      - 'examples/docker-engineering/**'
+      - 'examples/service-release-rollback/**'
+      - 'examples/kubernetes-foundations/**'
       - '.github/workflows/article-platform-labs.yml'
   workflow_dispatch:
 permissions:
@@ -29,14 +33,42 @@ jobs:
           systemctl --version
           uname -a
       - name: Process, signals and systemd lifecycle
-        run: |
-          set +e
-          timeout --signal=TERM --kill-after=30s 240s bash examples/linux-services/verify-linux.sh > "$RUNNER_TEMP/atlas-linux.log" 2>&1
-          result=$?
-          cat "$RUNNER_TEMP/atlas-linux.log"
-          if [ "$result" -ne 0 ]; then
-            python -c 'import os,pathlib; s=pathlib.Path(os.environ["RUNNER_TEMP"],"atlas-linux.log").read_text(); print("::error::"+s[-16000:].replace("%","%25").replace("\r","%0D").replace("\n","%0A"))'
-          fi
-          exit "$result"
+        run: python scripts/platform-lab-ci.py --timeout 240 -- bash examples/linux-services/verify-linux.sh
       - name: DNS, TCP, TLS and HTTP failure recovery
-        run: timeout 90s bash examples/network-troubleshooting/verify-linux.sh
+        run: python scripts/platform-lab-ci.py --timeout 90 -- bash examples/network-troubleshooting/verify-linux.sh
+      - name: Controlled Linux CPU, RSS and logical I/O observations
+        run: python scripts/platform-lab-ci.py --timeout 60 -- bash examples/linux-performance/verify-linux.sh
+  docker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12.14'
+      - run: docker version
+      - name: Image, namespace, volume, shutdown and cgroup boundaries
+        run: python scripts/platform-lab-ci.py --timeout 360 -- bash examples/docker-engineering/verify-linux.sh
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12.14'
+      - run: sudo apt-get update && sudo apt-get install -y nginx
+      - name: Private nginx candidate gating, drain and rollback
+        run: python scripts/platform-lab-ci.py --timeout 120 -- bash examples/service-release-rollback/verify-linux.sh
+  kubernetes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12.14'
+      - name: Install fixed official tools into runner temporary directory
+        run: python scripts/platform-lab-ci.py --timeout 180 -- bash scripts/install-platform-tools.sh
+      - name: Real isolated cluster replacement, probes and rollout recovery
+        run: python scripts/platform-lab-ci.py --timeout 1080 -- bash examples/kubernetes-foundations/verify-linux.sh

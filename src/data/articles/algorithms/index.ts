@@ -1,5 +1,11 @@
 import type { Article } from '../../articleTypes';
-import linear from './linear-data-structures';
-import hash from './hash-lru';
-import sorting from './sorting-binary-search';
-export const algorithmExpansionArticles: Article[] = [linear, hash, sorting];
+import a0 from './linear-data-structures';
+import a1 from './hash-lru';
+import a2 from './sorting-binary-search';
+import a3 from './sliding-monotonic';
+import a4 from './trees-heaps-recursion';
+import a5 from './graph-traversal-dependencies';
+import b0 from './shortest-paths';
+import b1 from './search-dynamic-programming';
+import b2 from './greedy-intervals';
+export const algorithmExpansionArticles: Article[] = [a0, a1, a2, a3, a4, a5, b0, b1, b2];

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="570" viewBox="0 0 1040 570" role="img" aria-labelledby="title desc"><title id="title">旧持有者恢复：资源是否识别代次</title><desc id="desc">旧持有者恢复：资源是否识别代次</desc><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#315c48"/></marker></defs><style>text{font-family:Arial,'PingFang SC',sans-serif;fill:#203f33;font-size:19px}.label{font-size:16px}.heading{font-size:27px;font-weight:700}.box{fill:#fff;stroke:#729984;stroke-width:2}.arrow{stroke:#315c48;stroke-width:2;fill:none;marker-end:url(#arrow)}.bad{fill:#fff4ec;stroke:#b96b39;stroke-width:2}</style><rect width="1040" height="570" rx="20" fill="#f2f7f3"/>
+<text x="35" y="48" class="heading">租约允许接替；fencing 在资源写入处拒旧代次</text>
+<text x="50" y="104">A：token 旧</text><text x="390" y="104">数据库权威</text><text x="780" y="104">资源端</text>
+<path d="M150 132V430M505 132V430M875 132V430" stroke="#a8bbad" stroke-width="2"/>
+<path d="M505 150H155" class="arrow"/><text x="210" y="137" class="label">A 获得租约及 token</text>
+<rect x="45" y="178" width="210" height="65" rx="10" class="bad"/><text x="70" y="217">A 暂停，不会消失</text>
+<rect x="355" y="205" width="300" height="75" rx="10" class="box"/><text x="379" y="235">权威时钟确认到期</text><text x="379" y="263" class="label">B 获得更高 token</text>
+<path d="M655 250H870" class="arrow"/><text x="675" y="232" class="label">B 新值 + 新 token</text>
+<text x="765" y="301" class="label">last_token = B 的代次</text>
+<path d="M155 350H870" class="arrow"/><text x="320" y="333" class="label">A 恢复，迟到写携带旧 token</text>
+<rect x="700" y="374" width="300" height="85" rx="10" class="box"/><text x="720" y="407">旧 token &lt; last_token</text><text x="720" y="438" class="label">原子条件更新拒绝，值仍是 B</text>
+<text x="40" y="501" class="label">无保护资源会被 A 覆盖；同一 token 再写仍允许，所以 fencing 不是幂等。</text>
+<text x="40" y="533" class="label">Redis 配额是另一条规则：单键 Lua 原子判断，限流不会拒绝陈旧写入。</text>
+</svg>

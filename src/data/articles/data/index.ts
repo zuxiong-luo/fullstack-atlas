@@ -1,5 +1,9 @@
 import type { Article } from '../../articleTypes';
-import indexes from './database-indexes';
-import mvcc from './database-mvcc';
-import locks from './database-locks-deadlocks';
-export const dataExpansionArticles: Article[] = [indexes,mvcc,locks];
+import a0 from './database-indexes';
+import a1 from './database-mvcc';
+import a2 from './database-locks-deadlocks';
+import a3 from './data-model-constraints';
+import a4 from './sql-execution-plans';
+import a5 from './optimistic-concurrency';
+import a6 from './cache-consistency';
+export const dataExpansionArticles: Article[] = [a0, a1, a2, a3, a4, a5, a6];

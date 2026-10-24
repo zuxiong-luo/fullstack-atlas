@@ -27,14 +27,7 @@ jobs:
           distribution: temurin
           java-version: '17'
       - name: Inspect SDK and install fixed native prerequisites
-        shell: bash
-        run: |
-          set -euo pipefail
-          command -v sdkmanager
-          command -v adb
-          java -version
-          node --version
-          sdkmanager --install 'platforms;android-37' 'build-tools;37.0.0' 'ndk;27.1.12297006' 'cmake;3.30.5'
+        run: python3 scripts/platform-lab-ci.py --timeout 600 -- bash scripts/install-native-tools.sh
       - name: Build actual x86_64 Android release and inspect template-only signing
         env:
           CI: 'true'

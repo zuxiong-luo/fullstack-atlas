@@ -52,5 +52,14 @@ it('keeps new chapter inline implementation excerpts synchronized with downloada
     }
     expect(mapped,article.id+' needs an inline real implementation, not only commands').toBeGreaterThan(0);
     expect(article.examples?.some(e=>e.path.endsWith('.zip')),article.id+' complete source download').toBe(true);
+    // An authored diagram is part of the explanation, not an unused delivery file.
+    const figureDirectory=path.join('public','figures',article.id);
+    if(fs.existsSync(figureDirectory)){
+      const referenced=new Set(article.sections.flatMap(sectionBlocks).filter(b=>b.type==='figure').map(b=>b.src.replace(/^\//,'')));
+      for(const asset of fs.readdirSync(figureDirectory).filter(name=>name.endsWith('.svg'))){
+        expect(referenced.has('figures/'+article.id+'/'+asset),article.id+': authored diagram must appear in the reading flow: '+asset).toBe(true);
+      }
+    }
+
   }
 });

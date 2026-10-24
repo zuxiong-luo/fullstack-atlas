@@ -17,7 +17,7 @@ async function copy(from,to){
    if(runtimeDataRoots.has(from)&&entry.name==='data')continue;
    if(from==='examples/next-production'&&entry.name==='release')continue;
    await copy(src,dst);
-  }else if(entry.isFile()&&(extensions.has(extname(entry.name))||explicitFiles.has(entry.name)||entry.name.endsWith('.service.in')))await copyFile(src,dst);
+  }else if(entry.isFile()&&(extensions.has(extname(entry.name))||explicitFiles.has(entry.name)||entry.name.endsWith('.service.in')||entry.name.endsWith('.conf.in')||entry.name.endsWith('.yaml.in')))await copyFile(src,dst);
  }
 }
 await copy('examples','public/downloads');
