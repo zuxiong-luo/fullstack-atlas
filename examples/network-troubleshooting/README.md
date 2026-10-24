@@ -1,8 +1,8 @@
 # 分层网络排查：本地DNS子集、真实TCP/TLS/HTTP
 
-**Ubuntu24.04运行待CI，暂不聚合发布。** macOS14.5上的CPython3.12.14可移植预检10/10通过；不能把它写成Linux验收。Linux脚本在mac先退出77，不修改宿主网络配置。
+**Ubuntu24.04.5隔离CI与mac可移植预检各10/10通过。** Linux证据来自真实CI，不把mac预检替代Linux。Linux脚本在mac先退出77，不修改宿主网络配置。
 
-固定协议资料：DNS RFC1035、TCP RFC9293、TLS1.3 RFC8446、HTTP语义RFC9110、HTTP/1.1消息RFC9112；工具资料OpenSSL3.0与Python3.12。目标Python3.12.14、Ubuntu24.04/OpenSSL3；实际Linux内核与OpenSSL补丁版本由CI输出补记。
+固定协议资料：DNS RFC1035、TCP RFC9293、TLS1.3 RFC8446、HTTP语义RFC9110、HTTP/1.1消息RFC9112；工具资料OpenSSL3.0与Python3.12。实际Linux为Ubuntu24.04.5、CPython3.12.14、kernel6.17.0-1022-azure；OpenSSL具体补丁尚未摘录，不使用mac版本冒充。
 
 ## CI
 
@@ -74,3 +74,7 @@ curl --noproxy '*' --resolve "atlas.test:$tls_port:127.0.0.1" --cacert "$lab_sta
 ## 验证范围
 
 10项测试覆盖：全链路成功、DNS不存在/无响应、TCP拒绝、TLS未知CA/主机名错、HTTP404/503/读取超时、每种故障后正确输入恢复、真实CLI退出码、证书删除与监听关闭。没有公网丢包、IPv6、代理/CDN、操作系统递归DNS、HTTP2/3、生产负载或手机验收。CI回来后记录run链接、Linux版本和实际结果。
+
+## 当前LinuxCI结果
+
+[run40097929509](https://github.com/zuxiong-luo/fullstack-atlas/actions/runs/40097929509)，head bea07732405b0faf0375adce85e3e242f8d0cb87，两套Linux脚本依序返回0；本网络脚本实际10/10通过并完成资源清理。DNS是本地UDP A/IN模拟，TCP/TLS/HTTP由真实OS协议栈完成；不扩张为系统递归DNS/公网/CDN/手机验收。仍review等最终图形与站点。

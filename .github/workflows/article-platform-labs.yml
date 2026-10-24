@@ -5,6 +5,7 @@ on:
     paths:
       - 'examples/linux-services/**'
       - 'examples/network-troubleshooting/**'
+      - 'examples/linux-performance/**'
       - '.github/workflows/article-platform-labs.yml'
   workflow_dispatch:
 permissions:
@@ -40,3 +41,5 @@ jobs:
           exit "$result"
       - name: DNS, TCP, TLS and HTTP failure recovery
         run: timeout 90s bash examples/network-troubleshooting/verify-linux.sh
+      - name: Controlled Linux CPU, RSS and logical I/O observations
+        run: timeout --signal=TERM --kill-after=5s 60s bash examples/linux-performance/verify-linux.sh

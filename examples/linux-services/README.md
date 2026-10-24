@@ -1,6 +1,6 @@
 # Linux服务：进程、线程、信号与systemd隔离实验
 
-**验证状态：proc/信号3项已在隔离Ubuntu CI通过；systemd编排在useradd超时处失败，修复后待重验。** 作者macOS没有Linux VM；本机语法/guard77和3项模拟清理测试不能替代Linux/systemd验收。
+**验证状态：Ubuntu隔离CI完整通过proc/信号3项、模拟部分清理3项及真实user/system两套服务生命周期。** 作者macOS没有Linux VM；本机guard77与模拟结果不代替Linux，Linux证据来自实际CI。
 
 文档基线：systemd255固定版本文档、Linux内核v6.8的proc文档、Linux man-pages6.19的signal/pthreads页面。实际CI为Ubuntu24.04.5 LTS、systemd255（255.4-1ubuntu8.17）、kernel6.17.0-1022-azure、CPython3.12.14。内核v6.8只是所引用文档版本。
 
@@ -46,7 +46,7 @@ cat "$lab_state/stopped.json"
 rm -rf -- "$lab_state"
 ```
 
-正常应观察：task_ids包含主PID和worker_tid；每个线程的Tgid相同；HTTP健康PID等于进程PID；TERM后退出0、ready消失、stopped.signals为`["SIGTERM"]`。这些断言已在隔离Ubuntu CI的3项proc/信号测试通过；两个systemd范围仍待重验。自动测试不靠“等两秒”认定就绪，而是读ready中的本次PID和真实HTTP响应。
+正常应观察：task_ids包含主PID和worker_tid；每个线程的Tgid相同；HTTP健康PID等于进程PID；TERM后退出0、ready消失、stopped.signals为`["SIGTERM"]`。这些断言已在隔离Ubuntu CI通过，两个systemd范围的完整故障/恢复/清理也已实际通过。自动测试不靠“等两秒”认定就绪，而是读ready中的本次PID和真实HTTP响应。
 
 KILL测试只杀自己Popen得到的子进程：退出状态为负SIGKILL，stopped不存在，ready可能残留；重新启动清理旧标记并恢复健康。因此ready文件存在不等于进程仍活着，也不能替代健康检查。
 
@@ -56,7 +56,7 @@ KILL测试只杀自己Popen得到的子进程：退出状态为负SIGKILL，stop
 
 Type=exec只表示程序成功exec，不承诺HTTP业务就绪；Restart=on-failure与StartLimit约束重启；TimeoutStopSec4s与KillMode=control-group约束停止范围。系统服务和用户服务由不同管理器管理，`User=`只在system模板出现。没有交付容器隔离、权限加固或生产高可用配置。
 
-## 待回填
+## CI实际结果与排障历史
 
 [run40094537231](https://github.com/zuxiong-luo/fullstack-atlas/actions/runs/40094537231)实际trace由根代理取得：上述Ubuntu环境，proc3项通过；旧useradd15秒超时，原cleanup标志不足以证明账户不存在。当前修复和模拟回归已完成，仍需重跑两scope实际JSON/日志、账户创建与清理确认。当前不把文章加入聚合发布，不把mac退出77写作“通过Linux测试”。
 
@@ -65,3 +65,7 @@ Type=exec只表示程序成功exec，不承诺HTTP业务就绪；Restart=on-fail
 第三轮隔离[run40095286144](https://github.com/zuxiong-luo/fullstack-atlas/actions/runs/40095286144)：模拟部分清理3/3与Linux proc/信号3/3均通过；修复后的useradd成功，实际账户清理complete。下一失败是普通runner直接Path.exists读取0700的/run/user/20000被PermissionError拒绝，尚未证明unit生命周期。已改为既有sudo -n test -S /run/user/UID/bus，以退出码轮询真正socket；不chmod或削弱runtime目录权限。完整两scope仍待下一轮CI。
 
 后续useradd仍30秒超时，不能将--no-log-init当已证根因。根代理18c1c46隔离strace annotation实际看到openat循环读取Rust工具链rlib/rmeta并创建输出（例如librustc_literal_escaper）；这证明账户创建在复制工具文件。现明确在本次work下创建空skel目录，传useradd --skel，以免教学用户复制镜像默认dotfiles/工具链；保留--no-log-init、有限UID/home/超时与严格清理。默认skeleton是慢点的解释仍待无strace新实验确认，两scope仍保持受阻。
+
+## 当前最终CI结果
+
+[run40097929509](https://github.com/zuxiong-luo/fullstack-atlas/actions/runs/40097929509)，head bea07732405b0faf0375adce85e3e242f8d0cb87，普通无strace两套脚本依序返回0，job约30秒/总约33秒。proc3+模拟清理3+user/system完整启动、TERM停止、失败42/重启耗尽、恢复及清理均通过。上面各次“待重验”只描述当时排障阶段；当前Linux执行验收已完成，文章仍review等图形/站点。strace观察复制Rust工具文件，显式空skel后成功支持该复制路径是重要耗时来源；不将最初lastlog猜测写成事实。
