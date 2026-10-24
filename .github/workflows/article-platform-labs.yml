@@ -7,6 +7,8 @@ on:
       - 'examples/network-troubleshooting/**'
       - 'examples/linux-performance/**'
       - 'examples/docker-engineering/**'
+      - 'examples/service-release-rollback/**'
+      - 'examples/kubernetes-foundations/**'
       - '.github/workflows/article-platform-labs.yml'
   workflow_dispatch:
 permissions:
@@ -47,3 +49,39 @@ jobs:
       - run: docker version
       - name: Image, namespace, volume, shutdown and cgroup boundaries
         run: python scripts/platform-lab-ci.py --timeout 360 -- bash examples/docker-engineering/verify-linux.sh
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12.14'
+      - run: sudo apt-get update && sudo apt-get install -y nginx
+      - name: Private nginx candidate gating, drain and rollback
+        run: python scripts/platform-lab-ci.py --timeout 120 -- bash examples/service-release-rollback/verify-linux.sh
+  kubernetes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12.14'
+      - name: Install fixed official tools into runner temporary directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          lab_bin="$RUNNER_TEMP/atlas-k8s-bin"
+          mkdir -p "$lab_bin"
+          cd "$lab_bin"
+          curl -fL --retry 3 -o kind https://kind.sigs.k8s.io/dl/v0.33.0/kind-linux-amd64
+          curl -fL --retry 3 -o kind.sha256 https://kind.sigs.k8s.io/dl/v0.33.0/kind-linux-amd64.sha256sum
+          echo "$(cut -d ' ' -f1 kind.sha256)  kind" | sha256sum --check
+          curl -fL --retry 3 -o kubectl https://dl.k8s.io/release/v1.35.8/bin/linux/amd64/kubectl
+          curl -fL --retry 3 -o kubectl.sha256 https://dl.k8s.io/release/v1.35.8/bin/linux/amd64/kubectl.sha256
+          echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+          chmod +x kind kubectl
+          echo "$lab_bin" >> "$GITHUB_PATH"
+      - name: Real isolated cluster replacement, probes and rollout recovery
+        run: python scripts/platform-lab-ci.py --timeout 1080 -- bash examples/kubernetes-foundations/verify-linux.sh

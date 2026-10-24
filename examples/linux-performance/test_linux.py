@@ -45,6 +45,19 @@ class ObservedWorkloads(unittest.TestCase):
             for pipe in [self.child.stdin, self.child.stdout, self.child.stderr]:
                 pipe.close()
 
+    def test_gone_process_and_reused_pid_are_failed_observations(self):
+        before = snapshot(self.child.pid)
+        self.command("quit")
+        self.child.wait(timeout=3)
+        with self.assertRaises((FileNotFoundError, ProcessLookupError)):
+            snapshot(self.child.pid)
+        with self.assertRaisesRegex(ValueError, "identity"):
+            delta(before, before | {"start_ticks": before["start_ticks"] + 1})
+        with self.assertRaisesRegex(ValueError, "interval"):
+            delta(before, before)
+        print(json.dumps({"case": "failed_observation", "gone_pid_rejected": True,
+                          "reused_pid_rejected": True, "zero_interval_rejected": True}), flush=True)
+
     def test_cpu_ticks_are_interval_work_not_instantaneous_load(self):
         before = snapshot(self.child.pid)
         result = self.command("cpu")
