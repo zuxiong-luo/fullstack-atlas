@@ -1,0 +1,33 @@
+{
+  "asset": "assets/index-m1VZ9AGh.js",
+  "sha256": "589988c7673fdd2ecab9416a17770feb250bb42262a71775c137ab0076b919de",
+  "workerSha256": "77fd61cbae142bdedfc2107a8a2ce7f5c49eed1d5d11a96b01f13e2620583c0a",
+  "manifest": {
+    "version": "a1eebc2226a356ab",
+    "files": 1468,
+    "bytes": 21582815,
+    "localBytes": 21583199,
+    "sameFileList": true
+  },
+  "figures": [
+    {
+      "path": "figures/flash-sale/atomic.svg",
+      "sha256": "084ea0b207a544e8ed1c2227b7264ac3ce39725685799def034cc44f9509929f"
+    },
+    {
+      "path": "figures/flash-sale/admission.svg",
+      "sha256": "c8e74412a524389a7d79f2280669ce0955b05f0c4e73659e593b82b70172ff89"
+    },
+    {
+      "path": "figures/flash-sale/recovery.svg",
+      "sha256": "5feaffa57e9e354363742b07bae14958b8c93a1d2924a7838bb035d2cd062476"
+    }
+  ],
+  "archive": {
+    "path": "downloads/flash-sale.zip",
+    "sourceFiles": 9,
+    "entryBytesMatch": true,
+    "onlineZipBytes": 17064,
+    "localZipBytes": 17064
+  }
+}
