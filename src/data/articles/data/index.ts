@@ -6,4 +6,5 @@ import a3 from './data-model-constraints';
 import a4 from './sql-execution-plans';
 import a5 from './optimistic-concurrency';
 import a6 from './cache-consistency';
-export const dataExpansionArticles: Article[] = [a0, a1, a2, a3, a4, a5, a6];
+import flashSale from './flash-sale';
+export const dataExpansionArticles: Article[] = [a0, a1, a2, a3, a4, a5, a6, flashSale];

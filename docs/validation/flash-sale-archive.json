@@ -1,0 +1,35 @@
+{
+  "fromArchive": true,
+  "outsideRepository": true,
+  "files": {
+    "flash-sale/worker.mjs": "d2af2660813b1003b26946d65acd01e55ed9968c5d534d27ba3a607941487bc9",
+    "flash-sale/test.mjs": "b86e2d217679d27490337835e103116fc410a9d8d4ba6d8919a8fe26f3eaa52d",
+    "flash-sale/schema.sql": "9ee99fcc8496963f5cea5b60487fa951adf8eba0b9f0821b99360c6d6a4db078",
+    "flash-sale/README.md": "a36a56b7462c1b42164f5861beea4c3bbb01cb5dd684ca75c1c125bcbed97629",
+    "flash-sale/fixtures.mjs": "63bdaf149c63e3f9fdce95b36f23b49f9083703d5505a463365a0d141603d0d9",
+    "flash-sale/lua.mjs": "c7c3bacdda504902471b83b43c85885427a56549ccbbac321a336acc008c95e7",
+    "flash-sale/package-lock.json": "08d3b02d91041dbbe524ad09d857cca1543fe249bb7c42616a2f67496352ad2a",
+    "flash-sale/package.json": "2e2f5288d1b62f576cc9a42f637c2122459884d033b43165642a0c3076636faa",
+    "flash-sale/service.mjs": "5b9b0a9a326dd39695db94562aa10f89da0395db964000fad42b87f5dc5dbcb7"
+  },
+  "commands": [
+    {
+      "command": [
+        "npm",
+        "ci",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "exit": 0
+    },
+    {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit": 0
+    }
+  ],
+  "result": "12/12 passed"
+}

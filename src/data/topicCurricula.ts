@@ -30,6 +30,7 @@ export const topicCurricula:TopicCurriculum[] = [
     chapter('database-locks-deadlocks','数据库锁与死锁：锁范围、等待关系和重试','构造可控等待与死锁，设计完整事务重试。',1),
     chapter('optimistic-concurrency','乐观并发控制：版本号、条件更新、唯一约束与幂等写入','验证冲突检测、并发唯一性与幂等写入边界。',2),
     chapter('cache-consistency','数据库与缓存一致性：失效、并发回填和更新顺序','复现过期回填与双写失败，明确一致性承诺。',2),
+    chapter('flash-sale','秒杀后端：从库存行锁到 Redis Lua 与有界异步下单','解释原子检查与容量保护，用真实PG/Redis验证预占、消费和恢复。',3),
     chapter('typeorm-foundations','TypeORM 基础：Entity、DataSource、Repository 与 SQL','从实际 SQL 理解实体映射、持久化和查询边界。',3),
     chapter('typeorm-relations-queries','关系与查询：JOIN、QueryBuilder、分页和 N+1','用真实查询日志验证关联加载、计数和精度保真的游标。',3),
     chapter('typeorm-transactions-concurrency','事务与并发：事务 manager、QueryRunner、锁与幂等','控制两个连接的执行顺序，验证回滚、冲突和连接归属。',3),
