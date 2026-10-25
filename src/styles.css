@@ -84,3 +84,10 @@
 .topbar {height:auto;min-height:76px;gap:12px;padding-top:12px;padding-bottom:12px;flex-wrap:wrap}
 .topbar-right {flex-wrap:wrap}
 @media(max-width:760px){.topbar{min-height:62px;padding-top:8px;padding-bottom:8px;gap:8px}.topbar-right{gap:6px}.topbar .top-divider{display:none}}
+
+/* Keep touch scrolling, while page zoom is controlled by the app. */
+html, body, #root, #root * { touch-action: pan-x pan-y; }
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  /* Small input text can cause Safari to zoom when the keyboard opens. */
+  #root input, #root select, #root textarea { font-size: max(16px, 1rem); }
+}
