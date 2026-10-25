@@ -1,0 +1,32 @@
+{
+  "asset": "assets/index-i11_GMhd.js",
+  "sha256": "024592c4f208500dc0a3c144eb57492867d8eff7c3d02fbab296d352b83139df",
+  "version": "88b7028eb719993a",
+  "files": 1306,
+  "bytes": 20198367,
+  "archives": [
+    {
+      "name": "react-native-engineering",
+      "entries": 24,
+      "bytesMatch": true
+    },
+    {
+      "name": "cross-platform-delivery",
+      "entries": 25,
+      "bytesMatch": true
+    },
+    {
+      "name": "python-course",
+      "entries": 81,
+      "bytesMatch": true
+    },
+    {
+      "name": "offline-first-static-site",
+      "entries": 6,
+      "bytesMatch": true
+    }
+  ],
+  "implementationCommit": "62ba1a0207f424b362e2893692ee2e843795ca53",
+  "pagesRun": 40146674941,
+  "verificationDate": "2026-10-25"
+}

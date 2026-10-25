@@ -1,5 +1,7 @@
 # 全站专题扩充执行与进度清单
 
+当前结果：新增60篇已全部分批发布，全站100篇，12分类均达到确认目标。最后实现提交62ba1a0，线上及环境范围见 `docs/validation/expansion-100-release.md`。
+
 批准范围：新增60篇；阶段一28篇，全站68篇且各分类至少4篇；阶段二32篇，全站100篇。React18篇、Agent8篇保留，本轮仅修必要一致性问题。
 
 ## 编辑与验收约定
@@ -85,11 +87,11 @@
 |1 / 既有|React Native 与 Flutter：渲染、事件和设备通信模型<br>`cross-platform-models`|区分两种框架的执行、渲染和平台调用边界。|`examples/cross-platform-models/`|已有|
 |2 / 既有|Flutter 设备页面：状态所有权、订阅与平台边界<br>`flutter-engineering`|实现有生命周期约束的设备页面。|`examples/flutter-engineering/`|已有|
 |3 / 1|跨平台架构：领域逻辑、状态与平台适配接口<br>`cross-platform-architecture`|用适配接口隔离设备能力，验证状态与取消。|`examples/cross-platform-architecture/`|已完成|
-|4 / 2|React Native 应用工程：导航、生命周期与原生能力<br>`react-native-engineering`|处理屏幕生命周期、权限和原生调用失败。|`examples/react-native-engineering/`|待审校|
+|4 / 2|React Native 应用工程：导航、生命周期与原生能力<br>`react-native-engineering`|处理屏幕生命周期、权限和原生调用失败。|`examples/react-native-engineering/`|已完成|
 |5 / 2|移动端离线数据：本地存储、操作队列与同步冲突<br>`mobile-offline-sync`|实现可重放操作与明确的冲突策略。|`examples/mobile-offline-sync/`|已完成|
 |6 / 既有|Electron 权限边界：从进程隔离到安全报表导出<br>`electron-trust-boundary`|验证不可信渲染进程与主进程的权限分隔。|`examples/electron-trust-boundary/`|已有|
 |7 / 2|跨平台性能：启动、滚动、内存和通信成本<br>`cross-platform-performance`|在指定平台上记录可复现测量，定位关键路径。|`examples/cross-platform-performance/`|已完成|
-|8 / 2|跨平台交付：构建、签名、配置、升级与崩溃定位<br>`cross-platform-delivery`|区分各平台交付链并验证可用的构建环境。|`examples/cross-platform-delivery/`|待审校|
+|8 / 2|跨平台交付：构建、签名、配置、升级与崩溃定位<br>`cross-platform-delivery`|区分各平台交付链并验证可用的构建环境。|`examples/cross-platform-delivery/`|已完成|
 
 ### Next.js 全栈
 
@@ -168,7 +170,7 @@
 
 - 2026-10-23：目录落盘；工作树起点 a6768cf。第一批9篇开始。待审校，不宣称正文或发布已完成。
 - 每批记录：官方资料与确切版本、测试环境和命令结果、失败案例、独立审稿、桌面/手机视口、ZIP与离线清单、回归、提交和线上资源版本。
-- 当前专用环境限制：无本机Docker/K8s；Android/iOS原生与真机未验；真实付费模型未调用。RN上游依赖问题沿用既有记录，进入新章前重新核对。
+- 起点环境限制：当时无本机Docker/K8s，Android/iOS原生未验。后续已在隔离Ubuntu和Android API36 x86_64模拟器验证，详见最终发布记录；实体手机、iOS、物理GPU矩阵及真实付费模型仍未验。RN上游依赖告警保留。
 
 - 2026-10-24：Node三篇已独立交叉审稿与真实示例复现；桌面/390手机视口图形、高亮、复制、SIGTERM入口通过。数据三篇作者交稿，主代理独立复现6/8/8通过，独立作者审稿待补。Python前三章示例17项已由两人复现，正文由接续作者补齐。批二安全2篇、Next3篇开始；未推送未宣称上线。
 
@@ -182,3 +184,5 @@
 第二阶段27篇已随8507e7b发布，线上95篇/25套新或更新ZIP核验通过，详见expansion-stage-02-95-release.md。剩余WebGL3和跨平台RN/交付2仍未计完成。
 
 WebGL后三篇已随f3494f2发布，线上98篇/三个新增ZIP核验通过，详见expansion-stage-02-98-release.md。只剩RN工程/跨平台交付两篇尚未验收完成。
+
+2026-10-25：最终两篇随62ba1a0207f424b362e2893692ee2e843795ca53发布，新增60篇全部完成，全站100篇。Pages run40146674941成功；线上主资源与55项已验快照逐字节相同，1306离线资源、四个新增或更新ZIP逐文件核对通过。本地4173已同步。原生模拟器、实际离线落盘与未验环境见 expansion-100-release.md。上述98篇及待审状态保留为历史批次事实。
