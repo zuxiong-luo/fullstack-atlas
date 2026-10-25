@@ -1,10 +1,10 @@
 import {useEffect,useState} from 'react';
+import {offlineRegistration,offlineWorker} from '../lib/offlineWorker';
 type Snapshot={version:string;bytes:number;savedAt:number;count:number};
 async function request(type:string,onProgress?:(n:number,total:number)=>void):Promise<Snapshot|null>{
  if(!('serviceWorker' in navigator))throw new Error('当前浏览器不支持离线缓存，请使用 HTTPS 或本机预览。');
- const registration=await navigator.serviceWorker.register(new URL('sw.js',document.baseURI).href,{scope:new URL('.',document.baseURI).pathname});
- const worker=registration.active||registration.installing||registration.waiting;if(!worker)throw new Error('离线服务启动失败');
- if(worker.state!=='activated')await new Promise<void>((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('离线服务启动超时')),15000);worker.addEventListener('statechange',()=>{if(worker.state==='activated'){clearTimeout(timer);resolve()}if(worker.state==='redundant'){clearTimeout(timer);reject(new Error('离线服务安装失败'))}})});
+ const registration=await offlineRegistration(navigator.serviceWorker,document.baseURI,type==='DOWNLOAD');
+ const worker=await offlineWorker(registration,type==='DOWNLOAD');
  return new Promise((resolve,reject)=>{const channel=new MessageChannel();let timer:ReturnType<typeof setTimeout>;const fail=()=>{channel.port1.close();reject(new Error('下载超时，请检查网络后重试。'))};const arm=()=>{clearTimeout(timer);timer=setTimeout(fail,120000)};arm();channel.port1.onmessage=e=>{arm();if(e.data.progress)onProgress?.(e.data.progress,e.data.total);if(e.data.done||e.data.error){clearTimeout(timer);channel.port1.close();e.data.error?reject(new Error(e.data.error)):resolve(e.data.installed)}};worker.postMessage({type},[channel.port2])});
 }
 export default function Offline(){const [snapshot,setSnapshot]=useState<Snapshot|null>(null),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[progress,setProgress]=useState(0);

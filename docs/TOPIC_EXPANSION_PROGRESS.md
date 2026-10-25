@@ -85,11 +85,11 @@
 |1 / 既有|React Native 与 Flutter：渲染、事件和设备通信模型<br>`cross-platform-models`|区分两种框架的执行、渲染和平台调用边界。|`examples/cross-platform-models/`|已有|
 |2 / 既有|Flutter 设备页面：状态所有权、订阅与平台边界<br>`flutter-engineering`|实现有生命周期约束的设备页面。|`examples/flutter-engineering/`|已有|
 |3 / 1|跨平台架构：领域逻辑、状态与平台适配接口<br>`cross-platform-architecture`|用适配接口隔离设备能力，验证状态与取消。|`examples/cross-platform-architecture/`|已完成|
-|4 / 2|React Native 应用工程：导航、生命周期与原生能力<br>`react-native-engineering`|处理屏幕生命周期、权限和原生调用失败。|`examples/react-native-engineering/`|待编写|
+|4 / 2|React Native 应用工程：导航、生命周期与原生能力<br>`react-native-engineering`|处理屏幕生命周期、权限和原生调用失败。|`examples/react-native-engineering/`|待审校|
 |5 / 2|移动端离线数据：本地存储、操作队列与同步冲突<br>`mobile-offline-sync`|实现可重放操作与明确的冲突策略。|`examples/mobile-offline-sync/`|已完成|
 |6 / 既有|Electron 权限边界：从进程隔离到安全报表导出<br>`electron-trust-boundary`|验证不可信渲染进程与主进程的权限分隔。|`examples/electron-trust-boundary/`|已有|
 |7 / 2|跨平台性能：启动、滚动、内存和通信成本<br>`cross-platform-performance`|在指定平台上记录可复现测量，定位关键路径。|`examples/cross-platform-performance/`|已完成|
-|8 / 2|跨平台交付：构建、签名、配置、升级与崩溃定位<br>`cross-platform-delivery`|区分各平台交付链并验证可用的构建环境。|`examples/cross-platform-delivery/`|待编写|
+|8 / 2|跨平台交付：构建、签名、配置、升级与崩溃定位<br>`cross-platform-delivery`|区分各平台交付链并验证可用的构建环境。|`examples/cross-platform-delivery/`|待审校|
 
 ### Next.js 全栈
 
@@ -160,9 +160,9 @@
 |2 / 1|从二维到三维：模型、视图、投影与深度<br>`webgl-3d-transforms`|解释坐标变换和深度测试，用参数控制画面。|`examples/webgl-3d-transforms/`|已完成|
 |3 / 1|几何与 GPU 数据：属性、索引缓冲和实例化<br>`webgl-geometry-buffers`|验证顶点布局、索引范围和实例化数据。|`examples/webgl-geometry-buffers/`|已完成|
 |4 / 1|纹理与采样：UV、过滤、mipmap 和透明混合<br>`webgl-texture-sampling`|通过实际纹理解释采样与混合次序。|`examples/webgl-texture-sampling/`|已完成|
-|5 / 2|Shader 与光照：法线、材质和逐像素计算<br>`webgl-shader-lighting`|验证法线变换和简化光照模型。|`examples/webgl-shader-lighting/`|待编写|
-|6 / 2|离屏渲染与后处理：Framebuffer、纹理与多 Pass<br>`webgl-framebuffer-postprocess`|完成离屏目标和后处理，检查附件完整性。|`examples/webgl-framebuffer-postprocess/`|待编写|
-|7 / 2|渲染性能与生命周期：批次、计时、内存和上下文恢复<br>`webgl-performance-lifecycle`|区分 CPU/GPU 测量，处理丢失与重建。|`examples/webgl-performance-lifecycle/`|待编写|
+|5 / 2|Shader 与光照：法线、材质和逐像素计算<br>`webgl-shader-lighting`|验证法线变换和简化光照模型。|`examples/webgl-shader-lighting/`|已完成|
+|6 / 2|离屏渲染与后处理：Framebuffer、纹理与多 Pass<br>`webgl-framebuffer-postprocess`|完成离屏目标和后处理，检查附件完整性。|`examples/webgl-framebuffer-postprocess/`|已完成|
+|7 / 2|渲染性能与生命周期：批次、计时、内存和上下文恢复<br>`webgl-performance-lifecycle`|区分 CPU/GPU 测量，处理丢失与重建。|`examples/webgl-performance-lifecycle/`|已完成|
 
 ## 验证与发布记录
 
@@ -180,3 +180,5 @@
 第一阶段28篇已随404486d及此前批次发布，线上68篇和12套新增ZIP核验通过，详见docs/validation/expansion-stage-01-release.md。第二阶段草稿逐篇进入审校，不提前以文件落盘计完成。
 
 第二阶段27篇已随8507e7b发布，线上95篇/25套新或更新ZIP核验通过，详见expansion-stage-02-95-release.md。剩余WebGL3和跨平台RN/交付2仍未计完成。
+
+WebGL后三篇已随f3494f2发布，线上98篇/三个新增ZIP核验通过，详见expansion-stage-02-98-release.md。只剩RN工程/跨平台交付两篇尚未验收完成。

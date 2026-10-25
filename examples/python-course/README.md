@@ -1,11 +1,11 @@
 # Python 笔记导入课程
 
-第1～3章保留三份可以独立运行的阶段入口；第4～5章新增内容在页末独立列出。前三个阶段处理同样的 `id`、`title`、`tags`，依次学习语言基础、函数与迭代、对象模型。脚本只读取指定本地文件并写到标准输出，没有数据库或网络服务。
+本目录串起第1～5、7～9章的笔记项目：导入、包边界、并发、FastAPI、SQLite与可安装交付。第6章保留独立的 `python-async-services` 文章/示例ID，不在本目录重写。第1～3章各有可独立运行的入口，处理同样的 `id`、`title`、`tags`，只读取指定文件并写stdout；第7～9章才逐层引入真实loopback HTTP、SQLite和安装产物。各阶段命令与依赖在下文对应章节说明。
 
 ## 环境与文件
 
 - Python **3.12.x**，本次实际验证 **CPython 3.12.14**，macOS 14.5 x86_64，2026-10-24。
-- 只用标准库，无需 pip 安装或服务配置。`pyproject.toml` 声明 `>=3.12,<3.13`，不意味着已经在所有3.12补丁版或其他系统测试。
+- 第1～5章只用标准库，无需 pip 安装或服务配置；第7～9章先按各章README安装精确锁依赖。`pyproject.toml` 声明 `>=3.12,<3.13`，不意味着已经在所有3.12补丁版或其他系统测试。
 - 正文核对 Python 3.12 系列官方文档，页面当前维护版为 **3.12.15**；这不是本次测试解释器版本。
 - 从仓库根目录 `cd examples/python-course`；下载 `python-course.zip` 的读者解压后进入 `python-course` 即可。
 
@@ -22,9 +22,15 @@ python-course/
   fixtures/bad.jsonl
   fixtures/duplicate.jsonl
   test_course.py
+  chapter04/  # Note、包入口与资源边界
+  chapter05/  # 线程、进程与asyncio
+  chapter07/  # FastAPI与有界任务；含requirements.lock
+  chapter08/  # SQLite数据访问与事务
+  chapter09/  # src安装快照、运行/构建锁与安装验收
+  test_chapter04.py ... test_chapter09.py
 ```
 
-三份脚本有意独立，避免学习某章还必须先运行前一章；它们重复的业务规则会在后续包与边界章节收拢。下文首先记录前三章。新增阶段入口见页末独立章节说明；FastAPI、数据访问和交付尚未实现。
+三份脚本有意独立，避免学习某章还必须先运行前一章；它们重复的业务规则会在后续包与边界章节收拢。下文首先记录前三章。第4～5与7～9章均已实现、独立审稿并发布；页末给出各自入口。
 
 ## 输入契约
 
@@ -65,7 +71,7 @@ python3 -m unittest -v test_course
 {"id":"n2","title":"生成器与迭代","tags":["python","iterator"]}
 ```
 
-命令正常退出码为0；错误写stderr，预期失败退出码为2。不要把所有终端内容都当作stdout。完整unittest包含真实CLI子进程断言，17/17通过；可以单独选 `test_course.Foundations`、`test_course.Iteration`、`test_course.Objects` 或 `test_course.CLI`。
+命令正常退出码为0；错误写stderr，预期失败退出码为2。不要把所有终端内容都当作stdout。本段前三章unittest包含真实CLI子进程断言，17/17通过；可以单独选 `test_course.Foundations`、`test_course.Iteration`、`test_course.Objects` 或 `test_course.CLI`。
 
 ## 失败与部分输出
 
@@ -99,7 +105,7 @@ python3 chapter02/import_notes.py fixtures/duplicate.jsonl python
 - [Python3.12 dataclass](https://docs.python.org/3.12/library/dataclasses.html)
 - [Python3.12对象协议](https://docs.python.org/3.12/reference/datamodel.html)
 
-已验证：CPython3.12.14上的17项标准库测试与真实CLI，包括流式部分输出、实例隔离、值相等/身份、运行时校验。没有性能收益结论。未验证：Windows/Linux与其他补丁版本、浏览器/手机视觉呈现、生产规模内存限制、真实数据库或HTTP服务。
+前三章历史验收：CPython3.12.14上的17项标准库测试与真实CLI，包括流式部分输出、实例隔离、值相等/身份、运行时校验，没有性能收益结论。这17项不涉及真实数据库或HTTP服务；后者由第7～9章另作真实loopback/SQLite/安装验证。各章跨系统/其他补丁版本及视觉呈现范围以文章验证记录为准，不把此处早期本机结果扩大为全平台结论。
 
 
 ## 第4章新增：模块与边界
@@ -109,9 +115,9 @@ python3 chapter02/import_notes.py fixtures/duplicate.jsonl python
 
 ## 第5章新增：并发模型与有界处理
 
-新增 `chapter05/` 与 `test_chapter05.py`，运行 `python3 -m chapter05 threads fixtures/notes.jsonl`、`python3 -m chapter05 asyncio fixtures/notes.jsonl`、`python3 -m chapter05 processes fixtures/notes.jsonl`。I/O模式用本机临时回显服务，进程模式用纯Python计算，均不作性能排名。运行 `python3 -m unittest -v test_course test_chapter04 test_chapter05` 共33项。详见[第5章说明](chapter05/README.md)。未审校新增章节不应混入第一批冻结ZIP，统一打包由发布流程决定。
+新增 `chapter05/` 与 `test_chapter05.py`，运行 `python3 -m chapter05 threads fixtures/notes.jsonl`、`python3 -m chapter05 asyncio fixtures/notes.jsonl`、`python3 -m chapter05 processes fixtures/notes.jsonl`。I/O模式用本机临时回显服务，进程模式用纯Python计算，均不作性能排名。运行 `python3 -m unittest -v test_course test_chapter04 test_chapter05` 共33项。详见[第5章说明](chapter05/README.md)。上述33项属于前五章标准库范围；当前课程已加入经独立审稿的7～9章，完整锁依赖和61项命令见下文。
 
-## 后续独立阶段（尚待审稿，不自动进入发布聚合）
+## HTTP、SQLite与安装交付阶段（第7～9章，已审稿发布）
 
 第7章`chapter07/README.md`：FastAPI内存笔记与有界导入任务。独立安装`chapter07/requirements.lock`，从课程根运行`python -m chapter07`；本章依赖第4章Note，不要求第8/9章。作者CPython3.12.14下8/8测试与真实loopback CLI启动/请求/关闭通过。第6章仍保留原有独立`python-async-services`文章/示例ID，第7章组合第5章固定worker/Queue与第6章的超时/取消清理约定，没有重命名或改写第6章。
 

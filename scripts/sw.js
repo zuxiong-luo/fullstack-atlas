@@ -18,7 +18,9 @@ self.addEventListener('message',event=>{const port=event.ports[0];if(!port)retur
  const complete=await installed();for(const old of complete.slice(2))await caches.delete(old.key);
  }catch(e){reply({error:e.message||'离线操作失败'})}finally{if(acquired)busy=false}})())});
 self.addEventListener('fetch',event=>{const request=event.request;const url=new URL(request.url);if(request.method!=='GET'||url.origin!==self.location.origin||!url.href.startsWith(self.registration.scope)||url.pathname.endsWith('/sw.js')||url.pathname.endsWith('/offline-manifest.json'))return;
- event.respondWith((async()=>{const list=await installed();const target=request.mode==='navigate'?new URL('./index.html',self.registration.scope).href:request;
- // An installed snapshot stays internally consistent; refresh it explicitly.
- for(const item of list){const hit=await item.cache.match(target,{ignoreVary:true});if(hit)return hit}return fetch(request)})());
+ event.respondWith((async()=>{const list=await installed();const shell=new URL('./index.html',self.registration.scope);
+ const appNavigation=request.mode==='navigate'&&(url.pathname===new URL(self.registration.scope).pathname||url.pathname===shell.pathname);
+ // Match the actual resource first: downloads and standalone HTML are navigations too.
+ // Only this hash-router application's entry may fall back to its shell.
+ for(const item of list){const hit=await item.cache.match(request,{ignoreVary:true})||(appNavigation?await item.cache.match(shell.href,{ignoreVary:true}):null);if(hit)return hit}return fetch(request)})());
 });

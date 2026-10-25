@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-25",
+  "apkBuildSource": "9280ec30b31ecc08568e515ff10631dc06262db8",
+  "rnRuntimeRun": 40142096678,
+  "deliveryRuntimeSource": "a834681f97a86f61182eada83d21e1cde48dea39",
+  "deliveryRuntimeRun": 40144174318,
+  "diagnosticOnlyChanges": [
+    [
+      "cross-platform-delivery",
+      "verify_emulator.py",
+      "f387b8feb7437092bf2b96825fb5553304d44e0db474f4d6e3f6f090f0e87db4"
+    ]
+  ],
+  "files": {
+    "react-native-engineering": {
+      ".gitignore": "97d451f263ba66fedc70f6530349602b65ab5342765d7a6725444d5ae6d3a639",
+      ".nvmrc": "51849cee918b92b09b95121b54380f6124c0f578d8c2323221c0d75bbbadb08d",
+      "app/_layout.jsx": "8c7bdd2f4d49b0e7a62f8ef3506326c01c3982a18ae09c6a51973ddd84873635",
+      "app/index.jsx": "55ac2f1a0bb88cfee5a197889462ceeae9ab0c6aedcf3f77ae6089ff31c570a7",
+      "app/note/[id].jsx": "712e98b60288fe44a06c8fc8d74c0f5a0da9b27c8258d67f2f014dfd137d9fa4",
+      "app.json": "89a7c26f3ab7c475e80ddf78eb6388cd8433b6d86acee8459c1d24b3cc008014",
+      "build_android.py": "a4667c48c90705b2fee8a238712ce311eff035a803c9b66bc1359d0df864d169",
+      "lib/lifecycle.jsx": "73cb5b4b1467d95f66732b3fbfb37ccbdbae1b67a269095e0346c13b27598df0",
+      "lib/native-port.js": "c39272e6071abbb83619197578ad5aefc65bfc00519a91e05af0caa24cedc223",
+      "lib/report.js": "68aeb0c19ad1c87842e9dbf4b0be67382ec77ddf48d91f92550c184134a5c015",
+      "lib/session.mjs": "0f94e768d4bfbce9b7e01d4568d74bde7de944c4ce844e421ad09cb546d49c46",
+      "metro.config.cjs": "f8c362941c71867a22fe4a858fe29289d9eb1820656569228ad2545e4b3b9791",
+      "package-lock.json": "1e5ea062056c3b734d13ae14d3ae462999fffeb28cd177347b292c171cd494d7",
+      "package.json": "0ec453e756bdc0469586fd74c405f351ba47378faeffa2d7076c54c3b1539186",
+      "test.mjs": "1272019decdd447a778f29424fddb9fd33fce73771933ffec2c75ef9003888ed",
+      "test_harness.py": "6201a9f6926de17977488ac3c79ba1608225d76b21ea3c28ef08e0904924b48d",
+      "verify-android.sh": "5bea29003dfd3fa46a4974d390d4b9017b02e58d1050bd5deb659eb7a9fe436b",
+      "verify-config.mjs": "10238de23a22954c36bd3621d56c5acac5cd0de932d7ee66b1813c4ef5fe8e6f",
+      "verify_emulator.py": "4cbf8518f8dcc85d06458c90278627a2f7aac5a80eb8b36f94d20ccc1833c164"
+    },
+    "cross-platform-delivery": {
+      ".gitignore": "97d451f263ba66fedc70f6530349602b65ab5342765d7a6725444d5ae6d3a639",
+      ".nvmrc": "51849cee918b92b09b95121b54380f6124c0f578d8c2323221c0d75bbbadb08d",
+      "App.jsx": "a89633e2be11659c731911beea9f058e84e8d369068896483a011ab178b4b7a4",
+      "app.config.cjs": "1fc7e7c289c80b1675763f1a43564356d45ee27a6adb4709c5b6d327a118f8d7",
+      "app.json": "58b9f46e1c40914ccce83791956ad00764ad1893e42f846d2d0d877618bc47ea",
+      "build-profile.json": "faadce2f369bdba71fd691632fe7bebcd2eb9c8c694e0aa1debbadade6d08b17",
+      "build_android.py": "2e23f403a51e8dbe3c32e2a3ebd851423a92c948f06ddec3503de2ad8ae7d25d",
+      "index.js": "dbab92d1827cb8cb94b907dd56dd19fb2590b4642bf526059696be2f6e73cd94",
+      "lib/controlled-error.js": "4a36652844bec8b5c2d642c112a89e3b21a0b5619dbccf4ad21698746ce3b07f",
+      "lib/notes.js": "203f30897b22f847860f94c975146e44f4fb2607136925594feb87de86d7c26b",
+      "lib/report.js": "51cf4063203f44c5e1df236b130590b90d5a3cb3412148acd662a6e1278da4a9",
+      "metro.config.cjs": "f8c362941c71867a22fe4a858fe29289d9eb1820656569228ad2545e4b3b9791",
+      "package-lock.json": "4f72312d6e4c991084105f7a0be004a04f5224c649973a8474d014c9dd30076d",
+      "package.json": "659a985afd25c914faa166103001472198fd8195f388977bfb7d3474900bd8a0",
+      "profile.cjs": "1df1842b0032484a8c6f9928b5a4e9d2946e93866a5c64ab52f8f877110eee3d",
+      "symbolicate.mjs": "2c193fc3d770b9ba40b9651c9dd91cd2f20f5b66f3b15c30fed5cabac6437078",
+      "test.mjs": "4b3a547c84dd31e8aac4fbf90ee6613a160e1cd92d1c1767c90b4c4841f89b5e",
+      "test_harness.py": "6201a9f6926de17977488ac3c79ba1608225d76b21ea3c28ef08e0904924b48d",
+      "verify-android.sh": "1ee7ea7bb1fabe8a80a5491ac324222f75f2b21a1890be6c9f48fa27cb888eb9",
+      "verify-artifact.mjs": "792dd32dcb5c049d6d56d5b3d0827b336a4665bbd05659834f9200df0cceb7f8",
+      "verify-config.mjs": "fe55a9de15b84aeb81f9c470cfff54874f8dd34ecbb508a1bf3f196bf199b72e",
+      "verify_emulator.py": "f387b8feb7437092bf2b96825fb5553304d44e0db474f4d6e3f6f090f0e87db4"
+    }
+  }
+}

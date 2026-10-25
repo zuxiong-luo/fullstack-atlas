@@ -159,15 +159,23 @@ const article: Article = {
         },
         {
           "type": "paragraph",
-          "text": "注册成功不等于所有页面已经受控。脚本要经历安装和激活。本站在 install 中调用 skipWaiting，在 activate 中通过 clients.claim 请求接管页面；页面端等待 worker 激活后再发送下载消息。更复杂的产品应评估立即接管是否会造成新 Worker 与旧页面协议不兼容。"
+          "text": "注册成功不等于所有页面已经受控，也不表示旧active就是刚发布的Worker。下载最新内容时，以updateViaCache:none注册，再显式等待registration.update()，优先等待新installing/waiting激活后发送DOWNLOAD。STATUS/CLEAR通过getRegistration读取精确scope的已有注册，不重复注册脚本；无注册才走注册。注册、更新、激活各阶段最多等待15秒，超时只停止客户端等待，不能取消浏览器底层更新。内容缓存与Worker升级是两件事，不能只下载了ZIP就假定拦截逻辑已更换。"
         },
         {
           "type": "code",
           "filename": "src/components/Offline.tsx · 完整通信函数",
-          "purpose": "页面与Worker实际通信实现，含类型、注册/激活、进度、超时与端口清理；仅等价排版。",
-          "code": "import { useEffect, useState } from 'react';\ntype Snapshot = {\n    version: string;\n    bytes: number;\n    savedAt: number;\n    count: number;\n};\nasync function request(type: string, onProgress?: (n: number, total: number) => void): Promise<Snapshot | null> {\n    if (!('serviceWorker' in navigator))\n        throw new Error('当前浏览器不支持离线缓存，请使用 HTTPS 或本机预览。');\n    const registration = await navigator.serviceWorker.register(new URL('sw.js', document.baseURI).href, { scope: new URL('.', document.baseURI).pathname });\n    const worker = registration.active || registration.installing || registration.waiting;\n    if (!worker)\n        throw new Error('离线服务启动失败');\n    if (worker.state !== 'activated')\n        await new Promise<void>((resolve, reject) => { const timer = setTimeout(() => reject(new Error('离线服务启动超时')), 15000); worker.addEventListener('statechange', () => { if (worker.state === 'activated') {\n            clearTimeout(timer);\n            resolve();\n        } if (worker.state === 'redundant') {\n            clearTimeout(timer);\n            reject(new Error('离线服务安装失败'));\n        } }); });\n    return new Promise((resolve, reject) => { const channel = new MessageChannel(); let timer: ReturnType<typeof setTimeout>; const fail = () => { channel.port1.close(); reject(new Error('下载超时，请检查网络后重试。')); }; const arm = () => { clearTimeout(timer); timer = setTimeout(fail, 120000); }; arm(); channel.port1.onmessage = e => { arm(); if (e.data.progress)\n        onProgress?.(e.data.progress, e.data.total); if (e.data.done || e.data.error) {\n        clearTimeout(timer);\n        channel.port1.close();\n        e.data.error ? reject(new Error(e.data.error)) : resolve(e.data.installed);\n    } }; worker.postMessage({ type }, [channel.port2]); });\n}\n",
+          "purpose": "实际客户端消息边界：显式更新Worker，等待最新激活后再下载内容；状态查询不强制联网。",
+          "code": "import {useEffect,useState} from 'react';\nimport {offlineRegistration,offlineWorker} from '../lib/offlineWorker';\ntype Snapshot={version:string;bytes:number;savedAt:number;count:number};\nasync function request(type:string,onProgress?:(n:number,total:number)=>void):Promise<Snapshot|null>{\n if(!('serviceWorker' in navigator))throw new Error('当前浏览器不支持离线缓存，请使用 HTTPS 或本机预览。');\n const registration=await offlineRegistration(navigator.serviceWorker,document.baseURI,type==='DOWNLOAD');\n const worker=await offlineWorker(registration,type==='DOWNLOAD');\n return new Promise((resolve,reject)=>{const channel=new MessageChannel();let timer:ReturnType<typeof setTimeout>;const fail=()=>{channel.port1.close();reject(new Error('下载超时，请检查网络后重试。'))};const arm=()=>{clearTimeout(timer);timer=setTimeout(fail,120000)};arm();channel.port1.onmessage=e=>{arm();if(e.data.progress)onProgress?.(e.data.progress,e.data.total);if(e.data.done||e.data.error){clearTimeout(timer);channel.port1.close();e.data.error?reject(new Error(e.data.error)):resolve(e.data.installed)}};worker.postMessage({type},[channel.port2])});\n}\n",
           "kind": "excerpt",
           "language": "tsx"
+        },
+        {
+          "type": "code",
+          "filename": "src/lib/offlineWorker.ts",
+          "language": "typescript",
+          "kind": "excerpt",
+          "purpose": "完整注册与激活选择：STATUS优先精确scope的已有注册；下载显式刷新；每个启动等待阶段有15秒应用期限，不能取消浏览器底层更新。",
+          "code": "async function within<T>(operation:Promise<T>):Promise<T>{\n let timer:ReturnType<typeof setTimeout>|undefined;\n try{return await Promise.race([operation,new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error('离线服务启动超时')),15000)})])}\n finally{clearTimeout(timer)}\n}\n/** Read/clear an installed snapshot without requiring a script fetch. */\nexport async function offlineRegistration(container:Pick<ServiceWorkerContainer,'getRegistration'|'register'>,base:string,refresh:boolean):Promise<ServiceWorkerRegistration>{\n const scope=new URL('.',base);\n if(!refresh){const existing=await within(container.getRegistration(scope.href));if(existing?.scope===scope.href)return existing}\n return within(container.register(new URL('sw.js',base).href,{scope:scope.pathname,updateViaCache:'none'}));\n}\n/** DOWNLOAD explicitly refreshes the worker as well as the content snapshot. */\nexport async function offlineWorker(registration:ServiceWorkerRegistration,refresh:boolean):Promise<ServiceWorker>{\n if(refresh)await within(registration.update()); // Deadline stops this caller waiting; it cannot cancel a browser update.\n const worker=refresh\n  ? registration.installing||registration.waiting||registration.active\n  : registration.active||registration.installing||registration.waiting;\n if(!worker)throw new Error('离线服务启动失败');\n if(worker.state==='activated')return worker;\n await new Promise<void>((resolve,reject)=>{\n  const finish=(error?:Error)=>{clearTimeout(timer);worker.removeEventListener('statechange',changed);error?reject(error):resolve()};\n  const changed=()=>{if(worker.state==='activated')finish();else if(worker.state==='redundant')finish(new Error('离线服务安装失败'))};\n  const timer=setTimeout(()=>finish(new Error('离线服务启动超时')),15000);\n  worker.addEventListener('statechange',changed);\n  changed(); // The state may have changed before the listener was attached.\n });\n return worker;\n}\n"
         }
       ],
       "paragraphs": []
@@ -271,7 +279,7 @@ const article: Article = {
       "blocks": [
         {
           "type": "paragraph",
-          "text": "fetch 事件只处理同源、作用范围内的 GET 请求，并排除 sw.js 和离线清单。导航请求统一映射到本站 index.html，其余请求按照资源 URL 查找。本站使用 hash 路由，#article/xxx 不会发送到服务器，首页脚本加载后再解析它并显示对应内容。"
+          "text": "fetch 事件只处理同源、作用范围内的 GET 请求，并排除 sw.js 和离线清单。先按真实 URL 查缓存；只有本站目录入口和 index.html 的导航才允许补应用首页。点击 ZIP、README 或独立实验 HTML 同样可能是 navigate，不能把所有导航都改成首页。本站使用 hash 路由，#article/xxx 不会发送到服务器，入口脚本加载后再解析它。"
         },
         {
           "type": "paragraph",
@@ -284,14 +292,34 @@ const article: Article = {
         {
           "type": "code",
           "filename": "scripts/sw.js · 完整fetch处理",
-          "purpose": "完整过滤和读取路径；POST、跨源、scope之外以及Worker和清单请求交还浏览器网络管理。",
-          "code": "self.addEventListener('fetch', event => {\n    const request = event.request;\n    const url = new URL(request.url);\n    if (request.method !== 'GET' || url.origin !== self.location.origin || !url.href.startsWith(self.registration.scope) || url.pathname.endsWith('/sw.js') || url.pathname.endsWith('/offline-manifest.json'))\n        return;\n    event.respondWith((async () => {\n        const list = await installed();\n        const target = request.mode === 'navigate' ? new URL('./index.html', self.registration.scope).href : request;\n        // An installed snapshot stays internally consistent; refresh it explicitly.\n        for (const item of list) {\n            const hit = await item.cache.match(target, { ignoreVary: true });\n            if (hit)\n                return hit;\n        }\n        return fetch(request);\n    })());\n});\n",
+          "purpose": "先匹配实际资源，只给应用入口补首页，防止ZIP、README和独立实验HTML被错误替换。",
+          "code": "self.addEventListener('fetch',event=>{const request=event.request;const url=new URL(request.url);if(request.method!=='GET'||url.origin!==self.location.origin||!url.href.startsWith(self.registration.scope)||url.pathname.endsWith('/sw.js')||url.pathname.endsWith('/offline-manifest.json'))return;\n event.respondWith((async()=>{const list=await installed();const shell=new URL('./index.html',self.registration.scope);\n const appNavigation=request.mode==='navigate'&&(url.pathname===new URL(self.registration.scope).pathname||url.pathname===shell.pathname);\n // Match the actual resource first: downloads and standalone HTML are navigations too.\n // Only this hash-router application's entry may fall back to its shell.\n for(const item of list){const hit=await item.cache.match(request,{ignoreVary:true})||(appNavigation?await item.cache.match(shell.href,{ignoreVary:true}):null);if(hit)return hit}return fetch(request)})());\n});\n",
           "kind": "excerpt",
           "language": "javascript"
         },
         {
           "type": "paragraph",
-          "text": "带入 /fullstack-atlas/#article/react-hooks-queue：浏览器发给服务器的导航不含 hash。拦截器把导航统一映射为 scope 下的 index.html，拿到页面后由 React 解析 hash。接下来模块请求 assets/lab-xxx.js，按资源 URL 命中缓存。某资源找不到时才 fetch(request)；若此刻真的离线，该请求依然会失败，不能靠导航回退弥补缺少的编译器。"
+          "text": "带入 /fullstack-atlas/#article/react-hooks-queue：浏览器发给服务器的导航不含 hash。拦截器先匹配实际入口 URL；这个 scope 目录入口没有独立缓存键时，才补 scope 下的 index.html，拿到页面后由 React 解析 hash。ZIP 或实验 HTML 的导航不会走这个入口回退。接下来模块请求 assets/lab-xxx.js，按资源 URL 命中缓存。某资源找不到时才 fetch(request)；若此刻真的离线，该请求依然会失败，不能靠导航回退弥补缺少的编译器。"
+        },
+        {
+          "type": "paragraph",
+          "text": "源码ZIP还有下载管理器这一层。页面先fetch这个同源资源，让请求进入Worker的资源匹配，再把得到的原始字节放进Blob，用临时对象URL触发文件下载。这样正文导航和文件下载的职责分开；若服务端误回首页HTML，必须报错，不能只换一个.zip扩展名假装成功。下面只快速检查ZIP文件头，真正内容验收仍靠构建阶段逐条比对ZIP文件与源码。"
+        },
+        {
+          "type": "code",
+          "filename": "src/lib/exampleDownload.ts",
+          "language": "typescript",
+          "kind": "excerpt",
+          "purpose": "完整字节获取与本地下载入口；fetch与响应体共用60秒期限并请求Abort；临时链接移除，对象URL60秒后释放，不冒称下载管理器完成。",
+          "code": "/** Fetch through the page/Service Worker before handing bytes to a browser download. */\nexport async function exampleArchive(url:string,fetcher:typeof fetch=fetch):Promise<Blob>{\n const controller=new AbortController();let timer:ReturnType<typeof setTimeout>|undefined;\n const deadline=new Promise<never>((_,reject)=>{timer=setTimeout(()=>{reject(new Error('下载准备超时，请检查网络后重试。'));controller.abort()},60000)});\n try{return await Promise.race([(async()=>{\n  const response=await fetcher(url,{cache:'no-store',signal:controller.signal});\n  if(!response.ok)throw new Error(`示例下载失败（HTTP ${response.status}）`);\n  const bytes=await response.arrayBuffer(),header=new Uint8Array(bytes,0,Math.min(4,bytes.byteLength));\n  // This rejects a cached HTML shell, not a replacement for a ZIP/CRC integrity check.\n  if(header.length!==4||header[0]!==0x50||header[1]!==0x4b||header[2]!==3||header[3]!==4)throw new Error('下载内容不是源码 ZIP，请联网更新离线包后重试。');\n  return new Blob([bytes],{type:'application/zip'});\n })(),deadline])}finally{clearTimeout(timer);controller.abort()}\n}\nexport function saveExampleArchive(blob:Blob,filename:string):void{\n const url=URL.createObjectURL(blob);let link:HTMLAnchorElement|undefined;\n try{link=document.createElement('a');link.href=url;link.download=filename;document.body.append(link);link.click()}\n finally{link?.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)}\n}\n"
+        },
+        {
+          "type": "code",
+          "filename": "src/components/ExampleDownloads.tsx",
+          "language": "tsx",
+          "kind": "excerpt",
+          "purpose": "完整文章下载控件：普通点击走fetch/Blob，保留真实href，错误在正文附近显示。",
+          "code": "import {useState} from 'react';\nimport type {Article} from '../data/articleTypes';\nimport {exampleArchive,saveExampleArchive} from '../lib/exampleDownload';\nexport default function ExampleDownloads({examples}:{examples:NonNullable<Article['examples']>}){\n const [pending,setPending]=useState<string|null>(null),[error,setError]=useState('');\n async function download(event:React.MouseEvent<HTMLAnchorElement>,path:string){\n  if(!path.endsWith('.zip')||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;\n  event.preventDefault();if(pending)return;setPending(path);setError('');\n  try{saveExampleArchive(await exampleArchive(`${import.meta.env.BASE_URL}downloads/${path}`),path.split('/').pop()!)}\n  catch(cause){setError(cause instanceof Error?cause.message:'下载失败，请联网更新离线包后重试。')}\n  finally{setPending(null)}\n }\n return <><div className=\"related-links\">{examples.map(e=><a key={e.path} href={`${import.meta.env.BASE_URL}downloads/${e.path}`} download={e.path.endsWith('.zip')?e.path.split('/').pop():undefined} target={e.path.endsWith('.zip')?undefined:'_blank'} rel=\"noreferrer\" aria-busy={pending===e.path} onClick={event=>void download(event,e.path)}>{e.label} ↗</a>)}</div>{pending&&<p role=\"status\">正在准备源码下载…</p>}{error&&<p role=\"alert\">{error}</p>}</>;\n}\n"
         }
       ],
       "paragraphs": []
@@ -330,7 +358,7 @@ const article: Article = {
         },
         {
           "type": "paragraph",
-          "text": "离线清单不从本站缓存响应，更新请求还使用 no-store，以便尝试读取线上清单。sw.js 由浏览器的注册与更新流程管理；它不在内容快照内。内容版本摘要不包含 Worker 本身，因此不能只看离线版本号判断 Worker 脚本是否更新。"
+          "text": "离线清单不从本站缓存响应，下载使用no-store读取线上清单。sw.js不在内容快照内，由浏览器注册与更新流程管理；用户点下载时显式update并等待新Worker激活。内容摘要不包含Worker，因此不能只看离线版本号判断拦截逻辑已经升级。"
         },
         {
           "type": "paragraph",
@@ -415,7 +443,7 @@ const article: Article = {
         },
         {
           "type": "paragraph",
-          "text": "独立示例使用本站 sw.js 的副本，在受控 Cache Storage 与网络中执行同一脚本，新增七条确定性检查：完整导航/懒资源、503保留旧版、不完整候选不可读、清单越界拒绝、请求过滤、只保留两版、命名空间清理。它不模拟HTTP响应的Vary匹配与浏览器配额，因此这两项仍须真实浏览器验证。"
+          "text": "独立示例使用本站 sw.js 的副本，在受控 Cache Storage 与网络中执行同一脚本：原七条检查覆盖完整导航/懒资源、503保留旧版、不完整候选不可读、清单越界、请求过滤、两版保留与命名空间清理。2026-10-25真实离线验收又发现下载ZIP导航被首页替换，新增实际URL优先和未缓存下载不得伪装首页两条回归，共9条。受控模型不模拟浏览器下载管理器、HTTP Vary与配额，这些需要另行实测。"
         }
       ],
       "paragraphs": []
@@ -489,11 +517,15 @@ const article: Article = {
     {
       "title": "MDN：StorageManager.persist",
       "url": "https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/persist"
+    },
+    {
+      "title": "MDN：ServiceWorkerRegistration.update与脚本刷新",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerRegistration/update"
     }
   ],
   "status": "review",
   "kind": "tutorial",
-  "verifiedAt": "2026-10-23",
+  "verifiedAt": "2026-10-25",
   "labMinutes": 25,
   "versions": [
     "本站静态构建与Service Worker实现，2026-10-23",

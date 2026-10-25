@@ -7,3 +7,5 @@
 公开目录现在95篇。新增27篇含安全2、数据库4、异步2、运维4、跨平台2、Next2、Node2、Python3、算法6。Python第6章原ID/独立入口保留，1—5及7—9共同项目递进。原始40篇ID/锚点/关联回归通过。本次不包含仍在验收的RN2和WebGL3。
 
 限制按每篇范围保留：Android/iOS实体手机未测，已完成的Web代表平台不做原生排名；K8为单节点kind，不是多节点生产故障证明；GPU型号/驱动和浏览器发行版未识别，真实ChromiumAPI绘制不替代硬件矩阵；真实付费模型未调用。RN原生版本/SDK兼容验证在最后批次单独记录。
+
+另一作者只读Actions API复核：Verify article examples run40140290453 completed/success，Python与5个Node job全部success，安装/测试步骤无skipped；平台run40140290411的linux/docker/release/kubernetes全部success。匿名完整日志下载403，因此不将API步骤状态描述成逐行读过stdout；61的具体测试数另由下载包实际执行输出证明。

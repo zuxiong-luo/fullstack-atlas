@@ -1,0 +1,68 @@
+name: Verify isolated Android delivery lab
+on:
+  push:
+    branches: [main, 'content-validation/native-labs']
+    paths:
+      - 'examples/cross-platform-delivery/**'
+      - '.github/workflows/cross-platform-delivery-labs.yml'
+      - 'scripts/platform-lab-ci.py'
+      - 'scripts/install-native-tools.sh'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: delivery-labs-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  android-delivery-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 110
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.14.1'
+          package-manager-cache: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install fixed official Android prerequisites
+        run: python3 scripts/platform-lab-ci.py --timeout 600 -- bash scripts/install-native-tools.sh
+      - name: Build two actual release APKs with source-map and public-certificate evidence
+        env:
+          CI: 'true'
+          ATLAS_LAB_BUILD_ONLY: '1'
+          ATLAS_LAB_ARTIFACT_DIR: ${{ runner.temp }}/atlas-delivery-artifacts
+        run: python3 scripts/platform-lab-ci.py --timeout 4500 -- bash examples/cross-platform-delivery/verify-android.sh
+      - name: Install locked symbolication tools in the runtime checkout
+        working-directory: examples/cross-platform-delivery
+        run: python3 ../../scripts/platform-lab-ci.py --timeout 240 -- npm ci --ignore-scripts --no-fund --audit=false
+      - name: Grant only this disposable runner user access to KVM
+        shell: bash
+        run: |
+          test -c /dev/kvm
+          sudo setfacl -m "u:$(id -un):rw" /dev/kvm
+      - name: Real API36 x86_64 emulator checks (no physical device)
+        uses: ReactiveCircus/android-emulator-runner@v2
+        env:
+          CI: 'true'
+          ATLAS_LAB_ARTIFACT_DIR: ${{ runner.temp }}/atlas-delivery-artifacts
+          ATLAS_LAB_EMULATOR_SERIAL: emulator-5554
+        with:
+          api-level: 36
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          emulator-boot-timeout: 600
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: python3 scripts/platform-lab-ci.py --timeout 240 -- python3 examples/cross-platform-delivery/verify_emulator.py
+      - name: Upload finite lab evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-delivery-artifacts-${{ github.sha }}
+          path: ${{ runner.temp }}/atlas-delivery-artifacts
+          if-no-files-found: ignore
+          retention-days: 3

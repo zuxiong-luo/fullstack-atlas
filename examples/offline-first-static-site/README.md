@@ -1,9 +1,11 @@
 # 离线协议独立实验
 
-Node.js22，无npm依赖。`node --test test.mjs`或`npm test`运行7项测试。
+Node.js22，无npm依赖。`node --test test.mjs`或`npm test`运行9项测试。
 
 sw.js与本批本站scripts/sw.js逐字相同；offline.mjs与本站构建脚本相同。离线测试用受控的Cache Storage/网络执行真实Worker脚本，明确不模拟Vary、配额和浏览器生命周期。构建脚本需要一个dist目录，完整站点请在主仓库执行npm run build，不把这份独立测试当成完整网站。
 
 真实浏览器：主仓库生产构建后npm run preview，在4173登录并下载，刷新，再断网或停预览服务，访问此前未打开的文章/代码实验。外部评论和引用不属于离线包。
 
 2026-10-23：7项测试通过，验证完整快照、失败回退、不完整候选、越界、过滤、保留两版与命名空间清理。未新增浏览器配额/多标签升级压力实验。
+
+2026-10-25：增加ZIP/README/独立HTML实际URL优先、未缓存下载不得伪装首页两条回归，9/9通过。应用仅对scope入口与index.html提供shell回退；navigate不等于应用页面。浏览器下载管理器另做实际验收，不用受控VM替代。
