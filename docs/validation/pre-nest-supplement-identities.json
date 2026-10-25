@@ -1,0 +1,1654 @@
+[
+  {
+    "id": "react-foundations",
+    "topic": "react",
+    "sectionIds": [
+      "what",
+      "representations",
+      "components",
+      "props",
+      "state",
+      "snapshot",
+      "immutable",
+      "render",
+      "forms",
+      "identity",
+      "practice",
+      "recap"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "react-hooks-interactions",
+    "topic": "react",
+    "sectionIds": [
+      "concept",
+      "rules",
+      "snapshot",
+      "queue",
+      "reducer-ref",
+      "events",
+      "lifecycle",
+      "race",
+      "implementation",
+      "strict",
+      "verify",
+      "boundaries"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "react-state-management",
+    "topic": "react",
+    "sectionIds": [
+      "concept",
+      "ownership",
+      "minimal",
+      "lifting-context",
+      "store",
+      "subscription",
+      "choice",
+      "server-cache",
+      "race",
+      "optimistic",
+      "ssr",
+      "lab",
+      "closing"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "react-fiber-reconciliation",
+    "topic": "react",
+    "sectionIds": [
+      "concept",
+      "purpose",
+      "structure",
+      "buffers",
+      "hooks",
+      "reconciliation",
+      "diff",
+      "work-loop",
+      "commit",
+      "whole-update",
+      "experiment",
+      "limits"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "react-concurrency",
+    "topic": "react",
+    "sectionIds": [
+      "concept",
+      "normal-route",
+      "priorities",
+      "enqueue",
+      "lane-selection",
+      "root-callback",
+      "scheduler",
+      "render-loop",
+      "rebase",
+      "public-apis",
+      "async-boundary",
+      "experiment",
+      "checklist"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "react-performance",
+    "topic": "react",
+    "sectionIds": [
+      "concept",
+      "measure",
+      "profiler",
+      "scope",
+      "memo",
+      "identity",
+      "hook-cache",
+      "comparator",
+      "window",
+      "other-costs",
+      "diagnosis",
+      "experiment",
+      "decision"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "react-modern-engineering",
+    "topic": "react",
+    "sectionIds": [
+      "concept",
+      "rendering",
+      "hydration",
+      "data",
+      "serialization",
+      "client",
+      "recovery",
+      "deployment",
+      "practice",
+      "streaming",
+      "rsc",
+      "routing"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "offline-first-static-site",
+    "topic": "operations",
+    "sectionIds": [
+      "goal",
+      "layers",
+      "manifest",
+      "scope",
+      "messages",
+      "snapshot",
+      "fetch",
+      "vary",
+      "update",
+      "storage",
+      "auth",
+      "verify",
+      "limits"
+    ],
+    "questionIds": [
+      "http-cache",
+      "cache-isolation",
+      "web-performance"
+    ]
+  },
+  {
+    "id": "oauth-login",
+    "topic": "identity",
+    "sectionIds": [
+      "boundaries",
+      "journey",
+      "proof",
+      "issuer-code",
+      "session",
+      "http-adapter",
+      "oidc-boundary",
+      "run",
+      "tradeoffs"
+    ],
+    "questionIds": [
+      "oauth",
+      "session-jwt",
+      "https",
+      "http-cache",
+      "cache-isolation"
+    ]
+  },
+  {
+    "id": "react-state-effects",
+    "topic": "react",
+    "sectionIds": [
+      "snapshot",
+      "effect",
+      "transport",
+      "race",
+      "refs",
+      "practice"
+    ],
+    "questionIds": [
+      "react-snapshot",
+      "effect-race",
+      "event-loop",
+      "web-performance",
+      "concurrency-pool"
+    ]
+  },
+  {
+    "id": "transactions-locks",
+    "topic": "data",
+    "sectionIds": [
+      "invariant",
+      "atomic",
+      "locks",
+      "isolation",
+      "validation",
+      "outside"
+    ],
+    "questionIds": [
+      "db-transactions",
+      "db-index",
+      "redis-cache"
+    ]
+  },
+  {
+    "id": "reliable-tasks",
+    "topic": "tasks",
+    "sectionIds": [
+      "states",
+      "claim",
+      "lease",
+      "effects",
+      "retry-policy",
+      "operations",
+      "reader-check"
+    ],
+    "questionIds": [
+      "worker-lease",
+      "distributed-lock",
+      "idempotency",
+      "retry",
+      "system-design",
+      "ts-model"
+    ]
+  },
+  {
+    "id": "k8s-debugging",
+    "topic": "operations",
+    "sectionIds": [
+      "evidence",
+      "routing",
+      "probes",
+      "resources",
+      "release"
+    ],
+    "questionIds": [
+      "k8s-probes",
+      "k8s-release",
+      "linux-debug",
+      "docker",
+      "node-backpressure"
+    ]
+  },
+  {
+    "id": "flutter-engineering",
+    "topic": "flutter",
+    "sectionIds": [
+      "context",
+      "state",
+      "communication",
+      "platform",
+      "render",
+      "delivery"
+    ],
+    "questionIds": [
+      "cross-platform-models-render",
+      "cross-platform-models-stream"
+    ]
+  },
+  {
+    "id": "react-fiber-scheduling",
+    "topic": "react",
+    "sectionIds": [
+      "problem",
+      "state-split",
+      "queue",
+      "fiber",
+      "lanes",
+      "timeline",
+      "counterexample",
+      "experiment",
+      "measure",
+      "decision"
+    ],
+    "questionIds": [
+      "react-fiber-scheduling-interrupt",
+      "react-fiber-scheduling-transition"
+    ]
+  },
+  {
+    "id": "react-identity-events",
+    "topic": "react",
+    "sectionIds": [
+      "s12-304342",
+      "s19-366973",
+      "s12-321727",
+      "s15-403303",
+      "s19-391767"
+    ],
+    "questionIds": [
+      "react-identity-events-key",
+      "react-identity-events-event"
+    ]
+  },
+  {
+    "id": "next-server-boundaries",
+    "topic": "nextjs",
+    "sectionIds": [
+      "s16-390231",
+      "project",
+      "s18-200107",
+      "session",
+      "storage",
+      "s10-261709",
+      "s14-336522",
+      "navigation",
+      "failures",
+      "s12-338026"
+    ],
+    "questionIds": [
+      "next-server-boundaries-rsc",
+      "next-server-boundaries-cache"
+    ]
+  },
+  {
+    "id": "node-capacity",
+    "topic": "nodejs",
+    "sectionIds": [
+      "s15-423830",
+      "service-shape",
+      "s16-457034",
+      "s15-394781",
+      "http-start",
+      "request-lifecycle",
+      "s11-181294",
+      "s10-352596",
+      "reader-check"
+    ],
+    "questionIds": [
+      "node-capacity-pressure",
+      "node-capacity-cpu"
+    ]
+  },
+  {
+    "id": "python-async-services",
+    "topic": "python",
+    "sectionIds": [
+      "s11-324665",
+      "s15-398808",
+      "s12-316434",
+      "s16-495396",
+      "failure-cleanup",
+      "timeout-boundary",
+      "s7-167119",
+      "check-understanding"
+    ],
+    "questionIds": [
+      "python-async-services-cancel",
+      "python-async-services-semaphore"
+    ]
+  },
+  {
+    "id": "algorithms-invariants",
+    "topic": "algorithms",
+    "sectionIds": [
+      "s11-300677",
+      "s14-350134",
+      "s14-340944",
+      "s13-272646",
+      "interactive-step",
+      "s10-286076"
+    ],
+    "questionIds": [
+      "algorithms-invariants-binary",
+      "algorithms-invariants-bfs"
+    ]
+  },
+  {
+    "id": "webgl-pipeline",
+    "topic": "webgl",
+    "sectionIds": [
+      "s19-335562",
+      "s9-274087",
+      "shader-program",
+      "buffer-layout",
+      "s11-290266",
+      "s16-211827",
+      "s12-394675"
+    ],
+    "questionIds": [
+      "webgl-pipeline-spaces",
+      "webgl-pipeline-bottleneck"
+    ]
+  },
+  {
+    "id": "cross-platform-models",
+    "topic": "flutter",
+    "sectionIds": [
+      "s14-414901",
+      "s18-134375",
+      "s15-178526",
+      "s16-311666",
+      "platform",
+      "app",
+      "s9-244390"
+    ],
+    "questionIds": [
+      "cross-platform-models-render",
+      "cross-platform-models-stream"
+    ]
+  },
+  {
+    "id": "electron-trust-boundary",
+    "topic": "flutter",
+    "sectionIds": [
+      "s17-482283",
+      "project",
+      "s16-422260",
+      "s19-463235",
+      "export",
+      "renderer",
+      "s10-264569",
+      "s14-430459"
+    ],
+    "questionIds": [
+      "electron-trust-boundary-ipc",
+      "electron-trust-boundary-lifecycle"
+    ]
+  },
+  {
+    "id": "web-security-boundaries",
+    "topic": "identity",
+    "sectionIds": [
+      "s14-362290",
+      "s16-401676",
+      "s17-161503",
+      "s18-376221",
+      "http-service",
+      "s14-394976",
+      "reader-check"
+    ],
+    "questionIds": [
+      "web-security-boundaries-csrf",
+      "web-security-boundaries-ssrf"
+    ]
+  },
+  {
+    "id": "agent-foundations",
+    "topic": "ai",
+    "sectionIds": [
+      "problem",
+      "scope",
+      "boundaries",
+      "contract",
+      "python",
+      "typescript",
+      "run",
+      "failures",
+      "real-http",
+      "validation",
+      "next"
+    ],
+    "questionIds": [
+      "agent-foundations-schema",
+      "agent-foundations-choice"
+    ]
+  },
+  {
+    "id": "agent-tools-mcp",
+    "topic": "ai",
+    "sectionIds": [
+      "s16-473090",
+      "s10-233147",
+      "executor",
+      "http-boundary",
+      "s18-384953",
+      "s13-336859",
+      "s13-376761"
+    ],
+    "questionIds": [
+      "agent-tools-mcp-trust",
+      "agent-tools-mcp-retry"
+    ]
+  },
+  {
+    "id": "agent-rag",
+    "topic": "ai",
+    "sectionIds": [
+      "s16-309811",
+      "s11-330776",
+      "s14-366783",
+      "http-boundary",
+      "provider-boundary",
+      "s9-233609",
+      "s14-389091"
+    ],
+    "questionIds": [
+      "agent-rag-debug",
+      "agent-rag-acl"
+    ]
+  },
+  {
+    "id": "agent-control-loop",
+    "topic": "ai",
+    "sectionIds": [
+      "s12-319637",
+      "s10-266114",
+      "run-contract",
+      "store-implementation",
+      "orchestration",
+      "s14-343997",
+      "s16-235042",
+      "s12-349322"
+    ],
+    "questionIds": [
+      "agent-control-loop-checkpoint",
+      "agent-control-loop-budget"
+    ]
+  },
+  {
+    "id": "agent-context-memory",
+    "topic": "ai",
+    "sectionIds": [
+      "s12-292236",
+      "s13-350593",
+      "memory-http",
+      "memory-run",
+      "s13-387507",
+      "s13-377441",
+      "s14-419470"
+    ],
+    "questionIds": [
+      "agent-context-memory-memory",
+      "agent-context-memory-compression"
+    ]
+  },
+  {
+    "id": "agent-evaluation",
+    "topic": "ai",
+    "sectionIds": [
+      "s9-193124",
+      "dataset",
+      "baseline",
+      "s15-443482",
+      "report",
+      "s13-363130",
+      "protocol",
+      "s11-306342",
+      "s12-362475"
+    ],
+    "questionIds": [
+      "agent-evaluation-judge",
+      "agent-evaluation-rollout"
+    ]
+  },
+  {
+    "id": "agent-security",
+    "topic": "ai",
+    "sectionIds": [
+      "s11-284690",
+      "s10-258433",
+      "http-boundary",
+      "output-gate",
+      "retrieval-egress",
+      "model-egress",
+      "s10-250771",
+      "s11-264470",
+      "s13-373711"
+    ],
+    "questionIds": [
+      "agent-security-injection",
+      "agent-security-approval"
+    ]
+  },
+  {
+    "id": "agent-production",
+    "topic": "ai",
+    "sectionIds": [
+      "s11-302915",
+      "ordinary-admission",
+      "s15-397295",
+      "s9-225100",
+      "s13-334788",
+      "deployment-files",
+      "budget-reproduction",
+      "s14-457123"
+    ],
+    "questionIds": [
+      "agent-production-cost",
+      "agent-production-recovery"
+    ]
+  },
+  {
+    "id": "react-fiber-structure",
+    "topic": "react",
+    "sectionIds": [
+      "question",
+      "three-objects",
+      "why-fiber",
+      "responsibilities",
+      "links",
+      "state",
+      "alternate",
+      "update-walkthrough",
+      "identity",
+      "experiment",
+      "single-source",
+      "slot-source",
+      "reuse-source",
+      "boundaries"
+    ],
+    "questionIds": [
+      "react-fiber-scheduling-interrupt"
+    ]
+  },
+  {
+    "id": "react-hooks-queue",
+    "topic": "react",
+    "sectionIds": [
+      "problem",
+      "snapshot",
+      "structures",
+      "circular",
+      "first-pass",
+      "rebase",
+      "eager",
+      "validation",
+      "takeaway"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "react-lane-selection",
+    "topic": "react",
+    "sectionIds": [
+      "problem",
+      "bits",
+      "root-sets",
+      "candidate",
+      "wip",
+      "entangle",
+      "expired",
+      "scheduler",
+      "slice",
+      "run",
+      "debug"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "react-work-loop-commit",
+    "topic": "react",
+    "sectionIds": [
+      "question",
+      "work-unit",
+      "yield",
+      "commit-entry",
+      "layout",
+      "refs",
+      "passive",
+      "run",
+      "use"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "react-double-buffer",
+    "topic": "react",
+    "sectionIds": [
+      "problem",
+      "first-mount",
+      "allocate",
+      "reuse",
+      "references",
+      "use-fiber",
+      "commit",
+      "lab"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "react-root-scheduling",
+    "topic": "react",
+    "sectionIds": [
+      "problem",
+      "dispatch",
+      "root-fields",
+      "choose",
+      "reuse",
+      "sync",
+      "normal",
+      "enter",
+      "continuation",
+      "lab",
+      "close"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "react-bailout-memo",
+    "topic": "react",
+    "sectionIds": [
+      "problem",
+      "plain",
+      "shallow",
+      "simple",
+      "subtree",
+      "context",
+      "comparator",
+      "late",
+      "reader-check",
+      "verify"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "react-hook-memoization",
+    "topic": "react",
+    "sectionIds": [
+      "problem",
+      "what",
+      "implementation",
+      "mount",
+      "update",
+      "trace",
+      "dependencies",
+      "callback",
+      "stale",
+      "lifetime",
+      "cost",
+      "reader-check",
+      "verify"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "node-execution-model",
+    "topic": "nodejs",
+    "sectionIds": [
+      "runtime",
+      "waiting",
+      "checkpoints",
+      "phases",
+      "cooperation",
+      "errors",
+      "lifetime",
+      "verify"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "node-modules-tooling",
+    "topic": "nodejs",
+    "sectionIds": [
+      "layers",
+      "formats",
+      "build",
+      "paths",
+      "runtime-input",
+      "package-boundary",
+      "module-state",
+      "reproduce"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "node-http-lifecycle",
+    "topic": "nodejs",
+    "sectionIds": [
+      "request-model",
+      "contract",
+      "handling",
+      "disconnect",
+      "timeouts",
+      "shutdown",
+      "ownership",
+      "test-client"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "node-parallel-computing",
+    "topic": "nodejs",
+    "sectionIds": [
+      "concept",
+      "choice",
+      "job",
+      "transport",
+      "pool",
+      "cancellation",
+      "ownership",
+      "verification"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "node-performance-memory",
+    "topic": "nodejs",
+    "sectionIds": [
+      "concept",
+      "workload",
+      "metrics",
+      "server",
+      "load",
+      "memory",
+      "snapshots",
+      "verification"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "database-indexes",
+    "topic": "data",
+    "sectionIds": [
+      "concept",
+      "structure",
+      "fixture",
+      "design",
+      "plans",
+      "covering",
+      "counterexamples",
+      "costs",
+      "run"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "database-mvcc",
+    "topic": "data",
+    "sectionIds": [
+      "concept",
+      "versions",
+      "snapshots",
+      "controlled",
+      "write-conflict",
+      "write-skew",
+      "vacuum",
+      "diagnose",
+      "run"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "database-locks-deadlocks",
+    "topic": "data",
+    "sectionIds": [
+      "concept",
+      "scope",
+      "wait",
+      "policies",
+      "table-lock",
+      "cycle",
+      "ordering",
+      "retry",
+      "inspect",
+      "run"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "data-model-constraints",
+    "topic": "data",
+    "sectionIds": [
+      "concept",
+      "keys",
+      "null",
+      "relationships",
+      "history",
+      "deferred",
+      "errors",
+      "verification"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "sql-execution-plans",
+    "topic": "data",
+    "sectionIds": [
+      "plan",
+      "read-tree",
+      "index",
+      "join",
+      "sort",
+      "pagination",
+      "statistics",
+      "verification"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "optimistic-concurrency",
+    "topic": "data",
+    "sectionIds": [
+      "concept",
+      "lost-update",
+      "cas",
+      "unique",
+      "receipt",
+      "unknown",
+      "inventory",
+      "verification"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "cache-consistency",
+    "topic": "data",
+    "sectionIds": [
+      "concept",
+      "race",
+      "generation",
+      "read",
+      "outbox",
+      "failure",
+      "promises",
+      "verification"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "python-language-foundations",
+    "topic": "python",
+    "sectionIds": [
+      "language-model",
+      "syntax",
+      "objects",
+      "containers",
+      "normalize",
+      "cli",
+      "run",
+      "boundaries"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "python-functions-iteration",
+    "topic": "python",
+    "sectionIds": [
+      "functions-as-parts",
+      "parameters",
+      "normalize",
+      "lazy",
+      "closure",
+      "pipeline",
+      "cli",
+      "verification"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "python-object-model",
+    "topic": "python",
+    "sectionIds": [
+      "model",
+      "instances",
+      "note",
+      "equality",
+      "parse",
+      "composition",
+      "protocols",
+      "assemble",
+      "run"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "python-modules-boundaries",
+    "topic": "python",
+    "sectionIds": [
+      "boundary",
+      "imports",
+      "types",
+      "errors",
+      "ownership",
+      "cli",
+      "verify"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "python-concurrency-models",
+    "topic": "python",
+    "sectionIds": [
+      "models",
+      "gil",
+      "jobs",
+      "window",
+      "spawn",
+      "io",
+      "async",
+      "cli",
+      "evidence"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "python-fastapi",
+    "topic": "python",
+    "sectionIds": [
+      "boundary",
+      "contract",
+      "body",
+      "jobs",
+      "dependencies",
+      "auth",
+      "run",
+      "verify"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "python-data-access",
+    "topic": "python",
+    "sectionIds": [
+      "persistence",
+      "unit",
+      "transaction",
+      "implementation",
+      "lease",
+      "migration",
+      "http",
+      "run",
+      "evidence"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "python-delivery",
+    "topic": "python",
+    "sectionIds": [
+      "artifact",
+      "snapshot",
+      "config",
+      "logs",
+      "entry",
+      "clean",
+      "measure",
+      "profile",
+      "limits"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "https-tls",
+    "topic": "identity",
+    "sectionIds": [
+      "concept",
+      "roles",
+      "trust",
+      "handshake",
+      "certificates",
+      "service",
+      "failures",
+      "boundary",
+      "run"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "sessions-lifecycle",
+    "topic": "identity",
+    "sectionIds": [
+      "concept",
+      "cookie",
+      "state",
+      "requests",
+      "csrf",
+      "expiry",
+      "jwt",
+      "jwt-lifecycle",
+      "verify",
+      "run"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "browser-security-policies",
+    "topic": "identity",
+    "sectionIds": [
+      "origins",
+      "cors",
+      "preflight",
+      "simple-write",
+      "cookies",
+      "csp",
+      "browser-run",
+      "verification"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "authorization-tenancy",
+    "topic": "identity",
+    "sectionIds": [
+      "authorization",
+      "matrix",
+      "model",
+      "context",
+      "rls",
+      "read",
+      "write",
+      "http",
+      "verification"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "next-routing",
+    "topic": "nextjs",
+    "sectionIds": [
+      "router",
+      "files",
+      "params",
+      "document",
+      "navigation",
+      "failure",
+      "verify"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "next-data-cache",
+    "topic": "nextjs",
+    "sectionIds": [
+      "definition",
+      "objects",
+      "source",
+      "keys",
+      "render-scope",
+      "stale-window",
+      "security-failure",
+      "verify"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "next-server-writes",
+    "topic": "nextjs",
+    "sectionIds": [
+      "transports",
+      "identity",
+      "input",
+      "idempotency",
+      "handlers",
+      "actions",
+      "client",
+      "verification"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "next-streaming-errors",
+    "topic": "nextjs",
+    "sectionIds": [
+      "concept",
+      "boundaries",
+      "controlled-data",
+      "controls",
+      "wire",
+      "recovery",
+      "verification"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "next-production",
+    "topic": "nextjs",
+    "sectionIds": [
+      "concept",
+      "artifact",
+      "config",
+      "startup",
+      "trace",
+      "framework-errors",
+      "real-deployment",
+      "verification"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "message-delivery",
+    "topic": "tasks",
+    "sectionIds": [
+      "concept",
+      "identities",
+      "states",
+      "reclaim",
+      "idempotency",
+      "order",
+      "observing",
+      "persistence",
+      "verify"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "retry-timeout-cancellation",
+    "topic": "tasks",
+    "sectionIds": [
+      "concept",
+      "safety",
+      "budgets",
+      "implementation",
+      "backoff",
+      "server",
+      "cleanup",
+      "evidence",
+      "run"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "transactional-outbox",
+    "topic": "tasks",
+    "sectionIds": [
+      "concept",
+      "boundaries",
+      "schema",
+      "relay",
+      "publish-window",
+      "consumer",
+      "failures",
+      "guarantees",
+      "run"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "async-task-model",
+    "topic": "tasks",
+    "sectionIds": [
+      "concept",
+      "boundaries",
+      "structure",
+      "admission",
+      "claim",
+      "completion",
+      "failures",
+      "lifetimes",
+      "capacity",
+      "verify"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "distributed-coordination",
+    "topic": "tasks",
+    "sectionIds": [
+      "concept",
+      "comparison",
+      "quota",
+      "window",
+      "lease",
+      "renew-release",
+      "stale-writer",
+      "fencing",
+      "token-order",
+      "verify"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "cross-platform-architecture",
+    "topic": "flutter",
+    "sectionIds": [
+      "definition",
+      "contract",
+      "state",
+      "load",
+      "commands",
+      "cancel",
+      "adapter",
+      "view",
+      "verify"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "mobile-offline-sync",
+    "topic": "flutter",
+    "sectionIds": [
+      "concept",
+      "structure",
+      "local-transaction",
+      "sync-loop",
+      "remote-transaction",
+      "lost-response",
+      "late-ack",
+      "conflicts",
+      "platform-boundaries",
+      "verify"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "cross-platform-performance",
+    "topic": "flutter",
+    "sectionIds": [
+      "concept",
+      "workload",
+      "startup",
+      "list-structure",
+      "scroll",
+      "communication",
+      "memory",
+      "platform",
+      "run"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "react-native-engineering",
+    "topic": "flutter",
+    "sectionIds": [
+      "objects",
+      "routes",
+      "session",
+      "ownership",
+      "native",
+      "build",
+      "evidence"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "cross-platform-delivery",
+    "topic": "flutter",
+    "sectionIds": [
+      "chain",
+      "identity",
+      "native",
+      "data",
+      "build",
+      "stack",
+      "execute",
+      "limits"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "linear-data-structures",
+    "topic": "algorithms",
+    "sectionIds": [
+      "concept",
+      "cost",
+      "vector",
+      "amortized",
+      "linked",
+      "stack",
+      "ring",
+      "lab",
+      "choices"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "hash-lru",
+    "topic": "algorithms",
+    "sectionIds": [
+      "mapping",
+      "hash",
+      "chain",
+      "load",
+      "lru-policy",
+      "lru-implementation",
+      "failure",
+      "lab",
+      "production"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "sorting-binary-search",
+    "topic": "algorithms",
+    "sectionIds": [
+      "order",
+      "split",
+      "proof",
+      "complexity",
+      "bound-concept",
+      "upper",
+      "boundaries",
+      "lab",
+      "tradeoffs"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "sliding-monotonic",
+    "topic": "algorithms",
+    "sectionIds": [
+      "concept",
+      "model",
+      "positive",
+      "counterexample",
+      "deque",
+      "stack",
+      "run"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "trees-heaps-recursion",
+    "topic": "algorithms",
+    "sectionIds": [
+      "concept",
+      "shape",
+      "traversal",
+      "recursion",
+      "heap-concept",
+      "heap-code",
+      "heapify",
+      "validation"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "graph-traversal-dependencies",
+    "topic": "algorithms",
+    "sectionIds": [
+      "concept",
+      "representation",
+      "bfs",
+      "dfs",
+      "topological",
+      "run"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "shortest-paths",
+    "topic": "algorithms",
+    "sectionIds": [
+      "concept",
+      "representation",
+      "relaxation",
+      "proof",
+      "heap",
+      "implementation",
+      "cost",
+      "bfs",
+      "run"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "search-dynamic-programming",
+    "topic": "algorithms",
+    "sectionIds": [
+      "concept",
+      "input",
+      "backtracking",
+      "state",
+      "memo",
+      "table",
+      "compact",
+      "bounds",
+      "run"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "greedy-intervals",
+    "topic": "algorithms",
+    "sectionIds": [
+      "concept",
+      "input",
+      "counterexamples",
+      "exchange",
+      "weights",
+      "rooms",
+      "coverage",
+      "verification",
+      "run"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "webgl-3d-transforms",
+    "topic": "webgl",
+    "sectionIds": [
+      "concept",
+      "spaces",
+      "matrices",
+      "projection",
+      "drawing",
+      "depth",
+      "lifecycle",
+      "verification"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "webgl-geometry-buffers",
+    "topic": "webgl",
+    "sectionIds": [
+      "records",
+      "layout",
+      "indices",
+      "vao",
+      "instancing",
+      "failure",
+      "verification"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "webgl-texture-sampling",
+    "topic": "webgl",
+    "sectionIds": [
+      "concept",
+      "pixels",
+      "uv",
+      "filtering",
+      "rendering",
+      "alpha",
+      "lifecycle",
+      "verification"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "webgl-shader-lighting",
+    "topic": "webgl",
+    "sectionIds": [
+      "concept",
+      "normal",
+      "inverse-transpose",
+      "shader",
+      "material",
+      "render",
+      "verification"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "webgl-framebuffer-postprocess",
+    "topic": "webgl",
+    "sectionIds": [
+      "concept",
+      "attachments",
+      "first-pass",
+      "second-pass",
+      "feedback",
+      "filters",
+      "size",
+      "run"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "webgl-performance-lifecycle",
+    "topic": "webgl",
+    "sectionIds": [
+      "concept",
+      "same-work",
+      "cpu",
+      "gpu",
+      "render",
+      "memory",
+      "lifecycle",
+      "protocol"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "linux-services",
+    "topic": "operations",
+    "sectionIds": [
+      "process",
+      "tasks",
+      "minimal",
+      "observe",
+      "signals",
+      "manager",
+      "integration",
+      "triage"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "network-troubleshooting",
+    "topic": "operations",
+    "sectionIds": [
+      "layers",
+      "contract",
+      "dns",
+      "tcp",
+      "tls",
+      "probe",
+      "fixture",
+      "run",
+      "linux-validation"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "linux-performance",
+    "topic": "operations",
+    "sectionIds": [
+      "meaning",
+      "counters",
+      "sampler",
+      "controlled",
+      "integration",
+      "diagnosis"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "docker-engineering",
+    "topic": "operations",
+    "sectionIds": [
+      "model",
+      "build",
+      "service",
+      "runtime",
+      "lifecycle",
+      "run"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "service-release-rollback",
+    "topic": "operations",
+    "sectionIds": [
+      "release",
+      "health",
+      "proxy",
+      "prepare",
+      "cutover",
+      "run"
+    ],
+    "questionIds": []
+  },
+  {
+    "id": "kubernetes-foundations",
+    "topic": "operations",
+    "sectionIds": [
+      "desired",
+      "objects",
+      "manifest",
+      "probes",
+      "rollout",
+      "isolated"
+    ],
+    "questionIds": []
+  }
+]

@@ -28,3 +28,29 @@ test('actual heap snapshots distinguish retained objects from cleared references
   console.log(JSON.stringify({heapEvidence:{baseline:result.baseline.atlasNoteCount,retained:result.retained.atlasNoteCount,released:result.released.atlasNoteCount},gcEvents:result.gcEvents.length}));
  }finally{await rm(directory,{recursive:true,force:true});}
 });
+test('CPU inspector captures finite workload and reconstructs its call stack',async()=>{
+ const {profileCPU}=await import('./cpu-profile.mjs');const row=await profileCPU();
+ assert.ok(row.totalSamples>0);assert.ok(row.hot.some(item=>item.stack.includes('profileCPU')&&item.stack.includes('rebuildIndex')));assert.ok(row.windowMs>=250);
+});
+test('slow local upstream exposes its connection and preserves a responsive event loop',async()=>{
+ const {diagnoseIO}=await import('./io-diagnostics.mjs');const row=await diagnoseIO();
+ assert.equal(row.body,'upstream');assert.equal(row.connectionsDuring,1);assert.ok(row.resourcesDuring.includes('TCPServerWrap'));assert.ok(row.elapsedMs>=100);
+ // No CPU / latency speed threshold: machine scheduling is not a correctness contract.
+});
+test('one libuv worker queues fs behind two submitted PBKDF2 jobs',async()=>{
+ const {execFileSync}=await import('node:child_process');
+ const row=JSON.parse(execFileSync(process.execPath,['pool-probe.mjs','--child'],{cwd:import.meta.dirname,env:{...process.env,UV_THREADPOOL_SIZE:'1'},encoding:'utf8',timeout:10000}));
+ assert.deepEqual(row.order,['crypto:0','crypto:1','file']);
+});
+test('connection failure and total budget close owned accept observers and request',{timeout:8000},async()=>{
+ const {diagnoseIO}=await import('./io-diagnostics.mjs');
+ await assert.rejects(diagnoseIO({failBeforeConnect:true}),error=>{
+  assert.equal(error.code,'ECONNREFUSED');
+  assert.deepEqual(error.cleanup,{listening:false,ownedTimers:0,requestDestroyed:true,connectionObservers:0});
+  return true;
+ });
+ await assert.rejects(diagnoseIO({stallResponse:true}),error=>{
+  assert.equal(error.name,'AbortError');assert.equal(error.cause.message,'IO_BUDGET_EXCEEDED');
+  assert.deepEqual(error.cleanup,{listening:false,ownedTimers:0,requestDestroyed:true,connectionObservers:0});return true;
+ });
+});

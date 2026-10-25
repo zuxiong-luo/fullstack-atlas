@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 360" role="img" aria-labelledby="title desc">
+<title id="title">非事务 DDL 的失败窗口</title>
+<desc id="desc">CREATE INDEX CONCURRENTLY成功后索引存在、历史零行；后续SELECT1/0报22012后索引仍存在、历史仍零行；人工确认残留再显式down删除索引，历史仍零行。</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#285240"/></marker></defs>
+<rect width="1000" height="360" fill="#f5f8f6"/>
+<g fill="#203d32" font-family="sans-serif">
+<text x="40" y="47" font-size="25">非事务 DDL：后续报错不会撤销已经成功的索引</text>
+<text x="40" y="80" font-size="17">本实验：transaction=false，执行模式 each；只有整个 up 成功才记录完成历史。</text>
+<rect x="40" y="110" width="270" height="150" rx="14" fill="#e8f0e4" stroke="#285240"/>
+<text x="55" y="144" font-size="15">CREATE INDEX CONCURRENTLY</text>
+<text x="60" y="182" font-size="22">成功：索引存在</text>
+<text x="60" y="218" font-size="19">partial_history = 0 行</text>
+<rect x="350" y="110" width="270" height="150" rx="14" fill="#f9f2da" stroke="#285240"/>
+<text x="370" y="144" font-size="20">SELECT 1/0 → 22012</text>
+<text x="370" y="182" font-size="22">失败：索引仍存在</text>
+<text x="370" y="218" font-size="19">partial_history = 0 行</text>
+<rect x="660" y="110" width="270" height="150" rx="14" fill="#e5edf5" stroke="#285240"/>
+<text x="680" y="144" font-size="20">确认残留，显式执行 down</text>
+<text x="680" y="182" font-size="22">恢复：索引已删除</text>
+<text x="680" y="218" font-size="19">partial_history = 0 行</text>
+<path d="M310 185 H350" stroke="#285240" stroke-width="3" marker-end="url(#arrow)"/><path d="M620 185 H660" stroke="#285240" stroke-width="3" marker-end="url(#arrow)"/>
+<text x="306" y="285" font-size="15">继续执行</text><text x="616" y="285" font-size="15">人工修复</text>
+<text x="40" y="327" font-size="17">同一历史计数，对应三种真实结构；先检查对象和历史，不能只看“迁移失败”。</text>
+</g></svg>

@@ -5,6 +5,7 @@ import {articles,articleTopics,findArticles} from '../data/articles';
 import {sectionBlocks} from '../data/articleTypes';
 import {topicCurricula} from '../data/topicCurricula';
 import baseline from '../../docs/validation/article-identities-baseline.json';
+import preNestBaseline from '../../docs/validation/pre-nest-supplement-identities.json';
 
 it('preserves every original article route, anchor and training relationship',()=>{
   const ids=articles.map(a=>a.id);
@@ -61,5 +62,15 @@ it('keeps new chapter inline implementation excerpts synchronized with downloada
       }
     }
 
+  }
+});
+
+it('keeps every published pre-Nest article, anchor and training reference stable during the supplement',()=>{
+  for(const previous of preNestBaseline){
+    const current=articles.find(a=>a.id===previous.id);
+    expect(current,previous.id).toBeDefined();
+    expect(current!.topic,previous.id).toBe(previous.topic);
+    expect(current!.questionIds,previous.id).toEqual(previous.questionIds);
+    for(const anchor of previous.sectionIds)expect(current!.sections.map(s=>s.id),previous.id+'#'+anchor).toContain(anchor);
   }
 });

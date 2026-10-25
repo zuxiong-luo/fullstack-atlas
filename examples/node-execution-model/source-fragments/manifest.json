@@ -1,0 +1,90 @@
+[
+  {
+    "upstream": "lib/fs.js",
+    "tag": "v22.12.0",
+    "start": 362,
+    "end": 388,
+    "fragment": "node-readFile.js",
+    "sha256": "0b5bb8bb1ac212a724eb0cf5709bf21f4dbd52f578a2b87823ac542473b63e26"
+  },
+  {
+    "upstream": "lib/internal/fs/read/context.js",
+    "tag": "v22.12.0",
+    "start": 85,
+    "end": 110,
+    "fragment": "node-context-read.js",
+    "sha256": "63bfd9d6e74f7e6b4430426378181c3dc98eadad63f1356abe72227d7a58ff58"
+  },
+  {
+    "upstream": "src/node_file.cc",
+    "tag": "v22.12.0",
+    "start": 2515,
+    "end": 2525,
+    "fragment": "node-file-binding.cc",
+    "sha256": "7edaf3c8acba7a7425a5afef6edf9360a98dc2e668267dbfd1f2116ca708796b"
+  },
+  {
+    "upstream": "deps/uv/src/unix/fs.c",
+    "tag": "v22.12.0",
+    "start": 139,
+    "end": 155,
+    "fragment": "uv-fs-post.c",
+    "sha256": "3e33a6897d670333414c2fc1105697230d0a7f76c8d9b4a9982cc98cbe104574"
+  },
+  {
+    "upstream": "lib/net.js",
+    "tag": "v22.12.0",
+    "start": 1075,
+    "end": 1088,
+    "fragment": "node-net-connect.js",
+    "sha256": "245de3f87699c36c1a40a484be23805ee31deb6cc0a205a9169faa99a6c37b53"
+  },
+  {
+    "upstream": "src/tcp_wrap.cc",
+    "tag": "v22.12.0",
+    "start": 332,
+    "end": 343,
+    "fragment": "node-tcp-binding.cc",
+    "sha256": "520f4123d70ee41fc6a6769f59b922cfb8a4cdf3a10c624086a65b28bc50f6a5"
+  },
+  {
+    "upstream": "deps/uv/src/unix/tcp.c",
+    "tag": "v22.12.0",
+    "start": 308,
+    "end": 333,
+    "fragment": "uv-tcp-connect.c",
+    "sha256": "0de561b044c7e07d873d0cb83716c89f10b577c61489c08c0a35a5efd798c719"
+  },
+  {
+    "upstream": "deps/uv/src/unix/tcp.c",
+    "tag": "v22.12.0",
+    "start": 337,
+    "end": 344,
+    "fragment": "uv-tcp-watch.c",
+    "sha256": "aa5dc46f9281acd025c7ae5c9935a9fc001d3ab49a025fdeeec0fe7f197de8d5"
+  },
+  {
+    "upstream": "lib/internal/process/task_queues.js",
+    "tag": "v22.12.0",
+    "start": 72,
+    "end": 110,
+    "fragment": "node-tick-drain.js",
+    "sha256": "45f22d4dfd3c1bf4266d0c4fea6e05c097d62af474449e046313fe71d448b2c9"
+  },
+  {
+    "upstream": "lib/fs.js",
+    "tag": "v22.12.0",
+    "start": 294,
+    "end": 338,
+    "fragment": "node-open-stat.js",
+    "sha256": "c6c169e6bc4c190f2ce38504fb5f858eb60e2455e18e7df1c150b6f34709db6b"
+  },
+  {
+    "upstream": "lib/internal/fs/read/context.js",
+    "tag": "v22.12.0",
+    "start": 25,
+    "end": 69,
+    "fragment": "node-read-close.js",
+    "sha256": "c3e1812e51af931fb53029a3376d48b2a1bf55109d4116e5c432649d808f9d9d"
+  }
+]

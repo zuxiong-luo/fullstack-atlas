@@ -3,9 +3,9 @@ const article: Article = {
   "id": "node-execution-model",
   "topic": "nodejs",
   "title": "Node.js 执行模型：进程、事件循环与异步 I/O",
-  "description": "从进程和执行线程开始，逐步解释异步等待、回调检查点、CPU 阻塞与进程退出；用实际子进程区分 CJS/ESM 的顺序边界。",
-  "minutes": 38,
-  "labMinutes": 25,
+  "description": "从 V8、Node 原生绑定、libuv 到操作系统串起运行时；跟踪真实文件读取与 loopback HTTP，再解释检查点、CPU 阻塞和退出。",
+  "minutes": 58,
+  "labMinutes": 35,
   "tags": [
     "Node.js",
     "事件循环",
@@ -14,7 +14,7 @@ const article: Article = {
     "异步 I/O",
     "AbortSignal"
   ],
-  "scope": "解释单个 Node 22 进程的普通 JavaScript 执行、等待与退出，用确定顺序实验和有界分块计算验证。Worker 线程池实现、跨进程调度及吞吐压测留给后续文章。",
+  "scope": "Node.js 22.12.0 单进程的 V8/原生绑定/libuv/OS 协作、文件与数值地址 TCP 请求、检查点、合作式取消与退出；固定 Unix 源码并单列平台边界，不凭 JS 日志冒称内核级追踪。",
   "prerequisites": [
     "会读函数、Promise 与 async/await",
     "知道程序可以访问文件或网络，但无需了解 libuv"
@@ -27,7 +27,7 @@ const article: Article = {
     "macOS 14.5 x64 实测",
     "无第三方运行依赖"
   ],
-  "verifiedAt": "2026-10-24",
+  "verifiedAt": "2026-10-25",
   "examples": [
     {
       "label": "完整示例与行为测试",
@@ -66,6 +66,273 @@ const article: Article = {
         {
           "type": "paragraph",
           "text": "网络连接的等待通常借助操作系统提供的能力；文件系统接口、部分加密和名称解析接口等可能使用 libuv 线程池，具体要看 API。不能把“异步”统一翻译为“去线程池执行”，更不能以为 await 后面的业务函数已经换了线程。后面的实验只推导可观察的 JavaScript 顺序，不凭日志猜测内核内部的每一次调度。"
+        }
+      ]
+    },
+    {
+      "id": "runtime-layers",
+      "title": "V8、原生绑定、libuv 和操作系统：一条调用穿过哪些层",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "V8 负责解析、执行与优化 JavaScript，管理 JavaScript 堆，并提供 Promise 微任务的执行机制。它不因为能执行 await，就知道某个文件放在哪块磁盘。Node 在 V8 之上安装 fs、net、http、process 等宿主接口。原生绑定是 JavaScript 与 Node 的 C++ 实现之间的入口；libuv 再提供事件循环、跨平台 I/O 与工作池等设施。操作系统最终拥有文件描述符、socket、线程和调度器。先把这四层分清，后面的“异步”才有具体的执行者。"
+        },
+        {
+          "type": "paragraph",
+          "text": "以 readFile(path, callback) 为例，先在当前 JavaScript 调用栈中校验输入、创建上下文、向原生绑定提交请求，再把执行机会交回调用者。底层读文件取得结果后，Node 才在所属执行环境中继续调用 JavaScript。文件读操作的实际执行、完成通知的排队、JavaScript 回调真正开始，是三个时刻。最后一个时刻仍会被一段未返回的同步 JavaScript 拖后。"
+        },
+        {
+          "type": "figure",
+          "src": "figures/node-execution-model/layers.svg",
+          "title": "同一个请求经过的层次与两条 I/O 路径",
+          "alt": "顶部是 V8 执行 JavaScript，向下经 Node 原生绑定进入 libuv；文件路径经工作池，数字地址 TCP 经非阻塞 socket 与 OS 就绪通知，完成后回到 JS。",
+          "caption": "这是 macOS 本例职责图，不表示实际线程数量；Linux 的文件 I/O 可能经过版本和配置相关的 io_uring 分支。"
+        },
+        {
+          "type": "paragraph",
+          "text": "HTTP 又多了一层协议解释：node:http 处理请求行、响应头和消息体，node:net 提供 TCP 连接与字节流。网络等待通常利用非阻塞 socket 与系统事件通知，macOS 对应 kqueue 一类设施，Linux 通常是 epoll。不能把 TCP 等待想成一个 libuv 工作线程一直坐在那里等数据。这里使用 127.0.0.1，刻意排除名称解析；若改为域名，dns.lookup 可能再引入操作系统 getaddrinfo 与工作池，dns.resolve 系列又有不同的实现路径。"
+        },
+        {
+          "type": "paragraph",
+          "text": "V8 还有 GC 等后台线程，libuv 有工作池，应用可以再建 Worker。这些线程与普通业务回调的执行位置要分别讨论。V8 优化一段函数不意味着 Node 自动把它分散到多个核心；大量 Promise 也只建立继续执行关系。下一节先用源码看清文件路径，再运行真正的调用来验证可以观察到的边界。"
+        }
+      ]
+    },
+    {
+      "id": "file-native-path",
+      "title": "跟踪 fs.readFile：上下文怎样一直带到读结果",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "本文使用 callback 版 fs.readFile，而不是 fs/promises，目的是把 FSReqCallback 与完成函数直接对应起来。传入路径、编码 utf8 和回调后，下面的完整 readFile 函数建立 ReadFileContext。普通路径分支创建 FSReqCallback，把上下文挂到 req.context，把完成入口设为 readFileAfterOpen，然后 binding.open。已传入文件描述符的 isUserFd 分支有不同的所有权和检查点；不能裁掉这一分支，再声称所有 readFile 都自行打开并关闭文件。"
+        },
+        {
+          "type": "code",
+          "language": "js",
+          "filename": "examples/node-execution-model/source-fragments/node-readFile.js",
+          "code": "function readFile(path, options, callback) {\n  callback ||= options;\n  validateFunction(callback, 'cb');\n  options = getOptions(options, { flag: 'r' });\n  const ReadFileContext = require('internal/fs/read/context');\n  const context = new ReadFileContext(callback, options.encoding);\n  context.isUserFd = isFd(path); // File descriptor ownership\n\n  if (options.signal) {\n    context.signal = options.signal;\n  }\n  if (context.isUserFd) {\n    process.nextTick(function tick(context) {\n      ReflectApply(readFileAfterOpen, { context }, [null, path]);\n    }, context);\n    return;\n  }\n\n  if (checkAborted(options.signal, callback))\n    return;\n\n  const flagsNumber = stringToFlags(options.flag, 'options.flag');\n  const req = new FSReqCallback();\n  req.context = context;\n  req.oncomplete = readFileAfterOpen;\n  binding.open(getValidatedPath(path), flagsNumber, 0o666, req);\n}",
+          "purpose": "Node.js v22.12.0 原源码连续节选：lib/fs.js:362–388。这里只完成打开请求的提交；函数返回不表示文件已读完。 依赖内部上下文，不能单独运行；MIT 归属见下载内 THIRD_PARTY_NOTICES.txt。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "reference",
+          "title": "源码出处 · lib/fs.js",
+          "url": "https://github.com/nodejs/node/blob/v22.12.0/lib/fs.js#L362-L388",
+          "note": "固定 tag；上面的正文已展示决定当前结论的代码。"
+        },
+        {
+          "type": "paragraph",
+          "text": "先把打开和读取之间的接力展示完整。readFileAfterOpen 拿到错误时直接回调；成功则保存 fd 并提交 fstat。readFileAfterStat 再按普通文件大小分配缓冲，过大或分配失败进入 close，正常调用 context.read。输入 fixture.txt 是普通小文件，所以 size 非零，走一次有限缓冲路径。"
+        },
+        {
+          "type": "code",
+          "language": "js",
+          "filename": "examples/node-execution-model/source-fragments/node-open-stat.js",
+          "code": "function readFileAfterOpen(err, fd) {\n  const context = this.context;\n\n  if (err) {\n    context.callback(err);\n    return;\n  }\n\n  context.fd = fd;\n\n  const req = new FSReqCallback();\n  req.oncomplete = readFileAfterStat;\n  req.context = context;\n  binding.fstat(fd, false, req);\n}\n\nfunction readFileAfterStat(err, stats) {\n  const context = this.context;\n\n  if (err)\n    return context.close(err);\n\n  // TODO(BridgeAR): Check if allocating a smaller chunk is better performance\n  // wise, similar to the promise based version (less peak memory and chunked\n  // stringify operations vs multiple C++/JS boundary crossings).\n  const size = context.size = isFileType(stats, S_IFREG) ? stats[8] : 0;\n\n  if (size > kIoMaxLength) {\n    err = new ERR_FS_FILE_TOO_LARGE(size);\n    return context.close(err);\n  }\n\n  try {\n    if (size === 0) {\n      // TODO(BridgeAR): If an encoding is set, use the StringDecoder to concat\n      // the result and reuse the buffer instead of allocating a new one.\n      context.buffers = [];\n    } else {\n      context.buffer = Buffer.allocUnsafeSlow(size);\n    }\n  } catch (err) {\n    return context.close(err);\n  }\n  context.read();\n}",
+          "kind": "excerpt",
+          "purpose": "Node.js v22.12.0 lib/fs.js:294–338 连续原文。完整打开/状态完成函数；保留大小上限与分配失败分支。 依赖Node内部上下文，不可独立运行；MIT归属在THIRD_PARTY_NOTICES.txt。"
+        },
+        {
+          "type": "reference",
+          "title": "源码出处 · lib/fs.js",
+          "url": "https://github.com/nodejs/node/blob/v22.12.0/lib/fs.js#L294-L338",
+          "note": "正文已给出关键实现；固定tag、连续行号与原文保留在下载包。"
+        },
+        {
+          "type": "paragraph",
+          "text": "打开完成后，内部 readFileAfterOpen / readFileAfterStat 取得描述符、大小并准备缓冲，再进入上下文的 read 方法。下面保留 read 中的取消检查、按剩余大小决定本块长度，以及为当前读操作设置 readFileAfterRead。this.pos 随读完成前进；大文件会分块继续读，末尾才收束输出和关闭。readFile 是读完整文件的上层编排，不是一次 uv_fs_read 就永远能拿到全部内容。"
+        },
+        {
+          "type": "code",
+          "language": "js",
+          "filename": "examples/node-execution-model/source-fragments/node-context-read.js",
+          "code": "  read() {\n    let buffer;\n    let offset;\n    let length;\n\n    if (this.signal?.aborted) {\n      return this.close(\n        new AbortError(undefined, { cause: this.signal.reason }));\n    }\n    if (this.size === 0) {\n      buffer = Buffer.allocUnsafeSlow(kReadFileUnknownBufferLength);\n      offset = 0;\n      length = kReadFileUnknownBufferLength;\n      this.buffer = buffer;\n    } else {\n      buffer = this.buffer;\n      offset = this.pos;\n      length = MathMin(kReadFileBufferLength, this.size - this.pos);\n    }\n\n    const req = new FSReqCallback();\n    req.oncomplete = readFileAfterRead;\n    req.context = this;\n\n    read(this.fd, buffer, offset, length, -1, req);\n  }",
+          "purpose": "Node.js v22.12.0 原源码连续节选：lib/internal/fs/read/context.js:85–110。本段从 read 方法开始到提交 read 调用，方法闭合括号属于紧随其后的原文件。 依赖内部上下文，不能单独运行；MIT 归属见下载内 THIRD_PARTY_NOTICES.txt。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "reference",
+          "title": "源码出处 · lib/internal/fs/read/context.js",
+          "url": "https://github.com/nodejs/node/blob/v22.12.0/lib/internal/fs/read/context.js#L85-L110",
+          "note": "固定 tag；上面的正文已展示决定当前结论的代码。"
+        },
+        {
+          "type": "paragraph",
+          "text": "读完成后也不凭一句“然后调用回调”跳过去。readFileAfterRead 增加 context.pos，达到 size 或读到0就 close，否则继续 read。描述符关闭完成后，readFileAfterClose 汇总错误、按实际位置裁剪或拼接缓冲，按 encoding 转换，最后 callback(null, buffer)。这样输入 notes 到 utf8 字符串输出的主路径在正文内可以走通；其中 close 方法负责按照描述符所有权安排关闭，传入现成 fd 的所有权规则不能和路径读取混用。"
+        },
+        {
+          "type": "code",
+          "language": "js",
+          "filename": "examples/node-execution-model/source-fragments/node-read-close.js",
+          "code": "function readFileAfterRead(err, bytesRead) {\n  const context = this.context;\n\n  if (err)\n    return context.close(err);\n\n  context.pos += bytesRead;\n\n  if (context.pos === context.size || bytesRead === 0) {\n    context.close();\n  } else {\n    if (context.size === 0) {\n      // Unknown size, just read until we don't get bytes.\n      const buffer = bytesRead === kReadFileUnknownBufferLength ?\n        context.buffer : context.buffer.slice(0, bytesRead);\n      ArrayPrototypePush(context.buffers, buffer);\n    }\n    context.read();\n  }\n}\n\nfunction readFileAfterClose(err) {\n  const context = this.context;\n  const callback = context.callback;\n  let buffer = null;\n\n  if (context.err || err)\n    return callback(aggregateTwoErrors(err, context.err));\n\n  try {\n    if (context.size === 0)\n      buffer = Buffer.concat(context.buffers, context.pos);\n    else if (context.pos < context.size)\n      buffer = context.buffer.slice(0, context.pos);\n    else\n      buffer = context.buffer;\n\n    if (context.encoding)\n      buffer = buffer.toString(context.encoding);\n  } catch (err) {\n    return callback(err);\n  }\n\n  callback(null, buffer);\n}",
+          "kind": "excerpt",
+          "purpose": "Node.js v22.12.0 lib/internal/fs/read/context.js:25–69 连续原文。完整读完成与关闭完成函数；保留错误聚合与编码异常分支。 依赖Node内部上下文，不可独立运行；MIT归属在THIRD_PARTY_NOTICES.txt。"
+        },
+        {
+          "type": "reference",
+          "title": "源码出处 · lib/internal/fs/read/context.js",
+          "url": "https://github.com/nodejs/node/blob/v22.12.0/lib/internal/fs/read/context.js#L25-L69",
+          "note": "正文已给出关键实现；固定tag、连续行号与原文保留在下载包。"
+        },
+        {
+          "type": "paragraph",
+          "text": "这个 read 是绑定暴露的读取入口。C++ 分支通过参数个数区分带请求对象的异步方式与同步方式：当前案例 argc > 5，因此把 fd、缓冲区、偏移和长度交给 AsyncCall，再调用 uv_fs_read。这里只节选异步分支，不以这段代码解释同步分支的全部异常处理。"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "filename": "examples/node-execution-model/source-fragments/node-file-binding.cc",
+          "code": "\n  char* buf = buffer_data + off;\n  uv_buf_t uvbuf = uv_buf_init(buf, len);\n\n  if (argc > 5) {  // read(fd, buffer, offset, len, pos, req)\n    FSReqBase* req_wrap_async = GetReqWrap(args, 5);\n    CHECK_NOT_NULL(req_wrap_async);\n    FS_ASYNC_TRACE_BEGIN0(UV_FS_READ, req_wrap_async)\n    AsyncCall(env, req_wrap_async, args, \"read\", UTF8, AfterInteger,\n              uv_fs_read, fd, &uvbuf, 1, pos);\n  } else {  // read(fd, buffer, offset, len, pos)",
+          "purpose": "Node.js v22.12.0 原源码连续节选：src/node_file.cc:2515–2525。异步分支把完成处理器 AfterInteger 与本次请求关联。 依赖内部上下文，不能单独运行；MIT 归属见下载内 THIRD_PARTY_NOTICES.txt。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "reference",
+          "title": "源码出处 · src/node_file.cc",
+          "url": "https://github.com/nodejs/node/blob/v22.12.0/src/node_file.cc#L2515-L2525",
+          "note": "固定 tag；上面的正文已展示决定当前结论的代码。"
+        },
+        {
+          "type": "paragraph",
+          "text": "到 libuv 的 Unix 实现，在本机 macOS 的通用工作路径里，POST 宏看到 cb 非空，就注册请求并通过 uv__work_submit 把 uv__fs_work 放入工作池，完成端是 uv__fs_done；cb 为空时才在当前调用路径直接执行 uv__fs_work。读操作最终使用系统文件读取能力。等待期间 JavaScript 主线程可以接着做别的短工作；工作池忙时，读文件自身也要排队。"
+        },
+        {
+          "type": "code",
+          "language": "c",
+          "filename": "examples/node-execution-model/source-fragments/uv-fs-post.c",
+          "code": "#define POST                                                                  \\\n  do {                                                                        \\\n    if (cb != NULL) {                                                         \\\n      uv__req_register(loop);                                                 \\\n      uv__work_submit(loop,                                                   \\\n                      &req->work_req,                                         \\\n                      UV__WORK_FAST_IO,                                       \\\n                      uv__fs_work,                                            \\\n                      uv__fs_done);                                           \\\n      return 0;                                                               \\\n    }                                                                         \\\n    else {                                                                    \\\n      uv__fs_work(&req->work_req);                                            \\\n      return req->result;                                                     \\\n    }                                                                         \\\n  }                                                                           \\\n  while (0)",
+          "purpose": "Node.js v22.12.0 原源码连续节选：deps/uv/src/unix/fs.c:139–155。这是工作池通用路径，不包含调用它之前的系统专属快速路径。 依赖内部上下文，不能单独运行；MIT 归属见下载内 THIRD_PARTY_NOTICES.txt。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "reference",
+          "title": "源码出处 · deps/uv/src/unix/fs.c",
+          "url": "https://github.com/nodejs/node/blob/v22.12.0/deps/uv/src/unix/fs.c#L139-L155",
+          "note": "固定 tag；上面的正文已展示决定当前结论的代码。"
+        },
+        {
+          "type": "paragraph",
+          "text": "平台边界必须放在这里：同版本 uv_fs_read 在到达 POST 之前会尝试 uv__iou_fs_read_or_write。该分支涉及 Linux 的 io_uring 配置与运行条件，本机没有验证它。上面的 macOS 结论有固定源码和本机环境支撑，但不能扩展成“任何系统的每次异步文件读取都一定占一个池线程”。性能篇会在本机用受控 PBKDF2 排队验证工作池竞争，不把资源名称当成底层线程探针。"
+        }
+      ]
+    },
+    {
+      "id": "network-native-path",
+      "title": "跟踪数值地址 TCP：连接等待怎样回到 JavaScript",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "现在把输入换成 http.get({host:\"127.0.0.1\", port, agent:false})。http 客户端建立本例自己的连接；net 层知道这是 IPv4 地址，创建 TCPConnectWrap 并设置 afterConnect，然后调用底层 handle.connect。agent:false 避免复用另一次实验已经存在的连接，端口使用 listen(0) 随机分配，不碰用户服务。"
+        },
+        {
+          "type": "code",
+          "language": "js",
+          "filename": "examples/node-execution-model/source-fragments/node-net-connect.js",
+          "code": "  if (addressType === 6 || addressType === 4) {\n    const req = new TCPConnectWrap();\n    req.oncomplete = afterConnect;\n    req.address = address;\n    req.port = port;\n    req.localAddress = localAddress;\n    req.localPort = localPort;\n    req.addressType = addressType;\n\n    if (addressType === 4)\n      err = self._handle.connect(req, address, port);\n    else\n      err = self._handle.connect6(req, address, port);\n  } else {",
+          "purpose": "Node.js v22.12.0 原源码连续节选：lib/net.js:1075–1088。保留 IPv4/IPv6 分支，本例走 addressType === 4。 依赖内部上下文，不能单独运行；MIT 归属见下载内 THIRD_PARTY_NOTICES.txt。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "reference",
+          "title": "源码出处 · lib/net.js",
+          "url": "https://github.com/nodejs/node/blob/v22.12.0/lib/net.js#L1075-L1088",
+          "note": "固定 tag；上面的正文已展示决定当前结论的代码。"
+        },
+        {
+          "type": "paragraph",
+          "text": "C++ TCPWrap 把地址转成原生结构后，将连接请求交给 uv_tcp_connect，并绑定完成处理器 AfterConnect。Dispatch 返回错误要清理请求包装；成功提交也不表示 JavaScript 的 response 回调已经可运行，因为连接建立之后还要发送 HTTP、等待服务响应并解析消息。"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "filename": "examples/node-execution-model/source-fragments/node-tcp-binding.cc",
+          "code": "\n  if (err == 0) {\n    AsyncHooks::DefaultTriggerAsyncIdScope trigger_scope(wrap);\n    ConnectWrap* req_wrap =\n        new ConnectWrap(env, req_wrap_obj, AsyncWrap::PROVIDER_TCPCONNECTWRAP);\n    err = req_wrap->Dispatch(uv_tcp_connect,\n                             &wrap->handle_,\n                             reinterpret_cast<const sockaddr*>(&addr),\n                             AfterConnect);\n    if (err) {\n      delete req_wrap;\n    } else {",
+          "purpose": "Node.js v22.12.0 原源码连续节选：src/tcp_wrap.cc:332–343。此连续节选包含提交与错误/成功分支开头；后续原文件还有追踪与状态记录，不在这里展开。 依赖内部上下文，不能单独运行；MIT 归属见下载内 THIRD_PARTY_NOTICES.txt。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "reference",
+          "title": "源码出处 · src/tcp_wrap.cc",
+          "url": "https://github.com/nodejs/node/blob/v22.12.0/src/tcp_wrap.cc#L332-L343",
+          "note": "固定 tag；上面的正文已展示决定当前结论的代码。"
+        },
+        {
+          "type": "paragraph",
+          "text": "再看 libuv：非阻塞 connect 可能返回 EINPROGRESS，这表示连接尚在进行，代码没有把它当最终失败。其他错误按分支返回或延期报告。之后把 req 关联到 handle，并监听 POLLOUT，就绪后才继续连接完成处理。POLLOUT 在这里是连接完成检查所需的事件兴趣，不等于已经收到完整 HTTP 响应。"
+        },
+        {
+          "type": "code",
+          "language": "c",
+          "filename": "examples/node-execution-model/source-fragments/uv-tcp-connect.c",
+          "code": "  do {\n    errno = 0;\n    r = connect(uv__stream_fd(handle), addr, addrlen);\n  } while (r == -1 && errno == EINTR);\n\n  /* We not only check the return value, but also check the errno != 0.\n   * Because in rare cases connect() will return -1 but the errno\n   * is 0 (for example, on Android 4.3, OnePlus phone A0001_12_150227)\n   * and actually the tcp three-way handshake is completed.\n   */\n  if (r == -1 && errno != 0) {\n    if (errno == EINPROGRESS)\n      ; /* not an error */\n    else if (errno == ECONNREFUSED\n#if defined(__OpenBSD__)\n      || errno == EINVAL\n#endif\n      )\n    /* If we get ECONNREFUSED (Solaris) or EINVAL (OpenBSD) wait until the\n     * next tick to report the error. Solaris and OpenBSD wants to report\n     * immediately -- other unixes want to wait.\n     */\n      handle->delayed_error = UV__ERR(ECONNREFUSED);\n    else\n      return UV__ERR(errno);\n  }",
+          "purpose": "Node.js v22.12.0 原源码连续节选：deps/uv/src/unix/tcp.c:308–333。这段是真实错误分支，不能删掉 EINPROGRESS 后只说“调用 connect 就完成连接”。 依赖内部上下文，不能单独运行；MIT 归属见下载内 THIRD_PARTY_NOTICES.txt。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "reference",
+          "title": "源码出处 · deps/uv/src/unix/tcp.c",
+          "url": "https://github.com/nodejs/node/blob/v22.12.0/deps/uv/src/unix/tcp.c#L308-L333",
+          "note": "固定 tag；上面的正文已展示决定当前结论的代码。"
+        },
+        {
+          "type": "code",
+          "language": "c",
+          "filename": "examples/node-execution-model/source-fragments/uv-tcp-watch.c",
+          "code": "  uv__req_init(handle->loop, req, UV_CONNECT);\n  req->cb = cb;\n  req->handle = (uv_stream_t*) handle;\n  uv__queue_init(&req->queue);\n  handle->connect_req = req;\n\n  uv__io_start(handle->loop, &handle->io_watcher, POLLOUT);",
+          "purpose": "Node.js v22.12.0 原源码连续节选：deps/uv/src/unix/tcp.c:337–344。后续通过事件循环的就绪通知继续推进。 依赖内部上下文，不能单独运行；MIT 归属见下载内 THIRD_PARTY_NOTICES.txt。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "reference",
+          "title": "源码出处 · deps/uv/src/unix/tcp.c",
+          "url": "https://github.com/nodejs/node/blob/v22.12.0/deps/uv/src/unix/tcp.c#L337-L344",
+          "note": "固定 tag；上面的正文已展示决定当前结论的代码。"
+        },
+        {
+          "type": "paragraph",
+          "text": "整个网络等待没有调用上面文件路径的 uv__work_submit。我们能据固定源码解释职责分工，却没有通过本篇 JS 程序记录 kqueue 的每个内核事件；网络 ready、HTTP 消息完成和用户回调之间仍有 Node 内部处理。需要内核级时间线时，下一步应在对应 OS 的受控环境加入系统追踪，而不是给 async_hooks 日志补上猜出来的纳秒。"
+        }
+      ]
+    },
+    {
+      "id": "real-io-trace",
+      "title": "真实调用记录：哪些是观察，哪些来自源码推导",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "完整实验先读取固定文本 notes，完成后才启动自己的 loopback HTTP 服务并发起请求。先后安排是为了让每条记录有明确归属，不用于证明“文件永远比网络快”。async_hooks 只收集目标资源类型，不在 hook 内调用 console，避免日志本身再触发异步资源而递归。"
+        },
+        {
+          "type": "code",
+          "language": "js",
+          "filename": "examples/node-execution-model/io-trace.mjs",
+          "code": "import { createHook } from 'node:async_hooks';\nimport { readFile } from 'node:fs';\nimport { createServer, get } from 'node:http';\nimport { pathToFileURL } from 'node:url';\n// async_hooks observes Node resources, not kernel scheduling or pool thread IDs.\nexport async function traceIO({file=new URL('./fixture.txt',import.meta.url)}={}) {\n  const resources = [], events = [];\n  const hook = createHook({ init(_id, type) {\n    if (['FSREQCALLBACK','TCPWRAP','TCPCONNECTWRAP','HTTPCLIENTREQUEST'].includes(type)) resources.push(type);\n  }});\n  const sockets = new Set();\n  const server = createServer((_req, res) => { events.push('server:request'); res.end('notes'); });\n  server.on('connection', socket => { sockets.add(socket); socket.once('close', () => sockets.delete(socket)); });\n  hook.enable();\n  try {\n    events.push('file:submit');\n    const text = await new Promise((resolve, reject) => readFile(file, 'utf8', (error, value) => {\n      events.push('file:callback'); error ? reject(error) : resolve(value.trim());\n    }));\n    await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });\n    events.push('http:submit');\n    const body = await new Promise((resolve, reject) => {\n      const request = get({host:'127.0.0.1', port:server.address().port, path:'/', agent:false}, response => {\n        events.push('http:response'); let value=''; response.setEncoding('utf8');\n        response.on('data', part => value += part); response.once('end', () => { events.push('http:end'); resolve(value); }); response.once('error', reject);\n      });\n      request.setTimeout(2000, () => request.destroy(new Error('LOCAL_HTTP_TIMEOUT'))); request.once('error', reject);\n    });\n    return {text, body, events, resources:[...new Set(resources)]};\n  } finally { hook.disable(); for (const socket of sockets) socket.destroy(); if (server.listening) await new Promise(resolve => server.close(resolve)); }\n}\nif (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) console.log(JSON.stringify(await traceIO()));",
+          "purpose": "完整真实 I/O 实验；资源、socket、服务都有本地所有者，finally 关闭。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "filename": "终端 · 2026-10-25 Node 22.12.0 实测",
+          "code": "node io-trace.mjs\n{\"text\":\"notes\",\"body\":\"notes\",\"events\":[\"file:submit\",\"file:callback\",\"http:submit\",\"server:request\",\"http:response\",\"http:end\"],\"resources\":[\"FSREQCALLBACK\",\"TCPWRAP\",\"TCPCONNECTWRAP\",\"HTTPCLIENTREQUEST\"]}",
+          "purpose": "只断言固定输入、业务先后与这些资源存在；不据事件名称推算工作线程 ID。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "直接观察有四件事：文件和 HTTP 都实际返回 notes；file:callback 在 file:submit 之后；服务先收到请求，客户端随后收到响应和结束；运行时为这次调用建立了相应的 FS、TCP 和 HTTP 资源。由源码推导的部分是：这些 Node 请求包装怎样交给 libuv，文件通用路径和网络就绪路径为什么不同。FSREQCALLBACK 不是“某个特定 OS 线程”，TCPWRAP 也不是“HTTP 完成”。"
+        },
+        {
+          "type": "paragraph",
+          "text": "网络连接和工作池都可能完成了底层工作，但若主线程还卡在同步计算，用户回调仍只能等待。下文原有 async CPU 实验、CJS/ESM 检查点和分块取消会逐个验证这一层，避免把 I/O 的异步与业务代码的并行混为一谈。"
+        },
+        {
+          "type": "paragraph",
+          "text": "失败输入也实际跑：把 file 传为示例目录内确定不存在的 absent-controlled-fixture.txt，打开回调以 ENOENT 拒绝，HTTP 服务尚未 listen，finally 关闭钩子。测试同时给出错误码并正常结束，不把“发起了读取”当成成功。若你的报错是 EACCES，应检查文件权限；若返回内容不对，则先检查路径与编码，而不是直接怀疑事件循环顺序。"
         }
       ]
     },
@@ -149,6 +416,24 @@ const article: Article = {
           "title": "Node 22.12.0：process.nextTick 的 CJS / ESM 上下文说明",
           "url": "https://nodejs.org/download/release/v22.12.0/docs/api/process.html#processnexttickcallback-args",
           "note": "固定版本的行为依据；上面的完整程序和子进程测试可在本地复现。"
+        },
+        {
+          "type": "paragraph",
+          "text": "固定版本的检查点实现也可以直接读：processTicksAndRejections 用 while 取出 nextTick 队列的项，执行并维护 async_hooks 上下文；这一轮队列耗尽后调用 V8 的 runMicrotasks，再视新入队项与拒绝处理重复。ESM 顶层本身的模块求值上下文解释了为何前面的入口输出不同。这段内部循环支撑“不同队列在检查点交替排空”的判断，不提供任意嵌套任务的万能总排序。"
+        },
+        {
+          "type": "code",
+          "language": "js",
+          "filename": "examples/node-execution-model/source-fragments/node-tick-drain.js",
+          "code": "function processTicksAndRejections() {\n  let tock;\n  do {\n    while ((tock = queue.shift()) !== null) {\n      const priorContextFrame =\n        AsyncContextFrame.exchange(tock[async_context_frame]);\n\n      const asyncId = tock[async_id_symbol];\n      emitBefore(asyncId, tock[trigger_async_id_symbol], tock);\n\n      try {\n        const callback = tock.callback;\n        if (tock.args === undefined) {\n          callback();\n        } else {\n          const args = tock.args;\n          switch (args.length) {\n            case 1: callback(args[0]); break;\n            case 2: callback(args[0], args[1]); break;\n            case 3: callback(args[0], args[1], args[2]); break;\n            case 4: callback(args[0], args[1], args[2], args[3]); break;\n            default: callback(...args);\n          }\n        }\n      } finally {\n        if (destroyHooksExist())\n          emitDestroy(asyncId);\n      }\n\n      emitAfter(asyncId);\n\n      AsyncContextFrame.set(priorContextFrame);\n    }\n    runMicrotasks();\n  } while (!queue.isEmpty() || processPromiseRejections());\n  setHasTickScheduled(false);\n  setHasRejectionToWarn(false);\n}",
+          "purpose": "Node.js v22.12.0 原源码连续节选：lib/internal/process/task_queues.js:72–110。完整 processTicksAndRejections 函数；内部调用依赖 Node 运行时，不是手写模拟器。 依赖内部上下文，不能单独运行；MIT 归属见下载内 THIRD_PARTY_NOTICES.txt。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "reference",
+          "title": "源码出处 · lib/internal/process/task_queues.js",
+          "url": "https://github.com/nodejs/node/blob/v22.12.0/lib/internal/process/task_queues.js#L72-L110",
+          "note": "固定 tag；上面的正文已展示决定当前结论的代码。"
         }
       ]
     },
@@ -297,7 +582,7 @@ const article: Article = {
         },
         {
           "type": "paragraph",
-          "text": "本机 Node 22.12.0、macOS 14.5 x64 已执行，8 项测试全部通过：同步计算顺序、CJS/ESM 检查点、I/O 内 immediate、普通 pending Promise 的退出、unref 计时器、分块结果和非法规模、分块取消、异步错误传播。测试内部的子进程都有超时；没有把“过了多少毫秒”当作吞吐或延迟收益。"
+          "text": "本机 Node 22.12.0、macOS 14.5 x64 已执行，10 项测试全部通过：同步计算顺序、CJS/ESM 检查点、I/O 内 immediate、普通 pending Promise 的退出、unref 计时器、分块结果和非法规模、分块取消、异步错误传播。测试内部的子进程都有超时；没有把“过了多少毫秒”当作吞吐或延迟收益。"
         },
         {
           "type": "paragraph",

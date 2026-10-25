@@ -1,11 +1,11 @@
-import type {Article} from '../../articleTypes';
-const article:Article={
+import type { Article } from '../../articleTypes';
+const article: Article = {
   "id": "node-parallel-computing",
   "topic": "nodejs",
   "title": "Node.js 并行计算：Worker、进程池与通信边界",
-  "description": "用同一份有界计算池分别驱动Worker线程和fork进程，验证准入、排队、取消、超时、崩溃替换与关闭；再实际比较ArrayBuffer转移与进程IPC复制，不靠耗时猜并行。",
-  "minutes": 60,
-  "labMinutes": 40,
+  "description": "先定义主线程、libuv 工作池、Worker 与 OS 进程，再用真实 spawn/exec/fork、cluster 和有界计算池验证通信、取消、崩溃和资源回收。",
+  "minutes": 78,
+  "labMinutes": 45,
   "scope": "Node22.12的可信纯CPU教学任务，thread/process双模式本地池；内存队列、有限任务与有限重启，不提供持久可靠队列、任意代码沙箱或生产加速承诺。",
   "tags": [
     "Node.js",
@@ -20,8 +20,8 @@ const article:Article={
     "理解Node主线程事件循环与进程的基本含义"
   ],
   "kind": "series",
-  "status": 'complete',
-  "verifiedAt": "2026-10-24",
+  "status": "complete",
+  "verifiedAt": "2026-10-25",
   "versions": [
     "Node.js22.12.0；ESM；无第三方npm依赖",
     "macOS14.5 x64实测；其他OS与生产负载另验"
@@ -61,6 +61,36 @@ const article:Article={
           "title": "执行上下文不同，通信与失败边界也不同",
           "alt": "thread同PID、不同threadId；process不同PID、主threadId0。示意的是隔离关系，不代表两个任务在某台机器上必然获得两倍CPU。",
           "caption": "thread同PID、不同threadId；process不同PID、主threadId0。示意的是隔离关系，不代表两个任务在某台机器上必然获得两倍CPU。"
+        }
+      ]
+    },
+    {
+      "id": "execution-owners",
+      "title": "四种执行者：名字都有“线程”，它们的所有者却不同",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "主线程是应用入口所在的线程，普通请求回调在自己的 JavaScript 执行环境里运行。libuv 工作池是运行时安排特定原生任务的设施，例如本机文件读取与 PBKDF2；你不能向它提交任意 JavaScript 闭包。Worker 是应用显式创建的 JavaScript 线程，拥有独立 V8 isolate、JavaScript 堆和事件循环。OS 进程则有自己的地址空间、运行时、文件句柄和退出状态。理解这四者，才能决定是减少等待、并行计算，还是增加隔离边界。"
+        },
+        {
+          "type": "paragraph",
+          "text": "Worker 与主线程处在同一个进程，process.pid 相同，threadId 不同；普通 JavaScript 对象不能直接跨 isolate 共享，消息一般结构化克隆。ArrayBuffer 可以转移所有权，SharedArrayBuffer 才建立显式共享内存并需要同步。进程的 PID 不同，IPC 或管道传数据，普通消息不会把两个进程的对象变成同一份地址。后文的转移实验会实际检查发送端 byteLength，而不是只背“线程快、进程安全”。"
+        },
+        {
+          "type": "figure",
+          "src": "figures/node-parallel-computing/owners.svg",
+          "title": "运行时工作池、Worker 与独立进程的边界",
+          "alt": "同一 Node 进程内主 isolate 和 Worker isolate 各有 JS 堆与循环，libuv 工作池执行原生工作并在该进程共享；进程 B 是独立地址空间，经过 IPC 通信。",
+          "caption": "职责图，未按线程数或内存比例绘制；共享内存必须显式设计，Worker 不是权限沙箱。"
+        },
+        {
+          "type": "paragraph",
+          "text": "libuv 的工作池在一个进程的事件循环之间共享。创建更多 Worker，不会为每个 Worker 额外复制一套可无限扩展的文件 I/O 工作池。因此 Worker 擅长把 CPU 密集的 JavaScript 从请求线程移开，但若瓶颈是所有线程共同争用的池任务，仅加 Worker 可能没有解决排队。独立进程拥有另一套运行时资源，代价是启动、内存、序列化与管理开销。"
+        },
+        {
+          "type": "paragraph",
+          "text": "故障边界也要逐个说：任务里正常 throw 可以由 Worker 模块捕获并回传业务失败；未捕获 JavaScript 异常通常终止该 Worker 并发出 error/exit；进程退出则让父进程收到对应退出事件。原生扩展崩溃、进程级 OOM 等不保证被 Worker 边界隔离。独立进程给地址空间和终止提供更强边界，但没有容器/权限配置时仍能以当前用户访问系统资源。下面的池只运行下载内可信模块，不提供任意代码执行。"
         }
       ]
     },
@@ -123,6 +153,104 @@ const article:Article={
         {
           "type": "paragraph",
           "text": "进程池也不是cluster的同义词。cluster常用于多个Node进程分担服务连接，而本文由主进程主动分派有限计算任务，消息队列与结果匹配都由自己的池维护。两个方案可以服务不同架构，也可能组合使用，但各自的准入、进程数量与CPU预算不能互相假定。"
+        }
+      ]
+    },
+    {
+      "id": "process-api-boundaries",
+      "title": "spawn、exec、fork：传参、输出和 IPC 都是设计选择",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "spawn(file, args, {shell:false}) 直接启动目标程序，args 是独立参数，stdout/stderr 是流，适合持续输出和需要背压处理的工具；仍须验证可执行文件、参数中的路径与工具自己的选项，shell:false 只消除了 shell 对分号等字符的解释。exec(command) 默认经过 shell，并把输出缓冲到回调，所以拼接用户输入会多一个命令解释边界，输出过多还会触发 maxBuffer。execFile(file,args) 默认不经 shell，但也使用缓冲回调。"
+        },
+        {
+          "type": "paragraph",
+          "text": "fork(module) 在 child_process 里表示启动另一个 Node 程序并建立 IPC 通道，不是复制当前 JavaScript 堆，也不是 Worker 的别名。下面固定子模块收到 count:7 后返回 count:8 和自己的 PID，随后断开 IPC。进程池采用 fork 是因为现有纯 CPU 模块就是 Node 程序，不需要用 shell 包一层 node 命令。"
+        },
+        {
+          "type": "paragraph",
+          "text": "IPC 等待也需要失败边界：子进程先退出、发出 error 或一直不回消息，都必须结算等待并移除监听。下面 firstMessage 在三条路径都清理自己的计时器/监听，childExit 等到真实退出才回收容量；silence/exit 模式只用于固定故障验收，不能提供公网执行入口。"
+        },
+        {
+          "type": "code",
+          "filename": "examples/node-parallel-computing/child-events.mjs",
+          "language": "js",
+          "code": "// Await one IPC message, with explicit exit/error/deadline ownership.\nexport function firstMessage(child,{timeoutMs=3000}={}){\n return new Promise((resolve,reject)=>{\n  const cleanup=()=>{clearTimeout(timer);child.off('message',message);child.off('error',error);child.off('exit',exit);};\n  const settle=(fn,value)=>{cleanup();fn(value);};\n  const message=value=>settle(resolve,value),error=value=>settle(reject,value);\n  const exit=(code,signal)=>settle(reject,new Error(`CHILD_EXIT_BEFORE_MESSAGE:${code}:${signal}`));\n  const timer=setTimeout(()=>settle(reject,new Error('CHILD_MESSAGE_TIMEOUT')),timeoutMs);\n  child.once('message',message);child.once('error',error);child.once('exit',exit);\n  if(child.exitCode!==null||child.signalCode!==null)exit(child.exitCode,child.signalCode);\n });\n}\nexport function childExit(child,{timeoutMs=3000,signal='SIGTERM'}={}){\n if(!child.pid||child.exitCode!==null||child.signalCode!==null)return Promise.resolve();\n return new Promise(resolve=>{\n  const timer=setTimeout(()=>child.kill('SIGKILL'),timeoutMs);\n  child.once('exit',()=>{clearTimeout(timer);resolve();});\n  if(signal)child.kill(signal);\n });\n}",
+          "purpose": "完整 IPC 消息等待与退出清理；deadline 不依赖下一条业务消息，避免杀死子进程以后 await 仍永远悬空。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "language": "js",
+          "filename": "examples/node-parallel-computing/process-modes.mjs",
+          "code": "import { spawn, exec, execFile, fork } from 'node:child_process';\nimport { promisify } from 'node:util';\nimport { pathToFileURL } from 'node:url';\nimport { once } from 'node:events';\nimport {firstMessage,childExit} from './child-events.mjs';\nconst execute=promisify(exec), executeFile=promisify(execFile);\nexport async function processModes({peerMode='ok'}={}) {\n  if(!['ok','exit','silence'].includes(peerMode))throw new RangeError('INVALID_PEER_MODE');\n  // The text is fixed teaching data. Never interpolate external input into a shell command.\n  const input='hello; printf SHELL_MARK';\n  const child=spawn(process.execPath,['-e','process.stdout.write(process.argv[1])',input],{shell:false,stdio:['ignore','pipe','pipe']});\n  let literal='';child.stdout.setEncoding('utf8');child.stdout.on('data',part=>literal+=part);\n  const [code]=await once(child,'close');if(code!==0)throw new Error('SPAWN_FAILED');\n  const {stdout:fileOutput}=await executeFile(process.execPath,['-e','process.stdout.write(process.argv[1])',input],{timeout:2000});\n  let shellOutput=null;\n  if(process.platform!=='win32') shellOutput=(await execute('printf hello; printf SHELL_MARK',{timeout:2000})).stdout;\n  let bufferError=null;\n  try { await executeFile(process.execPath,['-e','process.stdout.write(\"x\".repeat(4096))'],{maxBuffer:64,timeout:2000}); }\n  catch(error){bufferError=error.code;}\n  const peer=fork(new URL('./process-modes.mjs',import.meta.url),['--peer',peerMode],{stdio:['ignore','ignore','pipe','ipc']});\n  try {const message=firstMessage(peer,{timeoutMs:peerMode==='silence'?300:3000});peer.send({count:7});const reply=await message;await childExit(peer,{signal:null});return {input,literal,fileOutput,shellOutput,bufferError,reply,parentPid:process.pid};}\n  finally {await childExit(peer);}\n}\nif(process.argv.includes('--peer')) process.once('message',message=>{\n const mode=process.argv.at(-1);if(mode==='exit'){process.exitCode=7;process.disconnect();return;}if(mode==='silence'){setInterval(()=>{},1000);return;}\n process.send({count:message.count+1,pid:process.pid},()=>process.disconnect());\n});\nelse if(process.argv[1]&&pathToFileURL(process.argv[1]).href===import.meta.url) console.log(JSON.stringify(await processModes()));",
+          "purpose": "完整受控对照，字符串全为固定教学数据；从不接收外部命令。shell 示例只在 POSIX 执行，子进程有期限与退出收尾。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "filename": "本机输出中用于判断的字段",
+          "code": "input/literal/fileOutput = \"hello; printf SHELL_MARK\"\nshellOutput = \"helloSHELL_MARK\"\nbufferError = \"ERR_CHILD_PROCESS_STDIO_MAXBUFFER\"\nreply.count = 8；reply.pid 与 parentPid 不同",
+          "purpose": "实际 PID 随运行变化；不是建议把外部输入交给 exec。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "同一个带分号的固定输入，在 spawn/execFile 中原样成为参数；exec 的固定命令则把分号解释为下一条 printf。这个差异就是 shell 注入风险的机制。正确修复通常是固定可执行文件和参数数组、验证目标操作，不能只给字符串外面随手套引号。工具本身接受 --output、@file 或路径等语义时，还须约束参数含义；避免 shell 并不会消除工具级参数注入。"
+        },
+        {
+          "type": "paragraph",
+          "text": "输出 4096 字节、maxBuffer 64 的 execFile 真实失败，说明缓冲 API 的容量必须显式设计。spawn 的流也不是无限存储：父进程要消费数据、限制总量，并在写往其他流时处理背压。超时或 kill 表示发出信号，不等于子进程已消失；现有 endpoint.stop 等到 exit，SIGTERM 后还有自己的 SIGKILL 收尾。取消了进程也不会撤销它已提交的数据库事务。"
+        },
+        {
+          "type": "reference",
+          "title": "Node 22.12.0 child_process",
+          "url": "https://nodejs.org/download/release/v22.12.0/docs/api/child_process.html",
+          "note": "API、默认 shell、maxBuffer、IPC 语义的固定版本依据；当前正文已有实际对照代码。"
+        }
+      ]
+    },
+    {
+      "id": "cluster-distribution",
+      "title": "cluster 管服务连接分发，计算池管具体任务准入",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "cluster 让多个 Node worker 进程运行同一服务入口，主进程协调 worker 与监听句柄；常见轮询调度由主进程接受连接后分发，其他策略/平台有差别。它适合把多个服务进程组织在一个端口后面，不会自动把某一个请求内部的 CPU 循环拆到各 worker，也不会替你实现持久任务队列、幂等或数据库一致性。"
+        },
+        {
+          "type": "code",
+          "language": "js",
+          "filename": "examples/node-parallel-computing/cluster-demo.mjs",
+          "code": "import cluster from 'node:cluster';\nimport { createServer, get } from 'node:http';\nimport {firstMessage,childExit} from './child-events.mjs';\nif(cluster.isPrimary){\n  cluster.schedulingPolicy=cluster.SCHED_RR;\n  const workers=[];\n  try {\n    for(let i=0;i<2;i++)workers.push(cluster.fork({ATLAS_CLUSTER_FAIL:process.argv.includes('--startup-fail')?'1':'0'}));\n    const ready=await Promise.all(workers.map(worker=>firstMessage(worker.process).then(message=>message)));\n    const replies=[];\n    for(let i=0;i<8;i++)replies.push(await new Promise((resolve,reject)=>{\n      const request=get({host:'127.0.0.1',port:ready[0].port,agent:false},response=>{let data='';response.on('data',part=>data+=part);response.once('end',()=>resolve(JSON.parse(data)));});\n      request.setTimeout(1000,()=>request.destroy(new Error('TIMEOUT')));request.once('error',reject);\n    }));\n    console.log(JSON.stringify({workerPids:ready.map(row=>row.pid),ports:ready.map(row=>row.port),servedBy:[...new Set(replies.map(row=>row.pid))],requests:replies.length}));\n  } catch(error){console.error(error.message);process.exitCode=1;}\n  finally {for(const worker of workers)if(worker.isConnected())worker.send('close');await Promise.all(workers.map(worker=>childExit(worker.process,{signal:null})));}\n}else{\n  if(process.env.ATLAS_CLUSTER_FAIL==='1'){process.exit(7);}\n  const server=createServer((_req,res)=>res.end(JSON.stringify({pid:process.pid})));\n  server.listen(0,'127.0.0.1',()=>process.send({pid:process.pid,port:server.address().port}));\n  process.once('message',()=>server.close(()=>process.disconnect()));\n}",
+          "purpose": "完整两 worker 本机演示；显式 SCHED_RR，8 次独立连接、随机同一端口，自己的 worker 与服务退出后回收。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "filename": "本次实际 cluster 输出",
+          "code": "workerPids: [54217,54218]\nports: [54790,54790]\nservedBy: [54218,54217]\nrequests: 8",
+          "purpose": "示例 PID/端口仅是一次记录，测试断言共享端口、独立 worker 身份和响应来自已知 worker，不断言公平分配比率。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "运行结果验证的是两个进程提供同一个监听端口，以及本轮请求由这些 worker 服务。8 次请求不能给出负载均衡公平性结论，keep-alive 复用还会改变按连接分发的表现。每个 worker 的内存缓存和会话都独立；登录态不能靠“都在同一台机器”就认为共享。若需要统一状态，必须选择外部存储或明确通信协议。"
+        },
+        {
+          "type": "paragraph",
+          "text": "回到本文质数任务：我们需要知道一个任务排队还是运行、何时取消、何时替换崩溃执行者，所以使用下文有界计算池，而不是把 cluster 当通用解法。HTTP 服务也可以同时使用多进程与每进程有限 Worker，但总数要按整体 CPU/内存配额规划，不能把“进程数 × 线程数”无边界放大。"
+        },
+        {
+          "type": "reference",
+          "title": "Node 22.12.0 cluster",
+          "url": "https://nodejs.org/download/release/v22.12.0/docs/api/cluster.html",
+          "note": "主/worker 进程、连接分发和调度策略；本例 POSIX macOS 实测，不声明 Windows 同行为。"
         }
       ]
     },
@@ -321,7 +449,7 @@ const article:Article={
         },
         {
           "type": "paragraph",
-          "text": "macOS14.5/Node22.12.0已通过13项真实线程/进程测试并实际运行demo。没有把线程池写成内存模拟器，也没有以短样本耗时宣称某种模式更快。CLI、容量和生命周期已验证；Linux、容器CPU配额、native扩展与生产吞吐未验证。此队列只在本进程内，主进程退出就丢失，不能替代前面可靠异步系统中的持久任务与回执协议。"
+          "text": "macOS14.5/Node22.12.0已通过17项真实线程/进程测试并实际运行demo。没有把线程池写成内存模拟器，也没有以短样本耗时宣称某种模式更快。CLI、容量和生命周期已验证；Linux、容器CPU配额、native扩展与生产吞吐未验证。此队列只在本进程内，主进程退出就丢失，不能替代前面可靠异步系统中的持久任务与回执协议。"
         }
       ]
     }

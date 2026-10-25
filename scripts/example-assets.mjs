@@ -3,7 +3,7 @@ import {execFileSync} from 'node:child_process';
 import {join,extname} from 'node:path';
 // Curated source formats only. Never publish local environments, caches or secrets.
 const excluded=new Set(['.next','.dart_tool','.test','.turbo','.gradle','build','node_modules','.venv','venv','__pycache__','.pytest_cache','.git','dist','.mypy_cache','.ruff_cache','public-app']);
-const extensions=new Set(['.ts','.tsx','.jsx','.py','.json','.jsonl','.md','.txt','.toml','.lock','.html','.mjs','.js','.cjs','.css','.yaml','.yml','.sh','.sql','.dart','.glsl','.vert','.frag','.dockerignore']);
+const extensions=new Set(['.ts','.tsx','.jsx','.py','.json','.jsonl','.md','.txt','.toml','.lock','.html','.mjs','.js','.cjs','.css','.yaml','.yml','.sh','.sql','.dart','.glsl','.vert','.frag','.c','.cc','.dockerignore']);
 const runtimeDataRoots=new Set(['examples/next-server-boundaries','examples/next-data-cache','examples/next-server-writes']);
 const explicitFiles=new Set(['.nvmrc','.python-version','.env.example','.dockerignore','LICENSE','LICENSE.react','Dockerfile','MANIFEST.in']);
 await rm('public/examples',{recursive:true,force:true});

@@ -1,11 +1,11 @@
-import type {Article} from '../../articleTypes';
-const article:Article={
+import type { Article } from '../../articleTypes';
+const article: Article = {
   "id": "node-performance-memory",
   "topic": "nodejs",
   "title": "Node.js 性能与内存：延迟、堆快照、GC 和压测",
-  "description": "先定义负载模型与指标窗口，再用独立服务器进程采集真实HTTP延迟、ELU、循环延迟与GC；生成三份实际堆快照，验证全局引用保留128对象及清理后的变化。",
-  "minutes": 60,
-  "labMinutes": 40,
+  "description": "按 CPU 高、事件循环阻塞、内存增长和外部 I/O 慢分支排查；给出真实 CPU profile 栈、ELU/循环延迟、连接与工作池竞争，以及三份堆快照。",
+  "minutes": 85,
+  "labMinutes": 55,
   "scope": "Node22.12本机有界教学负载、perf_hooks指标、V8堆快照与引用边解析；不是生产容量报告。闭环最多100请求、并发最多8、服务最多4项在途；快照只处理本例合成对象，不分析用户真实进程。",
   "tags": [
     "Node.js",
@@ -20,8 +20,8 @@ const article:Article={
     "理解Node主线程事件循环与进程的基本含义"
   ],
   "kind": "series",
-  "status": 'complete',
-  "verifiedAt": "2026-10-24",
+  "status": "complete",
+  "verifiedAt": "2026-10-25",
   "versions": [
     "Node.js22.12.0；ESM；无第三方npm依赖",
     "macOS14.5 x64实测；其他OS与生产负载另验"
@@ -61,6 +61,67 @@ const article:Article={
           "title": "客户端延迟、服务端活跃与内存不是一条时间线",
           "alt": "客户端窗口从本轮发出到读完响应；服务端窗口从reset到读取metrics，两者接近但不完全重合。延迟分布不能直接当成事件循环延迟。",
           "caption": "客户端窗口从本轮发出到读完响应；服务端窗口从reset到读取metrics，两者接近但不完全重合。延迟分布不能直接当成事件循环延迟。"
+        }
+      ]
+    },
+    {
+      "id": "diagnostic-branches",
+      "title": "先选分支：CPU、循环阻塞、内存与 I/O 需要不同证据",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "性能问题不是一个统一的“慢”。先固定受影响请求、输入大小、时间窗口和错误率，再把现象拆成四条入口：CPU 高时找谁持续执行；循环阻塞时找哪一段同步工作延迟了其他回调；内存持续增长时找相同生命周期后还存活的引用；外部 I/O 慢时找连接、下游阶段或共享工作池的等待。几种情况可以重叠，分支只是下一步采证的选择，不是互斥分类。"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "现象入口",
+            "第一份证据",
+            "怎样缩小假设",
+            "下一步验证"
+          ],
+          "rows": [
+            [
+              "CPU 高",
+              "同窗口 process.cpuUsage + CPU profile",
+              "采样栈在业务计算、GC、原生调用还是其他线程",
+              "固定输入重跑并核对热点栈；Native 热点另用系统分析器"
+            ],
+            [
+              "请求慢且循环延迟高",
+              "请求延迟 + monitorEventLoopDelay + ELU",
+              "同步 CPU/同步 I/O 都可能占住循环；低 CPU 也可能阻塞",
+              "对照 sync/chunked 相同 checksum，观察其他回调是否获得机会"
+            ],
+            [
+              "内存阶梯增长",
+              "heapUsed / external / RSS + 同阶段快照",
+              "活对象与分配器保留页分开；找到持有者",
+              "相同批次后比较引用链，移除集合引用再验证"
+            ],
+            [
+              "请求慢但循环可响应",
+              "分阶段时间、连接数、资源与池任务对照",
+              "外部响应等待、连接池排队或 libuv 竞争",
+              "本地延迟上游 + 受控 UV_THREADPOOL_SIZE 两进程实验"
+            ]
+          ]
+        },
+        {
+          "type": "figure",
+          "src": "figures/node-performance-memory/diagnostic.svg",
+          "title": "四条排查分支都从同一窗口和具体请求开始",
+          "alt": "从固定请求与窗口分到 CPU 栈、循环延迟、存活引用、I/O 等待，再汇合到受控修改与重新验证。",
+          "caption": "图是诊断路线，不是凭单一阈值自动分类的判定器。"
+        },
+        {
+          "type": "paragraph",
+          "text": "CPU 与循环阻塞尤其容易混：一段同步纯计算常让两者都高；一次同步阻塞文件调用可能让循环延迟高，却没有同样高的 CPU。进程 CPU 还包含 Worker、原生工作线程和 GC，主线程 CPU profile 只采自己的 isolate。若进程 CPU 高而主 profile 没热点，下一步看 Worker 与原生线程，不能据空白 JS 栈断言“Node 没有工作”。"
+        },
+        {
+          "type": "paragraph",
+          "text": "下面原有的同结果 sync/chunked、闭环 HTTP 和三份快照保留为前三条分支的复现基础。新增 profile、连接观察和池排队补齐“下一步怎么查”。我们记录一次样本的输入与输出，不用一次测量宣称优化收益；机器当时的其他工作会影响所有毫秒值。"
         }
       ]
     },
@@ -241,6 +302,141 @@ const article:Article={
       ]
     },
     {
+      "id": "cpu-profile",
+      "title": "CPU 高：实际采样栈怎样指向正在执行的函数",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "CPU profile 是定期采样 JavaScript 执行位置并保留调用栈的记录。它和在函数前后 Date.now 不同：计时只知道两点之间过去多久，采样能说明窗口中经常停在哪条调用链。自耗时与包含下层调用的累计时间也不同；内联、优化、采样间隔和 GC 都会影响呈现，样本数不是函数调用次数。"
+        },
+        {
+          "type": "code",
+          "language": "js",
+          "filename": "examples/node-performance-memory/cpu-profile.mjs",
+          "code": "import inspector from 'node:inspector';\nimport { performance } from 'node:perf_hooks';\nimport { writeFile } from 'node:fs/promises';\nimport { pathToFileURL } from 'node:url';\nfunction mixRecord(value){let sum=value;for(let i=0;i<2000;i++)sum=(Math.imul(sum^i,2654435761)>>>0);return sum;}\nfunction rebuildIndex(deadline){let checksum=0;while(performance.now()<deadline)checksum^=mixRecord(checksum+1);return checksum;}\nexport async function profileCPU(output){\n const session=new inspector.Session();session.connect();\n const post=(method,params={})=>new Promise((resolve,reject)=>session.post(method,params,(error,result)=>error?reject(error):resolve(result)));\n try{\n  await post('Profiler.enable');await post('Profiler.setSamplingInterval',{interval:1000});await post('Profiler.start');\n  const start=performance.now();const checksum=rebuildIndex(start+250);const elapsedMs=performance.now()-start;\n  const {profile}=await post('Profiler.stop');if(output)await writeFile(output,JSON.stringify(profile));\n  const nodes=new Map(profile.nodes.map(node=>[node.id,node]));const parents=new Map();for(const node of profile.nodes)for(const child of node.children??[])parents.set(child,node.id);\n  const counts=new Map();for(const sample of profile.samples??[])counts.set(sample,(counts.get(sample)??0)+1);\n  const hot=[...counts].sort((a,b)=>b[1]-a[1]).slice(0,5).map(([id,samples])=>{\n   const stack=[];for(let cursor=id;cursor!==undefined;cursor=parents.get(cursor))stack.unshift(nodes.get(cursor).callFrame.functionName||'(anonymous)');\n   return {samples,stack};\n  });return {node:process.version,windowMs:elapsedMs,intervalUs:1000,totalSamples:profile.samples?.length??0,checksum,hot};\n }finally{session.disconnect();}\n}\nif(process.argv[1]&&pathToFileURL(process.argv[1]).href===import.meta.url)console.log(JSON.stringify(await profileCPU(process.argv[2])));",
+          "purpose": "完整 Inspector CPU profiler：1000 微秒请求采样间隔，250ms 有界合成计算，停止后通过 children 还原父链。可选写出本例自己的 cpuprofile。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "filename": "一次 CPU profile 的主要字段",
+          "code": "{\"node\":\"v22.12.0\",\"windowMs\":250.004922,\"intervalUs\":1000,\"totalSamples\":207,\"hot\":[{\"samples\":183,\"stack\":[\"(root)\",\"profileCPU\",\"rebuildIndex\"]},{\"samples\":14,\"stack\":[\"(root)\",\"profileCPU\",\"rebuildIndex\",\"mixRecord\"]}]}",
+          "purpose": "2026-10-25 macOS14.5 x64，未固定 CPU 频率或隔离其他进程；只截取两个热点字段，完整脚本还报告其他样本。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "输入是一个在 250ms 预算内反复运行的合成索引重建；窗口由 Profiler.start / stop 包围。rebuildIndex 是调用者，mixRecord 是内层计算。这个样本里两条链合计占多数样本，说明本次 JS CPU 的确落在这条计算路径。部分工作显示在 rebuildIndex 自身，不能因为 mixRecord 样本较少，就认定内层函数没有成本；优化/内联与采样都有影响。"
+        },
+        {
+          "type": "paragraph",
+          "text": "下一步不是先改 Worker 数，而是固定真实请求输入，确认这条计算是否重复、是否可以降低复杂度或缓存，并用相同输出验证修改。若热点是 (garbage collector)，则检查分配与对象生命周期；若热点主要是原生帧或进程 CPU 来自别的线程，这份主线程 JS 栈不够，需要对应线程或系统工具。这里没有读取用户进程，也没有给出减少计算之后的虚构提速数字。"
+        },
+        {
+          "type": "paragraph",
+          "text": "你可以运行 node cpu-profile.mjs sample.cpuprofile，将自己生成的文件加载到 DevTools 的性能剖析界面；本轮实际验证的是真实 Inspector 数据与程序还原的栈，没有把“可以加载”写成已经手工操作过浏览器分析器。命令行 --cpu-prof 也是固定版本提供的另一种采集入口，适合受控进程退出时落盘。"
+        },
+        {
+          "type": "reference",
+          "title": "Node 22.12.0 Inspector",
+          "url": "https://nodejs.org/download/release/v22.12.0/docs/api/inspector.html",
+          "note": "Session 与 Profiler 域；采样结果不等于精确逐函数计时。"
+        }
+      ]
+    },
+    {
+      "id": "io-resources",
+      "title": "I/O 慢：请求延迟与循环延迟为什么可以差很多",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "本节自己的 HTTP 上游收到请求后等待 120ms 才返回。我们同时记录整次请求的墙钟时间、进程 CPU 差值、ELU、循环直方图、服务 getConnections 和 getActiveResourcesInfo。请求慢有一个明确原因：上游定时等待。事件循环在这段时间仍可处理别的事情，不需要持续执行 120ms 的 JavaScript。"
+        },
+        {
+          "type": "paragraph",
+          "text": "等待连接本身也要受控。不能启动一个可能拒绝的请求，再单独 await 一条没有期限的 connection 事件，否则请求在连接前失败时，观察器反而把诊断工具挂住。本例为连接观察与响应 Promise 同时安装拒绝处理，用同一个 AbortController 管绝对2秒预算；任何一条失败都进入 finally，撤销另一条等待、移除自己的监听，并等真实请求 close。deadline 不依赖socket已经建立。"
+        },
+        {
+          "type": "code",
+          "language": "js",
+          "filename": "examples/node-performance-memory/io-diagnostics.mjs",
+          "code": "import { createServer, get } from 'node:http';\nimport { performance, monitorEventLoopDelay } from 'node:perf_hooks';\nimport { pathToFileURL } from 'node:url';\nconst countConnections=server=>new Promise((resolve,reject)=>server.getConnections((error,count)=>error?reject(error):resolve(count)));\nexport async function diagnoseIO({failBeforeConnect=false,stallResponse=false}={}){\n if(typeof failBeforeConnect!=='boolean'||typeof stallResponse!=='boolean')throw new TypeError('BOOLEAN_FAULT_MODE_REQUIRED');\n const sockets=new Set(),timers=new Set();const resourcesBefore=process.getActiveResourcesInfo();\n const upstream=createServer((_req,res)=>{if(stallResponse)return;const timer=setTimeout(()=>{timers.delete(timer);res.end('upstream');},120);timers.add(timer);});\n upstream.on('connection',socket=>{sockets.add(socket);socket.once('close',()=>sockets.delete(socket));});\n const histogram=monitorEventLoopDelay({resolution:10});histogram.enable();\n const controller=new AbortController();let deadline,request,requestClosed,removeAcceptedObserver=()=>{},acceptedConnectionHandler,failed;\n try{\n  await new Promise((resolve,reject)=>{upstream.once('error',reject);upstream.listen(0,'127.0.0.1',resolve);});\n  const port=upstream.address().port;\n  // Controlled fault: close only our own listener before connecting to its port.\n  if(failBeforeConnect)await new Promise(resolve=>upstream.close(resolve));\n  await new Promise(resolve=>setTimeout(resolve,20));\n  const cpu=process.cpuUsage(),elu=performance.eventLoopUtilization(),started=performance.now();\n  deadline=setTimeout(()=>controller.abort(new Error('IO_BUDGET_EXCEEDED')),2000);\n  const accepted=new Promise((resolve,reject)=>{\n   const cleanup=()=>{upstream.off('connection',connected);controller.signal.removeEventListener('abort',aborted);};\n   const connected=()=>{cleanup();countConnections(upstream).then(count=>resolve({count,resources:process.getActiveResourcesInfo()}),reject);};\n   const aborted=()=>{cleanup();reject(controller.signal.reason);};\n   removeAcceptedObserver=cleanup;acceptedConnectionHandler=connected;upstream.once('connection',connected);controller.signal.addEventListener('abort',aborted,{once:true});\n  });\n  const responseBody=new Promise((resolve,reject)=>{\n   request=get({host:'127.0.0.1',port,agent:false,signal:controller.signal},response=>{\n    let body='';response.on('data',part=>body+=part);response.once('end',()=>resolve(body));response.once('error',reject);\n   });\n   requestClosed=new Promise(resolve=>request.once('close',resolve));request.once('error',reject);\n  });\n  // Both rejection handlers are installed together: a failed request never leaves\n  // a separate, unbounded server-accept wait or an unhandled rejected Promise.\n  const [body,connection]=await Promise.all([responseBody,accepted]);\n  const elapsedMs=performance.now()-started,cpuUs=process.cpuUsage(cpu),loop=performance.eventLoopUtilization(elu);\n  return {body,elapsedMs,cpuMs:(cpuUs.user+cpuUs.system)/1000,elu:loop.utilization,loopP99Ms:histogram.percentile(99)/1e6,connectionsDuring:connection.count,resourcesBefore,resourcesDuring:connection.resources};\n }catch(error){failed=error;throw error;}\n finally{\n  clearTimeout(deadline);controller.abort(new Error('IO_CLEANUP'));removeAcceptedObserver();histogram.disable();\n  for(const timer of timers)clearTimeout(timer);timers.clear();for(const socket of sockets)socket.destroy();\n  if(requestClosed)await requestClosed;\n  if(upstream.listening)await new Promise(resolve=>upstream.close(resolve));\n  if(failed)failed.cleanup={listening:upstream.listening,ownedTimers:timers.size,requestDestroyed:request?.destroyed??true,connectionObservers:upstream.listeners('connection').filter(listener=>listener===acceptedConnectionHandler).length};\n }\n}\nif(process.argv[1]&&pathToFileURL(process.argv[1]).href===import.meta.url)console.log(JSON.stringify(await diagnoseIO()));",
+          "purpose": "完整随机 loopback 端口实验；接受连接与HTTP响应共享绝对2秒预算及单次收口，验证连接前失败/响应不返回，自己的request/socket/timer/server/histogram全部清理。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "两条故障也实际验证：failBeforeConnect 只先关闭本例自己的监听端口，随后请求得到 ECONNREFUSED；stallResponse 让本例已接收的连接不返回数据，绝对预算到期得到 AbortError，cause 为 IO_BUDGET_EXCEEDED。两条都验证 server 不再监听、自己的 timer 为0、request 已销毁、自己的 connection 观察器为0。HTTP Server 本身可能有内部监听，所以不拿总 listenerCount 减一个猜测常量，而是检查自己那个函数的身份。测试不触碰其他本地服务。"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "filename": "本次延迟上游窗口",
+          "code": "{\"body\":\"upstream\",\"elapsedMs\":136.996151,\"cpuMs\":18.996,\"elu\":0.13473941256280536,\"loopP99Ms\":18.776063,\"connectionsDuring\":1,\"resourcesDuring\":[\"ConnectWrap\",\"PipeWrap\",\"TCPServerWrap\",\"TCPSocketWrap\",\"TCPSocketWrap\"]}",
+          "purpose": "资源类型由 Node 平台与采样时机决定；保留前后快照但不把所有差异都归咎于泄漏。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "请求用了约137ms，CPU 约19ms，循环 p99 约19ms，本次没有把上游的整个等待算成循环延迟。这些量有不同定义：请求延迟覆盖提交到读完响应，ELU 描述这个循环 active/idle，直方图测定时采样相对计划的延后。高请求 p95 不能直接推出高循环延迟；同样，循环很灵活也不能推出下游很快。下一步应记录 DNS、连接、首字节、读体等阶段，并与下游自身时间和连接池排队相对照。"
+        },
+        {
+          "type": "paragraph",
+          "text": "getConnections 返回本服务接受的活动连接数量，本例观察到1；getActiveResourcesInfo 返回保持事件循环活动的资源类型，不提供业务请求归属、堆引用链或文件路径。PipeWrap 可能来自标准流，ConnectWrap 也可能处在完成通知边界，不能把数组长度当作 TCP 请求数。若连接迟迟不降，先核对自己的 socket/请求所有权、keep-alive 和超时，再决定是否需要 diagnostic report 或 OS lsof 等进一步证据；本例没有使用不稳定的 _getActiveHandles 私有 API。"
+        },
+        {
+          "type": "reference",
+          "title": "Node 22.12.0 process.getActiveResourcesInfo",
+          "url": "https://nodejs.org/download/release/v22.12.0/docs/api/process.html#processgetactiveresourcesinfo",
+          "note": "本版本是实验性资源诊断接口；正文按类型列表使用，不把它包装成泄漏检测器。"
+        }
+      ]
+    },
+    {
+      "id": "threadpool-saturation",
+      "title": "文件也慢：用两个干净进程证明共享工作池排队",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "外部等待不全发生在网络。默认 libuv 工作池由若干原生任务共用，PBKDF2、部分文件操作与某些 DNS API 会竞争。为了可控制地复现，我们在两个全新子进程中分别设置 UV_THREADPOOL_SIZE=1 和4，按提交顺序放入两个固定 PBKDF2，再读本地很小的 package.json。环境变量必须在进程启动前设置，不能在池已初始化后赋值再声称调整生效。"
+        },
+        {
+          "type": "code",
+          "language": "js",
+          "filename": "examples/node-performance-memory/pool-probe.mjs",
+          "code": "import { pbkdf2 } from 'node:crypto';\nimport { readFile } from 'node:fs';\nimport { performance } from 'node:perf_hooks';\nimport { execFileSync } from 'node:child_process';\nimport { pathToFileURL } from 'node:url';\nexport async function poolProbe(){\n const start=performance.now(),order=[];\n const jobs=Array.from({length:2},(_,i)=>new Promise((resolve,reject)=>pbkdf2('fixture','salt',250000,32,'sha256',(error)=>{order.push('crypto:'+i);error?reject(error):resolve();})));\n const file=new Promise((resolve,reject)=>readFile(new URL('./package.json',import.meta.url),(error)=>{order.push('file');error?reject(error):resolve(performance.now()-start);}));\n const fileMs=await file;await Promise.all(jobs);return {poolSize:process.env.UV_THREADPOOL_SIZE,fileMs,totalMs:performance.now()-start,order};\n}\nif(process.argv.includes('--child'))console.log(JSON.stringify(await poolProbe()));\nelse if(process.argv[1]&&pathToFileURL(process.argv[1]).href===import.meta.url){\n for(const size of ['1','4'])console.log(execFileSync(process.execPath,[import.meta.filename,'--child'],{env:{...process.env,UV_THREADPOOL_SIZE:size},encoding:'utf8',timeout:10000}).trim());\n}",
+          "purpose": "完整有界实验：两个 250000 轮 PBKDF2，自己的小文件，最多两个隔离子进程；每个总命令10秒期限。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "filename": "本机相同输入的两个窗口",
+          "code": "{\"poolSize\":\"1\",\"fileMs\":628.59742,\"totalMs\":628.6564030000001,\"order\":[\"crypto:0\",\"crypto:1\",\"file\"]}\n{\"poolSize\":\"4\",\"fileMs\":2.4780799999999985,\"totalMs\":315.766442,\"order\":[\"file\",\"crypto:1\",\"crypto:0\"]}",
+          "purpose": "这是一组受控案例的实际数据，不是把工作池从1改4的生产优化报告。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "只有一个池线程时，先提交的两项 PBKDF2 持有并串行使用池容量，小文件的打开/读取需要等。四个池线程的本轮中，小文件在两个密码运算完成前就回来了。结论是该输入/平台下存在共享池排队，不是文件磁盘一定慢，也不是 uv 线程池越大越好。PBKDF2 完成顺序在多个线程下可变，所以测试只断言单线程提交队列和文件结果，不锁定多线程的随机先后或加速倍数。"
+        },
+        {
+          "type": "paragraph",
+          "text": "排障时下一步应统计应用里这些池 API 的提交量和在途数量、限制昂贵工作并测量同样请求的尾延迟。扩大池可能增加 CPU 争用、内存和下游压力；创建 Worker 也不会为每个 isolate 单独复制全局 libuv 池。Linux 文件 I/O 还可能受到对应 libuv 路径与 io_uring 配置影响，本轮未在 Linux 重做此实验。不要把“TCP 不走这个池”的模型进一步误读为网络请求完全不会受 CPU 或名称解析竞争影响。"
+        },
+        {
+          "type": "reference",
+          "title": "Node 22.12.0 UV_THREADPOOL_SIZE",
+          "url": "https://nodejs.org/download/release/v22.12.0/docs/api/cli.html#uv_threadpool_sizesize",
+          "note": "固定版本列出的工作池 API 与启动环境约束；本地输出单列平台范围。"
+        }
+      ]
+    },
+    {
       "id": "memory",
       "title": "内存指标先分层：RSS不等于JavaScript活对象",
       "paragraphs": [],
@@ -326,7 +522,7 @@ const article:Article={
         },
         {
           "type": "paragraph",
-          "text": "macOS14.5/Node22.12.0已通过6项真实测试，包括同结果/实际让出、输入与取消、分位数公式、独立HTTP服务指标、目标边界以及实际GC/堆快照。最后一次快照证据为0/128/0，观察到GC事件；两种演示窗口各20次成功，无错误。这些是运行记录，不是生产吞吐或内存预算承诺，CLI输出会随机器负载变化。"
+          "text": "macOS14.5/Node22.12.0已通过10项真实测试，包括同结果/实际让出、输入与取消、分位数公式、独立HTTP服务指标、目标边界以及实际GC/堆快照。最后一次快照证据为0/128/0，观察到GC事件；两种演示窗口各20次成功，无错误。这些是运行记录，不是生产吞吐或内存预算承诺，CLI输出会随机器负载变化。"
         },
         {
           "type": "paragraph",

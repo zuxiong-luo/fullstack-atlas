@@ -47,7 +47,7 @@ for(const article of articles){
     if(block.type!=='code'||!block.filename?.startsWith('examples/')||block.kind==='pseudocode')continue;
     const filename=block.filename.split(' · ')[0];
     // Source references carrying line ranges are checked by the source-specific tests.
-    if(!/\.(?:[cm]?js|tsx?|jsx|py|sql|json|jsonl|dart|glsl|vert|frag|sh)$/.test(filename))continue;
+    if(!/\.(?:[cm]?js|tsx?|jsx|py|sql|json|jsonl|dart|glsl|vert|frag|sh|c|cc)$/.test(filename))continue;
     const relative=filename.slice('examples/'.length);
     const original=await readFile(filename);
     assert.deepEqual(await readFile(path.join('dist/downloads',relative)),original,relative+' downloadable source differs');

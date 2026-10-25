@@ -24,6 +24,8 @@ import {legacyArticles} from './articles/legacy';
 import {sectionBlocks,blockText} from './articleTypes';
 import {curriculumRank} from './topicCurricula';
 import {nodeExpansionArticles} from './articles/nodejs';
+import {nestExpansionArticles} from './articles/nestjs';
+import {typeormExpansionArticles} from './articles/typeorm';
 import {dataExpansionArticles} from './articles/data';
 import {pythonExpansionArticles} from './articles/python';
 import {identityExpansionArticles} from './articles/identity';
@@ -38,6 +40,7 @@ export const articleTopics=[
 {id:'flutter',name:'跨平台工程',description:'Flutter、React Native 与 Electron 的渲染、通信和交付。'},
 {id:'nextjs',name:'Next.js 全栈',description:'理解服务端组件、渲染与缓存边界。'},
 {id:'nodejs',name:'Node.js 工程',description:'事件循环、流、背压和服务容量。'},
+{id:'nestjs',name:'NestJS 工程',description:'从请求生命周期与依赖注入，到事务、权限、可靠性和服务交付。'},
 {id:'python',name:'Python 工程',description:'类型边界、异步任务与服务生命周期。'},
 {id:'algorithms',name:'算法与数据结构',description:'用不变量、复杂度和反例推导正确性。'},
 {id:'webgl',name:'WebGL 与图形',description:'从坐标变换到 GPU 流水线与帧预算。'},
@@ -46,7 +49,7 @@ export const articleTopics=[
 
 const rewritten = [reactFiberArticle,agentFoundationsArticle];
 export const reactSourceArticles = [reactFiberStructureArticle,reactHooksQueueArticle,reactLaneSelectionArticle,reactWorkLoopArticle,reactDoubleBufferArticle,reactRootSchedulingArticle,reactBailoutMemoArticle,reactHookMemoizationArticle];
-export const articles = [reactFoundationsArticle,reactHooksInteractionsArticle,reactStateManagementArticle,reactFiberReconciliationArticle,reactConcurrencyArticle,reactPerformanceArticle,reactModernEngineeringArticle,...legacyArticles.map(a=>rewritten.find(r=>r.id===a.id)??a),...reactSourceArticles,...nodeExpansionArticles,...dataExpansionArticles,...pythonExpansionArticles,...identityExpansionArticles,...nextExpansionArticles,...taskExpansionArticles,...crossPlatformExpansionArticles,...algorithmExpansionArticles,...webglExpansionArticles,...operationsExpansionArticles];
+export const articles = [reactFoundationsArticle,reactHooksInteractionsArticle,reactStateManagementArticle,reactFiberReconciliationArticle,reactConcurrencyArticle,reactPerformanceArticle,reactModernEngineeringArticle,...legacyArticles.map(a=>rewritten.find(r=>r.id===a.id)??a),...reactSourceArticles,...nodeExpansionArticles,...nestExpansionArticles,...dataExpansionArticles,...typeormExpansionArticles,...pythonExpansionArticles,...identityExpansionArticles,...nextExpansionArticles,...taskExpansionArticles,...crossPlatformExpansionArticles,...algorithmExpansionArticles,...webglExpansionArticles,...operationsExpansionArticles];
 export const readingPaths=[
 {id:'request',name:'从身份到数据',description:'理解一次请求如何建立信任，再保证数据变更正确。',articleIds:['oauth-login','transactions-locks'],prerequisites:'HTTP 与 SQL 基础'},
 {id:'interface',name:'从状态到交互',description:'对照 Web 与 Flutter，理解状态、生命周期与通信。',articleIds:['react-state-effects','flutter-engineering'],prerequisites:'JavaScript / Dart 基础'},

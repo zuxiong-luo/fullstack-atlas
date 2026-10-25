@@ -1,0 +1,119 @@
+[
+  {
+    "cppTokens": 0,
+    "figureCount": 1,
+    "highlights": 1241,
+    "scroll": 390,
+    "sourceDownload": "./downloads/nestjs-request-lifecycle.zip",
+    "title": "NestJS 基础与请求流程：从启动到响应",
+    "width": 390
+  },
+  {
+    "cppTokens": 0,
+    "figureCount": 1,
+    "highlights": 1143,
+    "scroll": 390,
+    "sourceDownload": "./downloads/nestjs-modules-di.zip",
+    "title": "模块与依赖注入：Provider、作用域和生命周期",
+    "width": 390
+  },
+  {
+    "cppTokens": 0,
+    "figureCount": 1,
+    "highlights": 1746,
+    "scroll": 390,
+    "sourceDownload": "./downloads/nestjs-typeorm-integration.zip",
+    "title": "NestJS 与 TypeORM：数据访问边界和事务服务",
+    "width": 390
+  },
+  {
+    "cppTokens": 0,
+    "figureCount": 1,
+    "highlights": 1990,
+    "scroll": 390,
+    "sourceDownload": "./downloads/nestjs-validation-authorization.zip",
+    "title": "输入、身份与权限：让 API 在服务端守住边界",
+    "width": 390
+  },
+  {
+    "cppTokens": 0,
+    "figureCount": 1,
+    "highlights": 3449,
+    "scroll": 390,
+    "sourceDownload": "./downloads/nestjs-reliability.zip",
+    "title": "可靠交互：超时、取消、后台任务与幂等入口",
+    "width": 390
+  },
+  {
+    "cppTokens": 0,
+    "figureCount": 1,
+    "highlights": 2472,
+    "scroll": 390,
+    "sourceDownload": "./downloads/nestjs-testing-delivery.zip",
+    "title": "测试与交付：配置、健康检查、日志和优雅关闭",
+    "width": 390
+  },
+  {
+    "cppTokens": 0,
+    "figureCount": 1,
+    "highlights": 1386,
+    "scroll": 390,
+    "sourceDownload": "./downloads/typeorm-foundations.zip",
+    "title": "TypeORM 基础：Entity、DataSource、Repository 与 SQL",
+    "width": 390
+  },
+  {
+    "cppTokens": 0,
+    "figureCount": 1,
+    "highlights": 1236,
+    "scroll": 390,
+    "sourceDownload": "./downloads/typeorm-relations-queries.zip",
+    "title": "关系与查询：JOIN、QueryBuilder、分页和 N+1",
+    "width": 390
+  },
+  {
+    "cppTokens": 0,
+    "figureCount": 1,
+    "highlights": 1867,
+    "scroll": 390,
+    "sourceDownload": "./downloads/typeorm-transactions-concurrency.zip",
+    "title": "事务与并发：事务 manager、QueryRunner、锁与幂等",
+    "width": 390
+  },
+  {
+    "cppTokens": 0,
+    "figureCount": 1,
+    "highlights": 2129,
+    "scroll": 390,
+    "sourceDownload": "./downloads/typeorm-migrations-performance.zip",
+    "title": "迁移与性能：Schema 演进、索引、批处理与观测",
+    "width": 390
+  },
+  {
+    "cppTokens": 106,
+    "figureCount": 3,
+    "highlights": 2098,
+    "scroll": 390,
+    "sourceDownload": "./downloads/node-execution-model.zip",
+    "title": "Node.js 执行模型：进程、事件循环与异步 I/O",
+    "width": 390
+  },
+  {
+    "cppTokens": 0,
+    "figureCount": 3,
+    "highlights": 3354,
+    "scroll": 390,
+    "sourceDownload": "./downloads/node-parallel-computing.zip",
+    "title": "Node.js 并行计算：Worker、进程池与通信边界",
+    "width": 390
+  },
+  {
+    "cppTokens": 0,
+    "figureCount": 3,
+    "highlights": 3732,
+    "scroll": 390,
+    "sourceDownload": "./downloads/node-performance-memory.zip",
+    "title": "Node.js 性能与内存：延迟、堆快照、GC 和压测",
+    "width": 390
+  }
+]

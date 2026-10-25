@@ -1,37 +1,32 @@
-# node-performance-memory 作者验证
+# Node 性能与内存：2026-10-25 增补验收
 
-2026-10-24。status review，待独立审稿/站点验收。环境macOS14.5 x64 / Node.js22.12.0，无第三方npm依赖。
-
-## 实跑命令与结果
+Node22.12.0/macOS14.5 x64，原ID/锚点/6项测试保留。新增四分支导读、真实CPU采样栈、连接/活跃资源和池饱和实验；不读写用户进程，不作生产改善声明。
 
 ```sh
-npm ci --ignore-scripts
-npm test
+npm ci --ignore-scripts --prefix examples/node-performance-memory
+npm test --prefix examples/node-performance-memory
+node examples/node-performance-memory/cpu-profile.mjs
+node examples/node-performance-memory/io-diagnostics.mjs
+node examples/node-performance-memory/pool-probe.mjs
 ```
 
-**6/6通过**。实际安装清洁无依赖项目，不依赖他项目node_modules。
+**10/10通过**。原同checksum/实际让出/取消/最近秩/独立HTTP服务/目标边界/三份快照全部通过；快照AtlasNote0→128→0，引用链实检，GC本次4项。新增profile、延迟上游和单线程原生池队列3项。
 
-实际独立服务器进程、loopback HTTP、ELU/循环直方图/CPU/内存/GC采集。负载有界闭环，默认每模式20请求、并发2；本次两窗口各成功20、错误0，不把样本数字当生产成绩。
+## 一次实际窗口（不是性能承诺）
 
-实际写出基线/保留/清理三份V8堆快照：AtlasNote数0→128→0；解析引用边确认global holder→notes，保留阶段128条指向实例的元素边，清理后0。观察到真实GC事件（最后记录4条，不保证任意运行恰好同数）。快照测试用临时目录，结束删除，没有读取用户进程或上传文件。
+- Inspector请求间隔1000us，有限合成重建250ms，窗口250.004922ms/207样本；热点profileCPU→rebuildIndex183，进一步mixRecord14。不能把样本数当函数调用次数，不能用主isolate profile概括进程全部native/Worker线程。
+- 自有上游延迟120ms；客户端136.996151ms、processCPU18.996ms、ELU0.134739、循环p99 18.776063ms、自有server连接1；资源包含TCPServerWrap和TCPSocketWrap。CPU/请求/循环的定义和窗口分开解释。
+- 两全新进程分别UV_THREADPOOL_SIZE1/4，先提交2×250000轮PBKDF2再读自身package.json。池1：file628.59742ms、order crypto0/crypto1/file；池4：file2.47808ms、order file/crypto1/crypto0。只证明该平台共享池排队，不给生产池大小建议，不锁定多线程顺序或快多少。
 
-另实际运行node benchmark.mjs并成功退出。不是模拟线程、IPC、网络或堆快照，没有按耗时推导生产能力。
+测试只检查输入、实际采样栈与工作结果、顺序约束、连接存在和正常收尾，不设CPU/ELU/延迟上限。没有根据并行编译/机器负载变动断言变慢或变快。
 
-## 源码、图形与参考
+## 图形与边界
 
-正文采用完整关键文件连续原文。两张SVG有效XML，并在940方形外框用Quick Look真实渲染逐张查看；检查文字、方向、数量与代码关系，无明显溢出。页面与手机局部滚动待根集成。
+diagnostic.svg实际CUA完整渲染；四条分支概念/下一步齐全，正文与代码一致。所有完整关键文件逐字内联；原GC/快照/有界闭环负载保留。快照与profile可选文件不入ZIP，测试临时快照删除。
 
-核对Node22.12官方固定文档worker_threads、child_process、perf_hooks、v8/process。代码为本站教学实现，不是运行时源码复制。
+未验证Linux/Windows、容器配额、远程网络、真实生产负载或DevTools手工剖析；getActiveResourcesInfo为本版本实验性接口，只报告类型，不是连接或泄漏计数。自有socket/timer/histogram/session与子进程均清理。站点手机/下载/离线由主集成确认。
 
-## 限制
+## 2026-10-25 同行只读审稿后的定向修正
 
-- 最多100请求、并发8、服务4项在途、迭代1..2000000，目标只允许loopback。演示不是生产压测器。
-- p50/p95统计所有尝试，失败另计；闭环不是开放到达负载，有协调遗漏条件。
-- 客户端与服务端窗口略有边界差异；无直方图样本返回null，不能读成0ms；ELU不等同全机CPU。
-- snapshot解析只覆盖当前Node/V8格式与本地可信样本，不是任意上传解析服务；快照同步耗时并可能需要额外内存。
-- profiles可能含进程数据，示例只生成合成对象；不要上传真实秘密快照。释放对象不保证RSS立即回落。
-- 没有Linux/容器/远程网络/生产吞吐、火焰图或用户真实进程诊断验收。
-
-sync和chunked的checksum应一致；chunked让出真实事件循环机会，不保证更高吞吐。benchmark输出随机器变化，不应把一次p95排名当结论。手工profiles保存三份快照，Git和ZIP排除这些生成物；可用浏览器DevTools离线加载做进一步Retainers观察，本轮未冒称手工点过。
-
-最终静态复核：7/7正文源码连续匹配，独立内容类型检查通过。
+Nest作者指出旧io-diagnostics把无期限connection等待与可能失败的request分开，连接前失败可悬空。已改连接/响应同预算并行等待，finally abort剩余等待与移除自己的listener，等待真实request close。真实故障仅作用于自有监听：关闭后连接得到ECONNREFUSED；接收后不返回得到AbortError/cause IO_BUDGET_EXCEEDED。两条均断言listening=false、ownedTimers=0、requestDestroyed=true、自己connectionObservers=0。
+首轮清理断言曾错误假设HTTP Server只有一条内部connection监听，实际剩余计数1；已改检查自己函数身份，不以总数推断泄漏。最后完整测试10/10通过，不把首轮断言失败列作成功。该组测试外层8秒是保护，内部实际请求2秒绝对预算；不以机器速度排名。同行未冒称执行这两条，作者实际复跑，主最终从刷新ZIP独立验收。

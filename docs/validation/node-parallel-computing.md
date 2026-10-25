@@ -1,36 +1,22 @@
-# node-parallel-computing 作者验证
+# Node 并行计算：2026-10-25 增补验收
 
-2026-10-24。status review，待独立审稿/站点验收。环境macOS14.5 x64 / Node.js22.12.0，无第三方npm依赖。
-
-## 实跑命令与结果
+保留ID/原章节/原13项池行为测试；新增主线程/libuv池/Worker/进程定义、spawn/execFile/exec/fork、cluster实际工程。Node22.12.0/macOS14.5 x64/无第三方依赖。
 
 ```sh
-npm ci --ignore-scripts
-npm test
+npm ci --ignore-scripts --prefix examples/node-parallel-computing
+npm test --prefix examples/node-parallel-computing
+node examples/node-parallel-computing/process-modes.mjs
+node examples/node-parallel-computing/cluster-demo.mjs
 ```
 
-**13/13通过**。实际安装清洁无依赖项目，不依赖他项目node_modules。
+**17/17通过**：原13项真实thread/process准入、队列、运行取消、期限、关闭、崩溃替换、所有权转移、重启预算完整通过，新增4项含多条IPC故障路径。
 
-真实thread与process各有正常、队列限容、排队取消、普通异常、退出替换、started后取消、期限和关闭测试。另验线程ArrayBuffer转移使发送端byteLength0，进程advanced IPC复制保持8；无效输入和重启预算关闭。
+实测固定字符串 `hello; printf SHELL_MARK` 经spawn/execFile原样输出；exec固定POSIX命令输出helloSHELL_MARK；maxBuffer64读取4096字节产生ERR_CHILD_PROCESS_STDIO_MAXBUFFER；fork收到7回8并返回不同PID。
 
-正常质数结果10/100/1000为4/25/168。thread同PID、不同threadId；process不同PID、threadId0。PID来自当前运行，不需要等于文档某个数。测试没有用耗时证明加速，没有把事件循环模型当作真实Worker。
+cluster实际两个worker进程/共享随机端口/8次新连接，本轮由两个PID响应；不把8次当公平分配或吞吐依据。explicit SCHED_RR仅在本机OS核验。
 
-另实际运行node demo.mjs并成功退出。不是模拟线程、IPC、网络或堆快照，没有按耗时推导生产能力。
+主审发现首版IPC等待在子进程提前exit时可能悬空，已用child-events的exit/error/deadline单次结算与listener清理修正。实际新增peer exit、silence超时与cluster ready前exit；silence固定教学模式主动保活，父进程finally终止并等exit。第一次silent测试返回正常exit而非timeout，原因是单次message监听移除后IPC不再保活；已修正故障夹具保活，最终17/17通过。此记录保留真实修复过程，不把首轮失败当成功。
 
-## 源码、图形与参考
+owners.svg使用CUA实际完整渲染，明确同进程两isolate共享libuv池和进程B独立地址空间。正文关键文件全部内联，与真实文件逐字比较；原有完整有界池未删减。
 
-正文采用完整关键文件连续原文。两张SVG有效XML，并在940方形外框用Quick Look真实渲染逐张查看；检查文字、方向、数量与代码关系，无明显溢出。页面与手机局部滚动待根集成。
-
-核对Node22.12官方固定文档worker_threads、child_process、perf_hooks、v8/process。代码为本站教学实现，不是运行时源码复制。
-
-## 限制
-
-- size1..4、queue0..32、timeout1..10000ms，任务limit2..5000000；队列在内存，主进程死则丢，不是持久消息系统。
-- throw/crash只为故障教学，不能把它们做成公网执行接口。固定模块可信，不提供权限沙箱。
-- Worker resourceLimits不等于总RSS硬限额；CPU隔离不自动回滚外部数据库、邮件或支付。
-- 取消运行任务会终止整个执行者，等待exit才替换；close是中止，不是drain。
-- 进程示例只在本机OS验证；没有Linux/容器CPU配额/生产吞吐结论。
-
-运行demo最后应两个池都running0/queued0，随后finally关闭。测试正常退出证明本次未留下挂住测试的Worker/子进程；OS强杀整个主测试不保证finally。
-
-最终静态复核：6/6正文源码连续匹配，独立内容类型检查通过。
+限制：Worker非安全沙箱、resourceLimits非总RSS硬上限、原生崩溃可能影响同进程；任务取消不回滚副作用；内存队列不持久；无Windows/Linux/容器生产CPU配额或加速收益结论。站点手机/下载/离线由主最终验收。

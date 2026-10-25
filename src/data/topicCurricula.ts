@@ -3,7 +3,7 @@ export type CurriculumChapter = {
   id: string;
   title: string;
   outcome: string;
-  phase: 0 | 1 | 2;
+  phase: 0 | 1 | 2 | 3;
   example: string;
 };
 export type TopicCurriculum = {
@@ -11,7 +11,7 @@ export type TopicCurriculum = {
   prerequisites: string[];
   chapters: CurriculumChapter[];
 };
-const chapter = (id:string,title:string,outcome:string,phase:0|1|2,example=id):CurriculumChapter => ({id,title,outcome,phase,example});
+const chapter = (id:string,title:string,outcome:string,phase:0|1|2|3,example=id):CurriculumChapter => ({id,title,outcome,phase,example});
 export const topicCurricula:TopicCurriculum[] = [
   {topic:'identity',prerequisites:['HTTP 请求与响应','JavaScript 与浏览器基础'],chapters:[
     chapter('https-tls','HTTPS 与 TLS：从证书信任到加密通信','验证证书、主机名与握手边界，定位信任失败。',1),
@@ -30,6 +30,10 @@ export const topicCurricula:TopicCurriculum[] = [
     chapter('database-locks-deadlocks','数据库锁与死锁：锁范围、等待关系和重试','构造可控等待与死锁，设计完整事务重试。',1),
     chapter('optimistic-concurrency','乐观并发控制：版本号、条件更新、唯一约束与幂等写入','验证冲突检测、并发唯一性与幂等写入边界。',2),
     chapter('cache-consistency','数据库与缓存一致性：失效、并发回填和更新顺序','复现过期回填与双写失败，明确一致性承诺。',2),
+    chapter('typeorm-foundations','TypeORM 基础：Entity、DataSource、Repository 与 SQL','从实际 SQL 理解实体映射、持久化和查询边界。',3),
+    chapter('typeorm-relations-queries','关系与查询：JOIN、QueryBuilder、分页和 N+1','用真实查询日志验证关联加载、计数和精度保真的游标。',3),
+    chapter('typeorm-transactions-concurrency','事务与并发：事务 manager、QueryRunner、锁与幂等','控制两个连接的执行顺序，验证回滚、冲突和连接归属。',3),
+    chapter('typeorm-migrations-performance','迁移与性能：Schema 演进、索引、批处理与观测','验证空库与旧库演进、失败后的真实状态及执行计划。',3),
   ]},
   {topic:'tasks',prerequisites:['HTTP 服务','数据库事务'],chapters:[
     chapter('async-task-model','异步任务模型：请求、队列、Worker 与持久化边界','确定任务接受、持久化和完成的不同承诺。',2),
@@ -74,6 +78,14 @@ export const topicCurricula:TopicCurriculum[] = [
     chapter('node-capacity','Node.js：事件循环、流背压与有边界的导出服务','验证背压、断开连接与容量约束。',0),
     chapter('node-parallel-computing','Node.js 并行计算：Worker、进程池与通信边界','通过有界 Worker 池隔离 CPU 工作并处理任务失败。',2),
     chapter('node-performance-memory','Node.js 性能与内存：延迟、堆快照、GC 和压测','定义测量口径，区分延迟、吞吐和存活对象。',2),
+  ]},
+  {topic:'nestjs',prerequisites:['Node.js 执行模型与 HTTP 服务','TypeScript 基础；数据库章节另需 SQL 与事务'],chapters:[
+    chapter('nestjs-request-lifecycle','NestJS 基础与请求流程：从启动到响应','跟踪真实 HTTP 请求的正常、校验、拒绝和异常路径。',3),
+    chapter('nestjs-modules-di','模块与依赖注入：Provider、作用域和生命周期','解释模块可见性与实例归属，验证初始化和资源关闭。',3),
+    chapter('nestjs-typeorm-integration','NestJS 与 TypeORM：数据访问边界和事务服务','用事务专属 manager 完成笔记与审计的原子写入。',3),
+    chapter('nestjs-validation-authorization','输入、身份与权限：让 API 在服务端守住边界','拒绝非法输入与跨租户访问，并验证没有写入副作用。',3),
+    chapter('nestjs-reliability','可靠交互：超时、取消、后台任务与幂等入口','传播请求预算，区分取消、幂等和持久任务的承诺。',3),
+    chapter('nestjs-testing-delivery','测试与交付：配置、健康检查、日志和优雅关闭','通过真实 E2E、依赖失效和 SIGTERM 验证交付边界。',3),
   ]},
   {topic:'python',prerequisites:['已有 JavaScript / TypeScript 开发经验'],chapters:[
     chapter('python-language-foundations','Python 入门：语法、对象、容器、控制流与函数','从输入文本生成可验证的笔记导入结果。',1,'python-course'),

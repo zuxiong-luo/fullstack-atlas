@@ -12,7 +12,7 @@ node benchmark.mjs
 node --expose-gc snapshot.mjs profiles
 ```
 
-ZIP解压后进入对应目录；仓库中可`cd examples/node-performance-memory`。`npm test` **6/6通过**。示例不依赖数据库、密钥、UI沙箱或付费服务；源代码下载不包含Node运行时。
+ZIP解压后进入对应目录；仓库中可`cd examples/node-performance-memory`。`npm test` **10/10通过**。示例不依赖数据库、密钥、UI沙箱或付费服务；源代码下载不包含Node运行时。
 
 ## 文件
 
@@ -36,6 +36,30 @@ sync和chunked的checksum应一致；chunked让出真实事件循环机会，不
 - 客户端与服务端窗口略有边界差异；无直方图样本返回null，不能读成0ms；ELU不等同全机CPU。
 - snapshot解析只覆盖当前Node/V8格式与本地可信样本，不是任意上传解析服务；快照同步耗时并可能需要额外内存。
 - profiles可能含进程数据，示例只生成合成对象；不要上传真实秘密快照。释放对象不保证RSS立即回落。
-- 没有Linux/容器/远程网络/生产吞吐、火焰图或用户真实进程诊断验收。
+- 没有Linux/容器/远程网络/生产吞吐或用户真实进程诊断验收；新增合成CPU profile实际采样，未手工操作DevTools。
 
 正文关键代码与真实文件连续匹配；两张可编辑SVG用Quick Look实际渲染检查。站点手机视口、ZIP干净安装及离线清单由主代理单列，不用CLI测试替代页面验收。
+
+## 2026-10-25：四分支诊断补充
+
+```sh
+node cpu-profile.mjs
+node cpu-profile.mjs sample.cpuprofile
+node io-diagnostics.mjs
+node pool-probe.mjs
+```
+
+CPU采样：Inspector1000us间隔请求，250ms有界合成重建，输出采样总量/调用栈；可选本例cpuprofile文件，不采用户进程。
+I/O：自己的上游延迟120ms，输出请求时间/CPU/ELU/循环p99/活动连接与资源类型；所有socket和timer清理。
+池排队：全新进程UV_THREADPOOL_SIZE=1与4，先提交2个250000轮PBKDF2，再读自己的package.json；不在已初始化进程动态改池。
+
+本次 **10/10测试通过**；原6项（含真实快照0→128→0）均保留。
+一次实测CPU窗口250.005ms/207样本，主调用链profileCPU→rebuildIndex（部分下探mixRecord）；上游136.996ms/CPU18.996ms/循环p99 18.776ms/连接1；池1文件628.597ms，池4文件2.478ms。
+这只是固定输入一次样本，不是性能改善承诺。测试不锁定CPU/ELU/延迟上限，不要求多线程完成顺序或精确样本数。
+
+源码包不应包含`.cpuprofile`/heapsnapshot；本次没有手工操作DevTools，没有Linux/容器或真实生产容量验收。
+
+## 同行审稿后的失败等待修正
+
+连接观察与响应现在共用绝对2秒AbortSignal预算，以Promise.all同时接收成功/拒绝；finally撤销剩余等待、移除自己的listener并等请求close。`diagnoseIO({failBeforeConnect:true})`真实连接拒绝；`diagnoseIO({stallResponse:true})`真实接收后不响应并在预算到期取消。两条均检查自有server/timer/request/观察器收口。
+测试现10/10（原9项+这组双故障），无CPU/ELU毫秒阈值。此修复为最后一次运行源更改，其他Node项目保持不变。

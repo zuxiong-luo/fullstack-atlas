@@ -2,6 +2,12 @@
 
 个人名片 + 全栈学习知识库 + 浏览器代码实验室。纯静态 React / TypeScript / Vite 项目，无数据库、无业务后端，适合 GitHub Pages。
 
+## 本次内容增补
+
+NestJS 六篇独立分类、TypeORM 四篇数据子系列，以及既有 Node.js 三篇的扩写，目录和验收状态分别见 [增补方案](docs/NESTJS_TYPEORM_NODE_CONTENT_PLAN.md)、[执行清单](docs/NESTJS_TYPEORM_NODE_PROGRESS.md)。章节都有独立源码项目、锁文件、正常与失败验证。
+
+站点仍是静态页面；NestJS/TypeORM 示例需要在本地 Node24.14.1 和 PostgreSQL17 环境运行，不能由 GitHub Pages 执行。Node.js 原理三篇保留 Node22.12.0 基准。各章 README 给出自己的运行步骤，不要把站点开发命令当成示例服务的启动命令。下文包含早期功能记录，当前专题与实际完成范围以内容清单和各批发布记录为准。
+
 ## 本地运行
 
 Node.js 22（建议当前受支持的 LTS 版本），npm。

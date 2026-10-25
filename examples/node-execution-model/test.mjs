@@ -36,3 +36,13 @@ test('cooperative work can observe cancellation between chunks', async () => {
 test('an async throw becomes a rejected Promise handled by the awaiting caller', () => {
   assert.equal(run('errors.mjs'), 'caller continued\ncaught SyntaxError');
 });
+test('real callback fs and numeric-loopback HTTP expose distinct Node resources', async () => {
+  const {traceIO}=await import('./io-trace.mjs'); const result=await traceIO();
+  assert.equal(result.text,'notes'); assert.equal(result.body,'notes');
+  assert.deepEqual(result.events,['file:submit','file:callback','http:submit','server:request','http:response','http:end']);
+  for(const type of ['FSREQCALLBACK','TCPWRAP','TCPCONNECTWRAP','HTTPCLIENTREQUEST']) assert.ok(result.resources.includes(type),type);
+});
+test('failed real file open propagates ENOENT and never leaves its server listening',async()=>{
+ const {traceIO}=await import('./io-trace.mjs');
+ await assert.rejects(traceIO({file:new URL('./absent-controlled-fixture.txt',import.meta.url)}),{code:'ENOENT'});
+});

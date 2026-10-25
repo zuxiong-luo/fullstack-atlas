@@ -1,6 +1,9 @@
 const PREFIX='atlas-offline:'+self.registration.scope;
 const META=new URL('./offline-ready',self.registration.scope).href;
 let busy=false;
+// Repository Markdown is UTF-8. Some static hosts omit its charset, so browser
+// document navigation otherwise guesses a locale-dependent legacy encoding.
+function readableDownload(url,response){if(!url.pathname.endsWith('.md'))return response;const headers=new Headers(response.headers);headers.set('Content-Type','text/plain; charset=utf-8');return new Response(response.body,{status:response.status,statusText:response.statusText,headers})}
 self.addEventListener('install',()=>self.skipWaiting());
 self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
 async function installed(){const keys=(await caches.keys()).filter(k=>k.startsWith(PREFIX));const result=[];for(const k of keys){const c=await caches.open(k);const marker=await c.match(META);if(marker)result.push({key:k,cache:c,meta:await marker.json()})}return result.sort((a,b)=>b.meta.savedAt-a.meta.savedAt)}
@@ -22,5 +25,5 @@ self.addEventListener('fetch',event=>{const request=event.request;const url=new 
  const appNavigation=request.mode==='navigate'&&(url.pathname===new URL(self.registration.scope).pathname||url.pathname===shell.pathname);
  // Match the actual resource first: downloads and standalone HTML are navigations too.
  // Only this hash-router application's entry may fall back to its shell.
- for(const item of list){const hit=await item.cache.match(request,{ignoreVary:true})||(appNavigation?await item.cache.match(shell.href,{ignoreVary:true}):null);if(hit)return hit}return fetch(request)})());
+ for(const item of list){const hit=await item.cache.match(request,{ignoreVary:true})||(appNavigation?await item.cache.match(shell.href,{ignoreVary:true}):null);if(hit)return readableDownload(url,hit)}return readableDownload(url,await fetch(request))})());
 });

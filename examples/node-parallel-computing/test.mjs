@@ -46,3 +46,24 @@ test('job and deadline input fail before admission, restart budget closes rather
   const a=pool.submit({kind:'crash'}),b=pool.submit({kind:'count',limit:10});const waiting=assert.rejects(b.result,/RESTART_LIMIT/);await assert.rejects(a.result,/WORKER_EXIT/);await waiting;assert.equal(pool.snapshot().closed,true);
  }finally{await pool.close();}
 });
+test('spawn arguments remain literal; exec is shell text; fork has independent IPC',async()=>{
+ const {processModes}=await import('./process-modes.mjs');const row=await processModes();
+ assert.equal(row.literal,row.input);assert.equal(row.fileOutput,row.input);
+ if(process.platform!=='win32')assert.equal(row.shellOutput,'helloSHELL_MARK');
+ assert.equal(row.bufferError,'ERR_CHILD_PROCESS_STDIO_MAXBUFFER');assert.equal(row.reply.count,8);assert.notEqual(row.reply.pid,row.parentPid);
+});
+test('cluster workers serve one shared port as separate processes',async()=>{
+ const {execFileSync}=await import('node:child_process');const row=JSON.parse(execFileSync(process.execPath,['cluster-demo.mjs'],{cwd:import.meta.dirname,encoding:'utf8',timeout:8000}));
+ assert.equal(row.requests,8);assert.equal(new Set(row.ports).size,1);assert.equal(new Set(row.workerPids).size,2);assert.ok(row.servedBy.every(pid=>row.workerPids.includes(pid)));
+});
+test('fork premature exit and missing reply reject rather than leaving await pending',async()=>{
+ const {processModes}=await import('./process-modes.mjs');
+ await assert.rejects(processModes({peerMode:'exit'}),/CHILD_EXIT_BEFORE_MESSAGE/);
+ await assert.rejects(processModes({peerMode:'silence'}),/CHILD_MESSAGE_TIMEOUT/);
+ const {spawn}=await import('node:child_process');const {firstMessage,childExit}=await import('./child-events.mjs');
+ const absent=spawn('/atlas-controlled-nonexistent-executable',[],{stdio:'ignore'});await assert.rejects(firstMessage(absent),{code:'ENOENT'});await childExit(absent);
+});
+test('cluster worker exit before ready is an explicit failure with owned cleanup',async()=>{
+ const {execFileSync}=await import('node:child_process');
+ assert.throws(()=>execFileSync(process.execPath,['cluster-demo.mjs','--startup-fail'],{cwd:import.meta.dirname,encoding:'utf8',timeout:8000,stdio:['ignore','pipe','pipe']}),error=>error.status===1&&error.stderr.includes('CHILD_EXIT_BEFORE_MESSAGE'));
+});

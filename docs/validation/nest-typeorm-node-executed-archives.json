@@ -1,0 +1,488 @@
+[
+  {
+    "name": "nestjs-modules-di",
+    "entries": 11,
+    "executedFileHashes": {
+      "test.mjs": "1d68b9c117db401b78a50d0ccc6f3d69a515f7abf9f53d66414563d643d0148c",
+      "README.md": "0bb87cbd9d9ef5a9fcece5679f8d24d6e5e17e9e1b84813db7231231d0a98ed5",
+      "package-lock.json": "cf820e0e187e45a3abe8cc0d8d9ed3ec77a56f3b3adc460364db4d6f4859ae9a",
+      "package.json": "4d1a42f956088543fad2a6ef4b84fc6de153b62d75251f8eff5648a2116baebe",
+      "tsconfig.json": "4639a266b7036116a5d92ee43f7c6e22fbdc7e64ae61ae7fcaeef7a6e0b2b3cd",
+      "src/main.ts": "75473da6693c6aff27fecdc1d299d4b6f884342b5cc624f0bd59cc7dd25fea20",
+      "src/app.ts": "ee056805c16be4e5faa47da40ad2cd9a7d9366ccbedefca94596457dccb99fd4",
+      "src/circular.ts": "ed0fa2ad8de92d13b2a667e8f5e763b63090b95974b98d4aa8e91da8082b02bb",
+      "src/missing.ts": "97aa5695992ed9059c5cfe22a1f510ae53259f59315a4ffda3ccca1fc227006d"
+    },
+    "commands": [
+      {
+        "command": [
+          "npm",
+          "ci",
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "npm",
+          "test"
+        ],
+        "returncode": 0
+      }
+    ]
+  },
+  {
+    "name": "nestjs-reliability",
+    "entries": 19,
+    "executedFileHashes": {
+      "test.mjs": "a86ea5f1e721a76af8b4ec599149279a983c1ab5a66e4ae9a32c0f97d34045bb",
+      "schema.sql": "13b1066f12ecf552e13d2b836a2665f6ef7b78e629ae74b1ce5b48900b98115c",
+      "README.md": "54a4f85a240cd91f0ad257cf12ed3c374c12cf7c41cf8761acdf3f32c5897494",
+      "package-lock.json": "714161f7d2485ffd095a3ee32f9c13eb080eb0e914360b17c0ecf21c007366ef",
+      "package.json": "37197521d4953738bffd83d844248ceae0375544099f56c138a39b036d217d38",
+      "scripts/test-cluster.mjs": "8ce178d8aba5db723cef8ed9a8e1947d3fb9ffc5da1c14995a84c0c4efcfefdd",
+      "scripts/start-cluster.mjs": "ed0a36c69a9f154d6bb744be0fbf17641e81029c4c51fd729cb2a2cdc0064ab1",
+      "scripts/cluster.mjs": "9084d5cc1b0bca1396c49e9178e00c66bf24546b7992ecd8580025a9d0bc8ac7",
+      "scripts/harness-safety.test.mjs": "383fc74ceabfa828bcc3c348aab2535ee6577d45e80129b5a83ee531492b3f1b",
+      "tsconfig.json": "4639a266b7036116a5d92ee43f7c6e22fbdc7e64ae61ae7fcaeef7a6e0b2b3cd",
+      "src/main.ts": "a3ba357944f7f199262fa5a5f51368ecd6e099318b90d2d7ea7380eb1799d512",
+      "src/app.ts": "003fa5292401ab1cc96a59fcfc334e2e60c4fb3d4523e28b9b4175dfcc25d587",
+      "src/model.ts": "259c3e1d07a34ae04ccb62a953410b34c8b01bdbe89604064b8aff204b9eca73",
+      "src/reliability.ts": "f32630e7649d935d9f713af247a66021baa3a6c1cd4b5e7587307654c3b6bb97",
+      "src/config.ts": "8a481b458dc6b978c764907c18b1f901d2601f30db5e41961e429308c91129e0",
+      "src/auth.ts": "152d89f3f4cea2b5a9e011b91c5c0962548db24eaf5008e4e53752e24988b181"
+    },
+    "commands": [
+      {
+        "command": [
+          "npm",
+          "ci",
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "npm",
+          "test"
+        ],
+        "returncode": 0
+      }
+    ]
+  },
+  {
+    "name": "nestjs-request-lifecycle",
+    "entries": 9,
+    "executedFileHashes": {
+      "test.mjs": "f9bee0743f5ba1c1520557ba5156cb748401dcd6f9b583f6bb0f7d3039e0d416",
+      "README.md": "4395bb73cfa50c02ee2b5f09c5c66b98496bbec6cf8f5fb5a616585fcc450710",
+      "package-lock.json": "9efe08c54826ce868e1f8e886387c00ff99cb3e4797638293492694c1658a97d",
+      "package.json": "a84034bd9fe0be54856007334714f5b011057a91bc0fb26c01a8e44d16e08363",
+      "tsconfig.json": "4639a266b7036116a5d92ee43f7c6e22fbdc7e64ae61ae7fcaeef7a6e0b2b3cd",
+      "src/main.ts": "9077cf1a90d5a94e8a23e1fdff436baf21e7919c5ef5c675792f049c547c6893",
+      "src/app.ts": "c88af26caf63f4a4642b9a0123c31b33128faea8882aa35220942eee6ed729be"
+    },
+    "commands": [
+      {
+        "command": [
+          "npm",
+          "ci",
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "npm",
+          "test"
+        ],
+        "returncode": 0
+      }
+    ]
+  },
+  {
+    "name": "nestjs-testing-delivery",
+    "entries": 18,
+    "executedFileHashes": {
+      "schema.sql": "3f1c045321008f1a88a8224bba16c2426d3cf7fcde2bb4215b027e9c1fedc848",
+      "README.md": "31ee9a2155cca235bb3df24d57036b354bdae37537bcf9d4e7175d77612e75df",
+      "package-lock.json": "51958d1f27c2570cd7cea31ae317349a600459065328c3ca91965ff9637b3141",
+      "package.json": "b857a49e2323afda1b8781a6dc7fee15f5f50566bf604522cef45a2c304bfae7",
+      "scripts/test-cluster.mjs": "082727ebf58e23b89e221d8f03dcb28f214babfd23cbd52cf74222daf43a37ae",
+      "scripts/start-cluster.mjs": "ed0a36c69a9f154d6bb744be0fbf17641e81029c4c51fd729cb2a2cdc0064ab1",
+      "scripts/cluster.mjs": "9084d5cc1b0bca1396c49e9178e00c66bf24546b7992ecd8580025a9d0bc8ac7",
+      "scripts/harness-safety.test.mjs": "383fc74ceabfa828bcc3c348aab2535ee6577d45e80129b5a83ee531492b3f1b",
+      "tsconfig.json": "4639a266b7036116a5d92ee43f7c6e22fbdc7e64ae61ae7fcaeef7a6e0b2b3cd",
+      "src/main.ts": "d8157c5feab9f0b1b36e0c4666a631929dadbef26b450f7687210b006816fd01",
+      "src/app.ts": "96b40cffaf8e587cf3bbd3ec17bf2937b087f76374f5877ab302a1f081749f66",
+      "src/model.ts": "259c3e1d07a34ae04ccb62a953410b34c8b01bdbe89604064b8aff204b9eca73",
+      "src/runtime.ts": "8626922f44b996405617f4e68e728efa5429e45a8ec5b97aa19f393c01d76c6d",
+      "src/config.ts": "8a481b458dc6b978c764907c18b1f901d2601f30db5e41961e429308c91129e0",
+      "src/auth.ts": "152d89f3f4cea2b5a9e011b91c5c0962548db24eaf5008e4e53752e24988b181"
+    },
+    "commands": [
+      {
+        "command": [
+          "npm",
+          "ci",
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "npm",
+          "test"
+        ],
+        "returncode": 0
+      }
+    ]
+  },
+  {
+    "name": "nestjs-typeorm-integration",
+    "entries": 18,
+    "executedFileHashes": {
+      "test.mjs": "685d6718e8cf6e03542e9b3f10ffbf8921fbb4842d35f6d4f96b9c29c05ad573",
+      "schema.sql": "3f1c045321008f1a88a8224bba16c2426d3cf7fcde2bb4215b027e9c1fedc848",
+      "README.md": "a0dfe638199128e2cd80c6e37e562a116fd4239bd417d5ecaf79192fa9b7915f",
+      "package-lock.json": "e87ac349827e797b65054ad7cba45cf912ce40716810c74c9a3b2b78e2df4c59",
+      "package.json": "fbbcbf9173b7a5b19aba5d19fdcd505756c733078d3b685ccdc0f2b8fa39413a",
+      "scripts/test-cluster.mjs": "8ce178d8aba5db723cef8ed9a8e1947d3fb9ffc5da1c14995a84c0c4efcfefdd",
+      "scripts/start-cluster.mjs": "ed0a36c69a9f154d6bb744be0fbf17641e81029c4c51fd729cb2a2cdc0064ab1",
+      "scripts/cluster.mjs": "9084d5cc1b0bca1396c49e9178e00c66bf24546b7992ecd8580025a9d0bc8ac7",
+      "scripts/harness-safety.test.mjs": "383fc74ceabfa828bcc3c348aab2535ee6577d45e80129b5a83ee531492b3f1b",
+      "tsconfig.json": "4639a266b7036116a5d92ee43f7c6e22fbdc7e64ae61ae7fcaeef7a6e0b2b3cd",
+      "src/main.ts": "d70b06b67736b46f6a91ec7078cbe0d41418df3a7e68847d6fbaffb8c87facbe",
+      "src/app.ts": "95b499f3e36f0e9a071974fe0b17fe8069d35d2aa942d74bd6c4bfa011e4b762",
+      "src/model.ts": "259c3e1d07a34ae04ccb62a953410b34c8b01bdbe89604064b8aff204b9eca73",
+      "src/initialization-failure.ts": "6ad88105aff9cdc6a881ad118ef09f08a6037b59872d0867320ad38cadc88542",
+      "src/config.ts": "8a481b458dc6b978c764907c18b1f901d2601f30db5e41961e429308c91129e0"
+    },
+    "commands": [
+      {
+        "command": [
+          "npm",
+          "ci",
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "npm",
+          "test"
+        ],
+        "returncode": 0
+      }
+    ]
+  },
+  {
+    "name": "nestjs-validation-authorization",
+    "entries": 17,
+    "executedFileHashes": {
+      "test.mjs": "5769d9699edcb50bffc7d0860c742d8b4f77baa422d7a93cd5dd1a5b7d363cf3",
+      "schema.sql": "3f1c045321008f1a88a8224bba16c2426d3cf7fcde2bb4215b027e9c1fedc848",
+      "README.md": "c885454a945f0971f4c309049cbb3ec41ba1659078270ec8bfad628c70f96dd2",
+      "package-lock.json": "066d971002a5697e21bf16df4b40c1dd80a2a7ca0c73980f4f24ccc78c5eb1cf",
+      "package.json": "f3b33582d5659a905e8ae78160733f3b01372849faaf3f9ac40236e29334ee99",
+      "scripts/test-cluster.mjs": "8ce178d8aba5db723cef8ed9a8e1947d3fb9ffc5da1c14995a84c0c4efcfefdd",
+      "scripts/start-cluster.mjs": "ed0a36c69a9f154d6bb744be0fbf17641e81029c4c51fd729cb2a2cdc0064ab1",
+      "scripts/cluster.mjs": "9084d5cc1b0bca1396c49e9178e00c66bf24546b7992ecd8580025a9d0bc8ac7",
+      "scripts/harness-safety.test.mjs": "383fc74ceabfa828bcc3c348aab2535ee6577d45e80129b5a83ee531492b3f1b",
+      "tsconfig.json": "4639a266b7036116a5d92ee43f7c6e22fbdc7e64ae61ae7fcaeef7a6e0b2b3cd",
+      "src/main.ts": "d70b06b67736b46f6a91ec7078cbe0d41418df3a7e68847d6fbaffb8c87facbe",
+      "src/app.ts": "65134cba7cfed73b9edc5d6a15ed8c9454bbb4e513d7e86f136e6ecf56d18ad9",
+      "src/model.ts": "259c3e1d07a34ae04ccb62a953410b34c8b01bdbe89604064b8aff204b9eca73",
+      "src/config.ts": "8a481b458dc6b978c764907c18b1f901d2601f30db5e41961e429308c91129e0"
+    },
+    "commands": [
+      {
+        "command": [
+          "npm",
+          "ci",
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "npm",
+          "test"
+        ],
+        "returncode": 0
+      }
+    ]
+  },
+  {
+    "name": "node-execution-model",
+    "entries": 28,
+    "executedFileHashes": {
+      "io-order.cjs": "da946455e86d3aa0281ee981d10739cfb7ddd44cb992bb8adfb7476af8497b55",
+      "test.mjs": "448946f42e6697ccb70fb53d8bb54daa4b1301d0c0ed71bb0e62a2b61e66046f",
+      "README.md": "43320fc8957ad3dcafa54261ad565b9f8f00ce33e51f66af94110029801b4952",
+      "errors.mjs": "5e3bd3ff1066bc3b76b31772cadcdb89e49674e24b41714f60a3c994b9e8faf5",
+      "package-lock.json": "25d91b1de9c9948e8dda2d5892e56d3162c2a3a0b7f2c393845ae9692522d8d3",
+      "package.json": "d62235c74f1e107f5d5886060979ad346c0bcc6a3fbbee912f3b8d60af26ef19",
+      "THIRD_PARTY_NOTICES.txt": "57d97fbf144acaef1e823747645107e05f7bb28b29697045d489b4ec6731855b",
+      ".nvmrc": "ccb4022e91abb8575a29d306d7aff041f578bb86eb1180d69475bb86a5c4512c",
+      "order.mjs": "81909a82382e0c08714f7e1996d008c2dc0a8e61acfd072c13bd3b3c327ae302",
+      "io-trace.mjs": "03860805660a5b92346ab8eeaffd410f817adb1471c47c0c857d2cfc99793836",
+      "main.mjs": "9d06b5f6d669c2c162ea4b0187240be19060634aa4c203faf56edcee0c899ef6",
+      "order.cjs": "81909a82382e0c08714f7e1996d008c2dc0a8e61acfd072c13bd3b3c327ae302",
+      "chunks.mjs": "479ee958033fd0bab1b2c76a06897db721bbc1c2b815410efbfe4be42ef99c98",
+      "fixture.txt": "444e0fffbd825e9610ff5b199485707a0c895339ae80c15cc8a8aee41b106fda",
+      "source-fragments/uv-tcp-connect.c": "0de561b044c7e07d873d0cb83716c89f10b577c61489c08c0a35a5efd798c719",
+      "source-fragments/node-tick-drain.js": "45f22d4dfd3c1bf4266d0c4fea6e05c097d62af474449e046313fe71d448b2c9",
+      "source-fragments/node-read-close.js": "c3e1812e51af931fb53029a3376d48b2a1bf55109d4116e5c432649d808f9d9d",
+      "source-fragments/node-context-read.js": "63bfd9d6e74f7e6b4430426378181c3dc98eadad63f1356abe72227d7a58ff58",
+      "source-fragments/node-file-binding.cc": "7edaf3c8acba7a7425a5afef6edf9360a98dc2e668267dbfd1f2116ca708796b",
+      "source-fragments/node-net-connect.js": "245de3f87699c36c1a40a484be23805ee31deb6cc0a205a9169faa99a6c37b53",
+      "source-fragments/manifest.json": "81d20647fdab917661093c42823e401ea1dd51fc1987d40b468d85e3fdcb87de",
+      "source-fragments/uv-tcp-watch.c": "aa5dc46f9281acd025c7ae5c9935a9fc001d3ab49a025fdeeec0fe7f197de8d5",
+      "source-fragments/uv-fs-post.c": "3e33a6897d670333414c2fc1105697230d0a7f76c8d9b4a9982cc98cbe104574",
+      "source-fragments/node-open-stat.js": "c6c169e6bc4c190f2ce38504fb5f858eb60e2455e18e7df1c150b6f34709db6b",
+      "source-fragments/node-tcp-binding.cc": "520f4123d70ee41fc6a6769f59b922cfb8a4cdf3a10c624086a65b28bc50f6a5",
+      "source-fragments/node-readFile.js": "0b5bb8bb1ac212a724eb0cf5709bf21f4dbd52f578a2b87823ac542473b63e26"
+    },
+    "commands": [
+      {
+        "command": [
+          "npm",
+          "ci",
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "npm",
+          "test"
+        ],
+        "returncode": 0
+      }
+    ]
+  },
+  {
+    "name": "node-parallel-computing",
+    "entries": 15,
+    "executedFileHashes": {
+      "worker.mjs": "5038c8b0f486fe0221d91843161e9a096e80c0636bfd66f8a73c36e3185304c4",
+      "test.mjs": "d316dfb459990edbda46dfc3f6a1a63a57b0723bbfc9fbcb335ddd14da118541",
+      "endpoint.mjs": "6c1fa67a7aea059d5de6b8e6ac9a4bd6e44419bd41c957e792f931517d65e432",
+      "communication.mjs": "b34ab0a1e8dcb97163f5437079fbcb068faa13eef7008a0c995ab4b7c91bb376",
+      "child-events.mjs": "8da893b21bc509c1d02b729da0b8e577ab2b2cd98474751525f93dbae7968c20",
+      "cluster-demo.mjs": "2f4ef0479afb2396306a81ac4bd28a3f50812599fb44af630685ec9867390860",
+      "process-modes.mjs": "6c60edcca842f4729c4bfb7592b7a91b5c4a9c87b8be8637e5a38e0182ab8fcf",
+      "README.md": "5cbf2055c64e4172192e0de09d3036fc9ac51170a75b8c0478d78b12543effe5",
+      "compute.mjs": "2ffbdb24b703e632bff30845a74db2b61c76384a66aed9e5a9cde0ebbc546ef6",
+      "package-lock.json": "ac797b8a3f7b0622d338dfb065e5bfafdb45269379c70cc01293e4aac8e11e59",
+      "package.json": "b8e1b50ed5a17d83bf7227ca2db217e307135f0fc97f56485bce0aa2fe2cd436",
+      ".nvmrc": "ccb4022e91abb8575a29d306d7aff041f578bb86eb1180d69475bb86a5c4512c",
+      "demo.mjs": "4c95e8e3bb0c70df39694c6cc72a1d7e5b8246ca942ba32c2b606a2dbb9cd02f",
+      "pool.mjs": "0fb2a7fd1b819590ea8f7300353ccfc53868d84f97f81c97de222631a70c6256"
+    },
+    "commands": [
+      {
+        "command": [
+          "npm",
+          "ci",
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "npm",
+          "test"
+        ],
+        "returncode": 0
+      }
+    ]
+  },
+  {
+    "name": "node-performance-memory",
+    "entries": 16,
+    "executedFileHashes": {
+      "io-diagnostics.mjs": "a357d6e277aa5e32798a7874482ae8f4a7e2d983e5994b7e48553f9add917049",
+      "test.mjs": "f50057299844f4bab32c262d4c17dd67f7eac323e475ae3354d1e39ce042202d",
+      "metrics.mjs": "5bc512464fe3966b2f8c09da1fd23f0cee708bfcb42e9e0be8dff86eef58c89d",
+      "benchmark.mjs": "82329f82c2a25801c93146ec619e181ca9c9c8ccca22206b87c4f26fa8405a2c",
+      "pool-probe.mjs": "2ace9d71250d969dd97ddd276b8aa6c3dc18367aeac68e4e93706818d8a89925",
+      "README.md": "c09f85610e767700b8257e6b99d6f113daf7954c181958f171ac014ded512ce1",
+      "cpu-profile.mjs": "db9a25d73661f9f84cd6ed33828d52bdf93f3c65c3b8d32fb46e336e87e77697",
+      "harness.mjs": "2e4cad05e86c13e93d5a28bc4f685b788f7a50130399e15cbe9e8af01769bdd0",
+      "load.mjs": "f79e907f20bfa2f39c5f04b2ea6baecca28f4d855763b36e7bff9924b4aa0d11",
+      "work.mjs": "f2932dec448bd33fa15d5bf6b01d8cc09c42ec2ffc81ccefda4409838f9f9ac3",
+      "package-lock.json": "ec01fe2c0aa72e5e1110a7c17f3d6d0aec06c67b026ae088201bc4fc97dbd204",
+      "package.json": "b8c4703fc266bd07381a2d442e5931aa2f8daf8314779c86de09be264cf27d12",
+      ".nvmrc": "ccb4022e91abb8575a29d306d7aff041f578bb86eb1180d69475bb86a5c4512c",
+      "server.mjs": "b64951d8e8065d6ef5f45fd53cf15c77f87018d9db71be9fbd7cbbaf6645b0ad",
+      "snapshot.mjs": "c5e02b4db406ea14c843811beb8af2a7b6d7573c872cf24ff4a0df3a342fedde"
+    },
+    "commands": [
+      {
+        "command": [
+          "npm",
+          "ci",
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "npm",
+          "test"
+        ],
+        "returncode": 0
+      }
+    ]
+  },
+  {
+    "name": "typeorm-foundations",
+    "entries": 11,
+    "executedFileHashes": {
+      "README.md": "4cfd98b42c7735b4851b6f1b9f581e77aa4422649ad95fd0cabf5127515fa6ef",
+      "package-lock.json": "3d479bac0db5fec046c01b6329de6c2879ffe0c51d94b586abb635850f5cbc65",
+      "package.json": "af839e71ee078fcd9e606d522c8a3078413cd3260a12c6f7175736a6bb97329d",
+      "scripts/test-runner-cleanup.mjs": "e667f80d5a5384c8af043d3950b6f76b8133848706e99c848f0e574c94ec0efa",
+      "scripts/run-tests.mjs": "8fd95d8189cf3c49c039d36823c5d874df99297e5e1e23f5323ccab1b69f2d3b",
+      "tsconfig.json": "291b36455a537c59f0c814f638c8638957320ef627f1280532835abea981c965",
+      "src/lab.test.ts": "3cea2c291a40639cccd82c287f92e4300032e304f402af61849f8f63ca75511f",
+      "src/model.ts": "1c0675d88ce60e74170a162531ce515c69bbe15f4fbf955c02ab249e09f0ada1"
+    },
+    "commands": [
+      {
+        "command": [
+          "npm",
+          "ci",
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "npm",
+          "test"
+        ],
+        "returncode": 0
+      }
+    ]
+  },
+  {
+    "name": "typeorm-migrations-performance",
+    "entries": 11,
+    "executedFileHashes": {
+      "README.md": "640bea9bb7cc466ea908d0e92271c0c4fe0d502b6b1f024bddfce2f6281714ca",
+      "package-lock.json": "950b1b9311473d5c1c3b906c8202ca1adde2d06a13b789534d373c7024ce1dfa",
+      "package.json": "928ee23494bbcf5817ceb3d0ca362965b3bd2c1c22f0bd791eb844fe257d1182",
+      "scripts/run-tests.mjs": "8fd95d8189cf3c49c039d36823c5d874df99297e5e1e23f5323ccab1b69f2d3b",
+      "tsconfig.json": "291b36455a537c59f0c814f638c8638957320ef627f1280532835abea981c965",
+      "src/lab.test.ts": "c97cb7e6cef240106fe42b5db28c39b38a257c3dc3e9d91ea478a98569a046ff",
+      "src/model.ts": "1c0675d88ce60e74170a162531ce515c69bbe15f4fbf955c02ab249e09f0ada1",
+      "src/migration-source.ts": "7da06e4c62ad3286c6eeb8c83cc128bf1087f5b5848a95ef01bff56128843f2f"
+    },
+    "commands": [
+      {
+        "command": [
+          "npm",
+          "ci",
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "npm",
+          "test"
+        ],
+        "returncode": 0
+      }
+    ]
+  },
+  {
+    "name": "typeorm-relations-queries",
+    "entries": 10,
+    "executedFileHashes": {
+      "README.md": "e0a990e0e12c2a142d200e5cac3b251b80db8ac46e3a7288650a99f8e05dedd4",
+      "package-lock.json": "901e9461c002ca6c8b03716cc80c4977253c647c9613d876d67a610dfd28bfe4",
+      "package.json": "ef7de9365d80b355ce0f054b7c3837dba0f07372cc15b5a9c274cd13d44d35ca",
+      "scripts/run-tests.mjs": "8fd95d8189cf3c49c039d36823c5d874df99297e5e1e23f5323ccab1b69f2d3b",
+      "tsconfig.json": "291b36455a537c59f0c814f638c8638957320ef627f1280532835abea981c965",
+      "src/lab.test.ts": "5ccbfac34e060ec632269c573f2994956133917a885ac82cdba2234ff91ae6e5",
+      "src/model.ts": "1c0675d88ce60e74170a162531ce515c69bbe15f4fbf955c02ab249e09f0ada1"
+    },
+    "commands": [
+      {
+        "command": [
+          "npm",
+          "ci",
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "npm",
+          "test"
+        ],
+        "returncode": 0
+      }
+    ]
+  },
+  {
+    "name": "typeorm-transactions-concurrency",
+    "entries": 10,
+    "executedFileHashes": {
+      "README.md": "8b9cd9cebbe822e4ec248f4a0f7bdbec117a4a844af2cd68f63d92970ef8e861",
+      "package-lock.json": "26a865898904dc1b4848ee7a2dfa495b453818aff81d871257d4ef2bca573f8b",
+      "package.json": "c7fd8103776df10d6ba0a730077accf9db8a33a22006deb69174d3c5912d91ef",
+      "scripts/run-tests.mjs": "8fd95d8189cf3c49c039d36823c5d874df99297e5e1e23f5323ccab1b69f2d3b",
+      "tsconfig.json": "291b36455a537c59f0c814f638c8638957320ef627f1280532835abea981c965",
+      "src/lab.test.ts": "afc63764aaaeabcdcc64e8599e90edd73f80e53bcbcc2dbdedfbe46862a8fc94",
+      "src/model.ts": "1c0675d88ce60e74170a162531ce515c69bbe15f4fbf955c02ab249e09f0ada1"
+    },
+    "commands": [
+      {
+        "command": [
+          "npm",
+          "ci",
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "npm",
+          "test"
+        ],
+        "returncode": 0
+      }
+    ]
+  }
+]

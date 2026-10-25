@@ -11,7 +11,7 @@ npm test
 node demo.mjs
 ```
 
-ZIP解压后进入对应目录；仓库中可`cd examples/node-parallel-computing`。`npm test` **13/13通过**。示例不依赖数据库、密钥、UI沙箱或付费服务；源代码下载不包含Node运行时。
+ZIP解压后进入对应目录；仓库中可`cd examples/node-parallel-computing`。`npm test` **17/17通过**。示例不依赖数据库、密钥、UI沙箱或付费服务；源代码下载不包含Node运行时。
 
 ## 文件
 
@@ -36,3 +36,17 @@ communication.mjs检查所有权，demo.mjs可直接运行；test.mjs为真实�
 - 进程示例只在本机OS验证；没有Linux/容器CPU配额/生产吞吐结论。
 
 正文关键代码与真实文件连续匹配；两张可编辑SVG用Quick Look实际渲染检查。站点手机视口、ZIP干净安装及离线清单由主代理单列，不用CLI测试替代页面验收。
+
+## 2026-10-25：线程层次与进程 API
+
+```sh
+node process-modes.mjs
+node cluster-demo.mjs
+```
+
+process-modes 对照 spawn/execFile 原样传参、固定 POSIX shell 命令、64字节 maxBuffer 失败与 fork IPC。
+child-events 提供消息/退出/错误/deadline 单次结算；新增故障验收覆盖peer退出、无回复、cluster启动前退出。
+cluster 只在随机loopback同端口服务8次独立连接，不作公平分发或生产吞吐结论。
+
+本次测试 **17/17 通过**；原13项完整保留，新增4项（包括IPC多个失败分支）。
+POSIX shell与cluster调度在macOS验证，Windows另验。silence模式有意保活等待，用父进程期限与 finally 回收；不留下后台worker。
