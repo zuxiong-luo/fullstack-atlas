@@ -1,0 +1,75 @@
+{
+  "workerSha256": "77fd61cbae142bdedfc2107a8a2ce7f5c49eed1d5d11a96b01f13e2620583c0a",
+  "asset": "assets/index-BC1Ybvgz.js",
+  "sha256": "575e2f70d25502e1974b0ee341e4475906ce29ff7be58b21181dcb11d54ad873",
+  "version": "74ee18ffe85ee73d",
+  "files": 1455,
+  "bytes": 21468669,
+  "archives": [
+    {
+      "name": "nestjs-request-lifecycle",
+      "entries": 9,
+      "bytesMatch": true
+    },
+    {
+      "name": "nestjs-modules-di",
+      "entries": 11,
+      "bytesMatch": true
+    },
+    {
+      "name": "nestjs-typeorm-integration",
+      "entries": 18,
+      "bytesMatch": true
+    },
+    {
+      "name": "nestjs-validation-authorization",
+      "entries": 17,
+      "bytesMatch": true
+    },
+    {
+      "name": "nestjs-reliability",
+      "entries": 19,
+      "bytesMatch": true
+    },
+    {
+      "name": "nestjs-testing-delivery",
+      "entries": 18,
+      "bytesMatch": true
+    },
+    {
+      "name": "typeorm-foundations",
+      "entries": 11,
+      "bytesMatch": true
+    },
+    {
+      "name": "typeorm-relations-queries",
+      "entries": 10,
+      "bytesMatch": true
+    },
+    {
+      "name": "typeorm-transactions-concurrency",
+      "entries": 10,
+      "bytesMatch": true
+    },
+    {
+      "name": "typeorm-migrations-performance",
+      "entries": 11,
+      "bytesMatch": true
+    },
+    {
+      "name": "node-execution-model",
+      "entries": 28,
+      "bytesMatch": true
+    },
+    {
+      "name": "node-parallel-computing",
+      "entries": 15,
+      "bytesMatch": true
+    },
+    {
+      "name": "node-performance-memory",
+      "entries": 16,
+      "bytesMatch": true
+    }
+  ]
+}

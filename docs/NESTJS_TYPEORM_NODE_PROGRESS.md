@@ -14,22 +14,24 @@
 
 |文章ID|归属|状态|示例与审校|
 |---|---|---|---|
-|nestjs-request-lifecycle|NestJS 工程|待发布|examples/nestjs-request-lifecycle；正文、图形、独立ZIP测试及交叉审稿通过；待线上版本核对|
-|nestjs-modules-di|NestJS 工程|待发布|examples/nestjs-modules-di；正文、图形、独立ZIP测试及交叉审稿通过；待线上版本核对|
-|nestjs-typeorm-integration|NestJS 工程|待发布|examples/nestjs-typeorm-integration；正文、图形、独立ZIP测试及交叉审稿通过；待线上版本核对|
-|nestjs-validation-authorization|NestJS 工程|待发布|examples/nestjs-validation-authorization；正文、图形、独立ZIP测试及交叉审稿通过；待线上版本核对|
-|nestjs-reliability|NestJS 工程|待发布|examples/nestjs-reliability；正文、图形、独立ZIP测试及交叉审稿通过；待线上版本核对|
-|nestjs-testing-delivery|NestJS 工程|待发布|examples/nestjs-testing-delivery；正文、图形、独立ZIP测试及交叉审稿通过；待线上版本核对|
-|typeorm-foundations|数据与并发 · TypeORM|待发布|examples/typeorm-foundations；正文、图形、独立ZIP测试及交叉审稿通过；待线上版本核对|
-|typeorm-relations-queries|数据与并发 · TypeORM|待发布|examples/typeorm-relations-queries；正文、图形、独立ZIP测试及交叉审稿通过；待线上版本核对|
-|typeorm-transactions-concurrency|数据与并发 · TypeORM|待发布|examples/typeorm-transactions-concurrency；正文、图形、独立ZIP测试及交叉审稿通过；待线上版本核对|
-|typeorm-migrations-performance|数据与并发 · TypeORM|待发布|examples/typeorm-migrations-performance；正文、图形、独立ZIP测试及交叉审稿通过；待线上版本核对|
-|node-execution-model|Node.js 工程|待发布|保留原ID、锚点和研习；扩写、原关联回归及独立ZIP测试通过；待线上版本核对|
-|node-parallel-computing|Node.js 工程|待发布|保留原ID、锚点和研习；扩写、原关联回归及独立ZIP测试通过；待线上版本核对|
-|node-performance-memory|Node.js 工程|待发布|保留原ID、锚点和研习；扩写、原关联回归及独立ZIP测试通过；待线上版本核对|
+|nestjs-request-lifecycle|NestJS 工程|已完成|examples/nestjs-request-lifecycle；正文、图形、独立ZIP测试及交叉审稿通过；线上资源与验收版一致|
+|nestjs-modules-di|NestJS 工程|已完成|examples/nestjs-modules-di；正文、图形、独立ZIP测试及交叉审稿通过；线上资源与验收版一致|
+|nestjs-typeorm-integration|NestJS 工程|已完成|examples/nestjs-typeorm-integration；正文、图形、独立ZIP测试及交叉审稿通过；线上资源与验收版一致|
+|nestjs-validation-authorization|NestJS 工程|已完成|examples/nestjs-validation-authorization；正文、图形、独立ZIP测试及交叉审稿通过；线上资源与验收版一致|
+|nestjs-reliability|NestJS 工程|已完成|examples/nestjs-reliability；正文、图形、独立ZIP测试及交叉审稿通过；线上资源与验收版一致|
+|nestjs-testing-delivery|NestJS 工程|已完成|examples/nestjs-testing-delivery；正文、图形、独立ZIP测试及交叉审稿通过；线上资源与验收版一致|
+|typeorm-foundations|数据与并发 · TypeORM|已完成|examples/typeorm-foundations；正文、图形、独立ZIP测试及交叉审稿通过；线上资源与验收版一致|
+|typeorm-relations-queries|数据与并发 · TypeORM|已完成|examples/typeorm-relations-queries；正文、图形、独立ZIP测试及交叉审稿通过；线上资源与验收版一致|
+|typeorm-transactions-concurrency|数据与并发 · TypeORM|已完成|examples/typeorm-transactions-concurrency；正文、图形、独立ZIP测试及交叉审稿通过；线上资源与验收版一致|
+|typeorm-migrations-performance|数据与并发 · TypeORM|已完成|examples/typeorm-migrations-performance；正文、图形、独立ZIP测试及交叉审稿通过；线上资源与验收版一致|
+|node-execution-model|Node.js 工程|已完成|保留原ID、锚点和研习；扩写、原关联回归及独立ZIP测试通过；线上资源与验收版一致|
+|node-parallel-computing|Node.js 工程|已完成|保留原ID、锚点和研习；扩写、原关联回归及独立ZIP测试通过；线上资源与验收版一致|
+|node-performance-memory|Node.js 工程|已完成|保留原ID、锚点和研习；扩写、原关联回归及独立ZIP测试通过；线上资源与验收版一致|
 
 最多三名作者同时工作。主代理统一修改分类、目录、聚合、测试、下载与离线交付；作者独占各自正文/示例/图形/验证记录。前两篇标杆先审阅再批量收口，不以相同模板或文件落盘提前计完成。
 
 完成需：概念推导、关键代码正文自足、真实成功与失败实验、可控并发、可读SVG、独立复现、目录/搜索/下载/离线检查、全站测试构建和线上版本核对。已有100篇ID、锚点和关联起点快照见 validation/pre-nest-supplement-identities.json。
 
 最终验收汇总见 [发布记录](validation/nest-typeorm-node-release.md)。13个下载包的执行命令和逐文件摘要见 `validation/nest-typeorm-node-executed-archives.json`；实际390px浏览器记录见 `validation/nest-typeorm-node-mobile.json`。
+
+2026-10-25已发布：实现提交 `1d6725d`，全站110篇、13分类。主资源及SW逐字节匹配，13个线上ZIP逐文件匹配；Pages与示例CI通过。线上浏览器工具读取最后一步超时，未把资源核对写成人工线上页面验收。正文/桌面与实际390px交互已在本地验收。
