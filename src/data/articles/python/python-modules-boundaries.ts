@@ -1,39 +1,38 @@
 import type {Article} from '../../articleTypes';
-const article: Article = {
+const article:Article = {
   "id": "python-modules-boundaries",
   "topic": "python",
-  "title": "Python 模块与边界：包、类型、异常和资源管理",
-  "description": "把笔记工具收拢为可通过python -m运行的包，用类型表达输入输出、异常链表达失败来源，并把文件所有权覆盖到实际消费。",
-  "minutes": 45,
+  "title": "Python 文件与模块：读写、JSON、异常和 import",
+  "description": "先把笔记写进文件，再学读取、错误处理、JSON 和拆分模块。用已经学过的 Note 与 Notebook 组成一个能保存和恢复的小程序。",
+  "minutes": 55,
   "tags": [
-    "Python",
-    "模块",
-    "类型注解",
+    "Python 模块",
+    "文件",
+    "JSON",
     "异常",
-    "资源管理"
+    "包",
+    "类型注解"
   ],
-  "scope": "个人笔记导入第4阶段；CPython3.12.14与标准库，本地包与CLI。交付模块边界和资源测试，不展开构建发布、类型检查器配置或框架依赖注入。",
+  "scope": "从小文件和普通模块开始，不先讲复杂包架构或异常分层。示例先在临时目录练习；保存到固定路径时需要明确工作目录和覆盖行为。",
   "prerequisites": [
-    "理解前三章Note/Notebook、生成器推进与JSONL",
-    "会从examples/python-course运行命令"
+    "已学前三篇，能看懂函数、列表、字典、类及对象方法"
   ],
   "kind": "series",
   "status": "complete",
   "versions": [
-    "CPython3.12.14（实际运行）",
-    "Python3.12官方文档（页面维护版3.12.15）"
+    "CPython 3.12.14"
   ],
-  "verifiedAt": "2026-10-24",
-  "labMinutes": 35,
+  "verifiedAt": "2026-10-26",
+  "labMinutes": 30,
   "questionIds": [],
   "examples": [
     {
-      "label": "Python课程源码ZIP",
+      "label": "Python 课程与新入门示例 ZIP",
       "path": "python-course.zip"
     },
     {
-      "label": "本章运行与失败说明",
-      "path": "python-course/chapter04/README.md"
+      "label": "从这里开始：九篇顺序、文件与命令",
+      "path": "python-course/beginner/README.md"
     }
   ],
   "references": [
@@ -42,247 +41,279 @@ const article: Article = {
       "url": "https://docs.python.org/3.12/tutorial/modules.html"
     },
     {
-      "title": "Python3.12：类型注解",
-      "url": "https://docs.python.org/3.12/library/typing.html"
+      "title": "Python3.12：文件与JSON",
+      "url": "https://docs.python.org/3.12/tutorial/inputoutput.html"
     },
     {
-      "title": "Python3.12：异常与异常链",
+      "title": "Python3.12：异常处理",
       "url": "https://docs.python.org/3.12/tutorial/errors.html"
     },
     {
-      "title": "Python3.12：with语句",
-      "url": "https://docs.python.org/3.12/reference/compound_stmts.html#the-with-statement"
+      "title": "Python3.12：pathlib",
+      "url": "https://docs.python.org/3.12/library/pathlib.html"
     }
   ],
   "sections": [
     {
       "id": "boundary",
-      "title": "模块不是把文件切碎，而是给依赖确定方向",
+      "title": "程序结束后还想保留数据，就需要文件",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "模块是可以导入的Python代码单元，常见形式是一个.py文件；包把相关模块组织在一个名字空间里。本章使用带__init__.py的普通包，便于给学习阶段定义清楚的公共入口。模块的职责不仅是“文件放哪里”，还包括谁能调用谁、哪些状态在导入时建立，以及失败由哪一层解释。"
+          "text": "前面的 book 只在当前程序运行时存在。退出程序，再运行一遍，之前在内存里添加的笔记不会自己回来。文件能把数据保存下来，下次运行再读取；模块则帮助我们把越来越多的代码分到不同 .py 文件。先从一次写入和读取开始，不急着设计多层工程。"
         },
         {
           "type": "paragraph",
-          "text": "前三章分别保留完整脚本，是为了按阶段独立复现。到了第四章，如果CLI、JSON解析、Note构造都继续放在同一个文件，别的程序想复用导入逻辑时，就容易一起带入命令行参数和输出行为。我们现在把语言对象与外部环境分开：领域层只管合法笔记，转换层认识JSONL，应用层组装并拥有文件，CLI负责把结果交给终端。"
-        },
-        {
-          "type": "paragraph",
-          "text": "本章仍使用三条笔记的JSONL输入，成功得到count=3的整批结果，坏行则不输出成功JSON。新增成果是chapter04/notes_tool包和6项独立测试，不改前三章入口。实际验证CPython3.12.14，无第三方依赖；核对的是3.12官方文档，当前页面显示维护版3.12.15。这里不安装框架，也不声称已经完成静态类型检查或发行到包仓库。"
+          "text": "本篇先保存普通文字，再保存包含多条笔记的 JSON。最后把 Note、Notebook 和文件操作拆开，看看 import 怎样把它们连起来。你会用到前面已经学过的列表、字典、函数和类；新出现的工具会在使用前解释。"
         }
       ]
     },
     {
       "id": "imports",
-      "title": "包的入口：导入可复用，运行才读取文件",
-      "paragraphs": [],
-      "blocks": [
-        {
-          "type": "figure",
-          "src": "/figures/python-modules-boundaries/modules.svg",
-          "title": "导入工具的依赖方向与资源边界",
-          "alt": "CLI调用应用层，应用层在with中打开文件并消费转换层；转换层构造领域Note，错误由专门模块提供，包导入不启动CLI。",
-          "caption": "教学结构图，实线表示调用或依赖。文件拥有权由read_notebook承担，build_notebook只借用输入迭代对象。"
-        },
-        {
-          "type": "paragraph",
-          "text": "从examples/python-course执行python -m chapter04.notes_tool时，解释器先按模块搜索路径找到包，再执行它的__main__.py。相对导入from .cli import main中的点指当前包，不是当前终端目录。这也是我们提供-m入口的原因：如果直接执行notes_tool/cli.py，那个文件没有相同的包上下文，相对导入会失败。"
-        },
-        {
-          "type": "code",
-          "language": "python",
-          "filename": "examples/python-course/chapter04/notes_tool/__main__.py",
-          "kind": "excerpt",
-          "purpose": "完整模块运行入口。只有作为主模块执行才调用main，普通导入不读文件。",
-          "code": "from .cli import main\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n"
-        },
-        {
-          "type": "code",
-          "language": "python",
-          "filename": "examples/python-course/chapter04/notes_tool/__init__.py",
-          "kind": "excerpt",
-          "purpose": "完整公共API；导出函数、领域类型和预期错误，导入本包没有运行CLI。",
-          "code": "\"\"\"Small public API; importing this package does not read files or start a CLI.\"\"\"\nfrom .app import build_notebook, read_notebook\nfrom .domain import Note, Notebook\nfrom .errors import ImportFailure, NoteError\n\n__all__ = [\"Note\", \"Notebook\", \"NoteError\", \"ImportFailure\", \"build_notebook\", \"read_notebook\"]\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "__init__.py通过明确的名字导出稳定入口，不让调用者到处依赖内部文件安排。__all__主要约束星号导入，并不把未列出的模块变成无法访问的私有代码。模块第一次导入会执行顶层语句，之后通常从sys.modules复用同名模块；所以顶层只放定义和轻量导入，不打开数据文件、不创建线程，也不打印结果。"
-        },
-        {
-          "type": "paragraph",
-          "text": "搜索路径受运行方式与环境影响。从课程目录运行，chapter04能作为顶层包被找到；换到任意目录直接敲同一命令未必成功。不要靠修改sys.path掩盖这一前提，也别把自己的文件命名为json.py或typing.py，意外遮住标准库后会出现难懂的导入错误。正式安装与分发会在工程交付章节处理。"
-        },
-        {
-          "type": "reference",
-          "title": "官方依据：模块、包和模块搜索路径",
-          "url": "https://docs.python.org/3.12/tutorial/modules.html"
-        }
-      ]
-    },
-    {
-      "id": "types",
-      "title": "类型表达调用约定，外部数据仍要检查",
+      "title": "import：使用已有文件里定义的功能",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "类型注解告诉读者和工具“这里希望收到什么、交回什么”。object表示还不知道具体形状的Python对象；Iterable[str]表示能逐个提供字符串，不要求必须是列表；Iterator[tuple[int, Note]]表示逐个产出行号与领域笔记。Path表达文件路径对象。选择较小的接口能让测试用StringIO或列表调用同一逻辑，也避免把处理函数绑死到某一种文件对象。"
-        },
-        {
-          "type": "paragraph",
-          "text": "注解不自动执行运行时检查。写下id: str不会阻止调用者传入数字，json.loads的结果也不会因为赋给raw: object就变得可信。外部边界必须先验证字典键、字段类型和内容，再构造Note；领域对象仍检查自己的不变量。本章沿用不可变Note与可变Notebook的组合，这些规则没有因拆包而消失。"
+          "text": "模块通常是一个 Python 文件，里面可以定义函数、类和变量。import math 把 Python 自带的数学模块引入当前文件，随后用 math.sqrt 调用它提供的平方根函数。模块名让你看得出这个功能从哪里来。"
         },
         {
           "type": "code",
+          "code": "import math\nprint(math.sqrt(9))",
           "language": "python",
-          "filename": "examples/python-course/chapter04/notes_tool/domain.py",
-          "kind": "excerpt",
-          "purpose": "完整领域层：字段注解与运行时校验并列，Notebook拥有独立字典；此层不导入Path、sys或JSON。",
-          "code": "from collections.abc import Iterator\nfrom dataclasses import dataclass\nfrom .errors import NoteError\n\n\n@dataclass(frozen=True)\nclass Note:\n    id: str\n    title: str\n    tags: tuple[str, ...] = ()\n\n    def __post_init__(self) -> None:\n        for name in (\"id\", \"title\"):\n            value = getattr(self, name)\n            if not isinstance(value, str) or not value.strip() or value != value.strip():\n                raise NoteError(f\"{name} must be a trimmed non-empty string\")\n        if type(self.tags) is not tuple:\n            raise NoteError(\"tags must be a tuple\")\n        if any(not isinstance(tag, str) or not tag or tag != tag.strip().lower()\n               for tag in self.tags):\n            raise NoteError(\"tags must contain normalized non-empty strings\")\n        if len(set(self.tags)) != len(self.tags):\n            raise NoteError(\"tags must not contain duplicates\")\n\n    def to_dict(self) -> dict[str, object]:\n        return {\"id\": self.id, \"title\": self.title, \"tags\": list(self.tags)}\n\n\nclass Notebook:\n    def __init__(self) -> None:\n        self._notes: dict[str, Note] = {}\n\n    def add(self, note: Note) -> None:\n        if not isinstance(note, Note):\n            raise TypeError(\"notebook accepts Note instances\")\n        if note.id in self._notes:\n            raise NoteError(\"duplicate id: \" + note.id)\n        self._notes[note.id] = note\n\n    def __len__(self) -> int:\n        return len(self._notes)\n\n    def __iter__(self) -> Iterator[Note]:\n        return iter(self._notes.values())\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "to_dict的dict[str, object]没有假装每个值都是字符串：tags的导出值是列表。Notebook.__iter__返回Iterator[Note]，让调用者知道遍历得到对象而不是字典键。类型能检查的精度仍有限，比如一个字符串是否已去空格、ID是否唯一，不能仅靠str这一个标注表达；这类业务约束保留在代码里。我们实际运行的是unittest，未把“写了注解”说成“静态检查已经通过”。"
-        },
-        {
-          "type": "reference",
-          "title": "官方依据：类型注解不会由运行时自动强制执行",
-          "url": "https://docs.python.org/3.12/library/typing.html"
-        }
-      ]
-    },
-    {
-      "id": "errors",
-      "title": "失败也有层次：合法性、输入位置与终端消息",
-      "paragraphs": [],
-      "blocks": [
-        {
-          "type": "code",
-          "language": "python",
-          "filename": "examples/python-course/chapter04/notes_tool/errors.py",
-          "kind": "excerpt",
-          "purpose": "完整预期错误定义。ImportFailure保存物理行号，NoteError描述领域规则失败。",
-          "code": "\"\"\"Expected domain and input failures; programming errors stay visible.\"\"\"\n\n\nclass NoteError(ValueError):\n    \"\"\"A value or notebook operation violates the note contract.\"\"\"\n\n\nclass ImportFailure(ValueError):\n    def __init__(self, line_number: int, detail: str) -> None:\n        self.line_number = line_number\n        super().__init__(f\"line {line_number}: {detail}\")\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "NoteError说明值或成员操作违反笔记规则；ImportFailure说明一次外部输入在某行无法转成有效笔记。它们都继承ValueError，但调用者可以按更具体的类型区分。给自定义异常起名字，是为了表达稳定的失败契约，而不是为了让每个函数多捕获一次。底层不知道终端怎么排版，CLI也不需要重新分析每一条校验字符串。"
-        },
-        {
-          "type": "paragraph",
-          "text": "异常沿调用栈传播，直到某层能够补充信息或决定处理方式。JSON解析知道语法坏了，转换层知道它来自第几行，CLI知道它来自哪个文件。raise ImportFailure(...) from error保留直接原因，调试时能看到原JSONDecodeError或NoteError；只用一个新字符串替换掉所有错误，会失去这条路径。"
+          "purpose": "把这段代码单独保存为 demo.py，再运行 python3 demo.py。",
+          "kind": "runnable"
         },
         {
           "type": "code",
-          "language": "python",
-          "filename": "examples/python-course/chapter04/notes_tool/codec.py",
-          "kind": "excerpt",
-          "purpose": "完整转换层：从object验证并构造Note，按物理行号包装预期输入失败；不打开或关闭输入。",
-          "code": "from collections.abc import Iterable, Iterator\nimport json\nfrom .domain import Note\nfrom .errors import ImportFailure, NoteError\n\n\ndef parse_note(raw: object) -> Note:\n    if not isinstance(raw, dict) or set(raw) != {\"id\", \"title\", \"tags\"}:\n        raise NoteError(\"note requires exactly id, title, tags\")\n    if any(not isinstance(raw[key], str) for key in (\"id\", \"title\")):\n        raise NoteError(\"id and title must be strings\")\n    if not isinstance(raw[\"tags\"], list):\n        raise NoteError(\"tags must be a list\")\n    tags: list[str] = []\n    for tag in raw[\"tags\"]:\n        if not isinstance(tag, str) or not tag.strip():\n            raise NoteError(\"tag must be a non-empty string\")\n        normalized = tag.strip().lower()\n        if normalized not in tags:\n            tags.append(normalized)\n    return Note(raw[\"id\"].strip(), raw[\"title\"].strip(), tuple(tags))\n\n\ndef iter_records(lines: Iterable[str], *, max_chars: int = 4096) -> Iterator[tuple[int, Note]]:\n    if type(max_chars) is not int or max_chars < 1:\n        raise ValueError(\"max_chars must be a positive integer\")\n    for line_number, line in enumerate(lines, start=1):\n        if len(line) > max_chars:\n            raise ImportFailure(line_number, f\"exceeds {max_chars} characters\")\n        if not line.strip():\n            continue\n        try:\n            raw: object = json.loads(line)\n            note = parse_note(raw)\n        except (json.JSONDecodeError, NoteError) as error:\n            raise ImportFailure(line_number, str(error)) from error\n        yield line_number, note\n"
+          "code": "3.0",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "拿bad.jsonl推演：首行产生(1, Note)，第二行json.loads失败，except只捕获JSONDecodeError或NoteError，再附上line 2。未知的TypeError、NameError仍会向外暴露，避免把程序缺陷伪装成用户输入问题。空行不产生Note，却仍占行号。长度超过4096会直接得到ImportFailure；这里仍是完整行读入后的字符数校验，包含换行，不是底层字节读取上限。"
+          "text": "也可以写 from math import sqrt，随后直接调用 sqrt(9)。两种写法不是两套数学算法，只是把名字放到当前代码中的方式不同。Python 自带的模块叫标准库，不需要先 pip install；以后用到 FastAPI 这样的第三方包时，才需要另外安装。"
         },
         {
           "type": "paragraph",
-          "text": "iter_records含yield，因此调用时先得到迭代器，max_chars值检查仍在首次推进才执行。参数只能按关键字传入是调用绑定规则，非法值则是函数体内规则，两种错误时机不同。返回行号与Note的二元组，是为了让应用层发现重复身份时仍能定位输入行，而不是给Note本身塞进只属于文件格式的行号字段。"
-        },
-        {
-          "type": "reference",
-          "title": "官方依据：异常传播、选择性捕获和异常链",
-          "url": "https://docs.python.org/3.12/tutorial/errors.html#exception-chaining"
+          "text": "不要把自己的练习文件命名成 json.py 或 math.py，免得和你打算导入的标准库重名。初学阶段把模块都放在明确的练习目录，比先去修改全局导入路径更容易排查。"
         }
       ]
     },
     {
       "id": "ownership",
-      "title": "with覆盖真正的消费，拥有与借用分别说清",
+      "title": "open 和 with：打开文件，用完后关好",
       "paragraphs": [],
       "blocks": [
         {
           "type": "code",
+          "code": "with open(\"notes_demo.txt\", \"w\", encoding=\"utf-8\") as file:\n    file.write(\"学习 Python\\n复习函数\")\n\nwith open(\"notes_demo.txt\", encoding=\"utf-8\") as file:\n    text = file.read()\n\nprint(text)",
           "language": "python",
-          "filename": "examples/python-course/chapter04/notes_tool/app.py",
-          "kind": "excerpt",
-          "purpose": "完整应用层：build_notebook借用lines；read_notebook拥有打开的文件并在with内完成消费。",
-          "code": "from collections.abc import Iterable\nfrom pathlib import Path\nfrom .codec import iter_records\nfrom .domain import Notebook\nfrom .errors import ImportFailure, NoteError\n\n\ndef build_notebook(lines: Iterable[str], *, max_chars: int = 4096) -> Notebook:\n    book = Notebook()\n    for line_number, note in iter_records(lines, max_chars=max_chars):\n        try:\n            book.add(note)\n        except NoteError as error:\n            raise ImportFailure(line_number, str(error)) from error\n    return book\n\n\ndef read_notebook(path: Path, *, max_chars: int = 4096) -> Notebook:\n    with path.open(encoding=\"utf-8\") as source:\n        return build_notebook(source, max_chars=max_chars)\n"
+          "purpose": "在专门的新练习目录里运行。w 会创建文件，也会覆盖同名文件原有内容。",
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "学习 Python\n复习函数",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "build_notebook接收已有的可迭代输入，不承诺关闭它；这让上层可以把列表、StringIO或打开的文件交进来。read_notebook负责把路径变成资源，所以也负责关闭。return build_notebook(...)先把调用完整求值，得到Notebook后才离开with；它交回的是已组装结果，不是仍依赖文件读取的懒迭代器。"
+          "text": "open 打开文件，\"w\" 表示写入，默认的 \"r\" 表示读取。encoding=\"utf-8\" 指定文字编码，读写双方保持一致，中文才容易正确恢复。file.write 写入文字，file.read 读出文字；换行用字符串中的 \\n 表示。"
         },
         {
           "type": "paragraph",
-          "text": "with通过上下文管理协议进入与退出资源范围。正常返回、块内异常、循环提前离开，都能触发退出；对文件对象，这意味着关闭文件。它不等于吞掉异常，也不保证强制杀进程或断电时还能运行清理。若某个上下文管理器主动把异常压住，语义还要看它自己的__exit__，不能把“用了with”当成所有对象都统一回滚的承诺。"
+          "text": "with 后面的缩进范围里可以使用 file；离开这个范围时，文件会被关闭，即使中途发生错误也会执行相应的关闭。这里可以把 with 理解成“在这一段里使用这个资源，结束时做好收尾”。暂时不用先学如何自定义上下文管理器。"
         },
         {
           "type": "paragraph",
-          "text": "坏行发生时，已创建的局部Notebook不会返回，文件仍在退出时关闭；调用者传入的借用流则保持打开，由调用者决定下一步。独立测试既验证成功与失败后拥有的StringIO已关闭，也验证build_notebook没有越权关闭借用流。这样验证的是可观察的资源协议，而不是只检查源代码里有没有with这个单词。"
+          "text": "\"notes_demo.txt\" 是相对路径，相对于启动命令时所在的工作目录，不一定相对于 .py 文件所在目录。找不到文件时先看你在哪个目录运行。想表示更明确的路径，可以使用 pathlib.Path；配套示例用 Path(folder) / \"notes.json\" 表示某个文件夹里的文件，/ 在这里是组合路径，不是做除法。"
+        }
+      ]
+    },
+    {
+      "id": "errors",
+      "title": "错误处理：先看发生了什么，再决定怎样提示",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "code",
+          "code": "try:\n    number = int(\"十二\")\nexcept ValueError:\n    print(\"请输入阿拉伯数字，例如12\")",
+          "language": "python",
+          "purpose": "把这段代码单独保存为 demo.py，再运行 python3 demo.py。",
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "请输入阿拉伯数字，例如12",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "重复ID由Notebook.add判断，应用层捕获NoteError并补行号。例如第一行n1、第二行空白、第三行仍n1，得到line 3，而不是line 2。整批返回没有外部写入回滚能力，内存仍随全部Note与索引增长；文件生命周期正确，不等于已经解决大文件容量问题。"
+          "text": "try 中写可能失败的操作；只有发生匹配的错误，才进入 except。这里 int 不能把“十二”转换为整数，抛出的 ValueError 被接住，于是程序能给出一条具体提示。不要把所有错误都吞掉后继续输出“成功”，否则你自己也不知道数据有没有处理完。"
         },
         {
-          "type": "reference",
-          "title": "官方依据：with语句与退出协议",
-          "url": "https://docs.python.org/3.12/reference/compound_stmts.html#the-with-statement"
+          "type": "paragraph",
+          "text": "文件不存在通常会得到 FileNotFoundError；JSON 格式损坏会得到 JSONDecodeError，它属于 ValueError。也可以主动 raise ValueError(\"标题不能为空\") 表达当前输入不符合要求。下一段读取笔记时会这样检查：不是把类型名变得高深，而是让错误发生在能够说明原因的位置。"
+        }
+      ]
+    },
+    {
+      "id": "json",
+      "title": "JSON：把列表和字典保存成通用文本",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "JSON 是一种文本格式，常用来保存或传输简单数据。Python 字典不是直接写进文件的一种神奇内存对象；json.dump 会把列表、字典等转成 JSON 文本，json.load 则从文件读 JSON 并恢复为 Python 的基本数据。"
+        },
+        {
+          "type": "code",
+          "code": "import json\n\ntext = json.dumps({\"title\": \"学习文件\", \"done\": False}, ensure_ascii=False)\nprint(text)\nrestored = json.loads(text)\nprint(restored[\"done\"])",
+          "language": "python",
+          "purpose": "把这段代码单独保存为 demo.py，再运行 python3 demo.py。",
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "{\"title\": \"学习文件\", \"done\": false}\nFalse",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "dumps/loads 处理字符串，dump/load 配合已打开的文件对象。JSON 里布尔值写成 false，Python 里是 False；JSON 的 null 对应 Python 的 None。ensure_ascii=False 让中文按可读文字输出，不是改变笔记本身的内容。"
+        },
+        {
+          "type": "paragraph",
+          "text": "JSON 能解析，不代表内容就是我们要的笔记列表。比如 {} 是合法 JSON，但不能按多条笔记遍历；{\"title\":1,\"done\":\"false\"} 也不是当前程序需要的数据。前三篇已经认识了这些类型，现在才有条件逐项检查并给出清楚的错误。"
+        }
+      ]
+    },
+    {
+      "id": "package",
+      "title": "把代码拆成一个小包，完整读写逻辑在这里",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "code",
+          "code": "beginner/\n  learning_notes/\n    __init__.py\n    models.py\n    files.py\n  files_demo.py",
+          "language": "text",
+          "purpose": "这是目录结构，不是 Python 代码。models.py 放第三篇的 Note 和 Notebook；files.py 放下面的读写函数。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "带有 __init__.py 的 learning_notes 是本例的一个包，可以把相关模块组织在一起。files.py 里的 from .models import Note, Notebook 表示从同一个包里的 models 模块取这两个类；前面的点表示包内的相对位置，不是文件系统的父目录。"
+        },
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/learning_notes/files.py",
+          "code": "import json\nfrom .models import Note, Notebook\n\n\ndef save_book(book, path):\n    with open(path, \"w\", encoding=\"utf-8\") as target:\n        json.dump(book.to_list(), target, ensure_ascii=False, indent=2)\n\n\ndef load_book(path):\n    with open(path, encoding=\"utf-8\") as source:\n        rows = json.load(source)\n    if not isinstance(rows, list):\n        raise ValueError(\"文件最外层应该是列表\")\n    book = Notebook()\n    for row in rows:\n        if not isinstance(row, dict) or set(row) != {\"title\", \"done\"}:\n            raise ValueError(\"每条笔记需要 title 和 done\")\n        if not isinstance(row[\"title\"], str) or not row[\"title\"].strip():\n            raise ValueError(\"标题不能为空\")\n        if not isinstance(row[\"done\"], bool):\n            raise ValueError(\"done 应该是布尔值\")\n        note = Note(row[\"title\"].strip())\n        if row[\"done\"]:\n            note.finish()\n        book.add(note)\n    return book",
+          "purpose": "完整文件读写模块。book.to_list 来自第三篇；读取时逐条检查标题和完成状态，再创建 Note。",
+          "language": "python",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "save_book 打开目标文件，将普通列表写成 JSON。load_book 先读回基本数据，确认最外层是列表，然后逐条确认字段和类型；创建 Note 后，根据 done 决定是否调用 finish，最后把它加入 Notebook。这里只使用之前认识的 if、for 和类，没有隐藏一个新的转换框架。"
+        },
+        {
+          "type": "paragraph",
+          "text": "其中 set(row) 取得字典的键，和 {\"title\",\"done\"} 比较，要求这一版文件恰好包含这两个字段。isinstance 检查某个值是不是指定类型。检查后才调用 strip，能避免把数字当标题时，得到一个难以理解的“没有 strip 属性”错误。"
+        },
+        {
+          "type": "figure",
+          "src": "/figures/python-modules-boundaries/modules.svg",
+          "title": "两个模块和一个运行入口怎样配合",
+          "alt": "files_demo 导入 models 中的类和 files 中的读写函数；files 模块也从同包 models 导入类。",
+          "caption": "运行入口负责演示流程，模型文件保存类定义，文件模块负责读写。箭头只表示导入和调用，不是必须照搬的多层架构。 手机端可以在图形区域横向滑动查看。"
+        }
+      ]
+    },
+    {
+      "id": "types",
+      "title": "类型注解：说明你希望传入和返回什么",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/files_demo.py",
+          "code": "def count_notes(book: Notebook) -> int:\n    return len(book)",
+          "purpose": "这一段只是说明参数应为 Notebook、结果应为 int；真正的函数仍只做一件事。",
+          "language": "python",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "book: Notebook 是参数注解，-> int 是返回值注解。它们给编辑器和检查工具提供线索，不会自动帮你转换数据，也不会让 Python 在每次调用时强制检查。你依然可以先写不带注解的普通函数，等代码开始跨文件配合时，再用注解让接口更容易读。"
+        },
+        {
+          "type": "paragraph",
+          "text": "后面服务示例中的 str | None 表示值可以是字符串，也可以是 None；list[str] 表示预期是字符串列表。这些是类型说明，不是新建列表或处理分支的代码。要限制实际数据，仍靠刚才那样的明确检查，或使用专门做校验的库。"
         }
       ]
     },
     {
       "id": "cli",
-      "title": "CLI是适配层：把对象转成输出，把已知失败转成退出码",
+      "title": "运行入口：为什么示例末尾有 __main__ 判断",
       "paragraphs": [],
       "blocks": [
         {
           "type": "code",
+          "filename": "examples/python-course/beginner/files_demo.py",
+          "code": "from pathlib import Path\nfrom tempfile import TemporaryDirectory\nfrom learning_notes.models import Note, Notebook\nfrom learning_notes.files import save_book, load_book\n\n\ndef count_notes(book: Notebook) -> int:\n    return len(book)\n\n\nif __name__ == \"__main__\":\n    book = Notebook()\n    book.add(Note(\"把笔记保存到文件\"))\n    with TemporaryDirectory() as folder:\n        path = Path(folder) / \"notes.json\"\n        save_book(book, path)\n        restored = load_book(path)\n        print(restored.to_list())\n        print(count_notes(restored))\n        path.write_text(\"这不是 JSON\", encoding=\"utf-8\")\n        try:\n            load_book(path)\n        except ValueError:\n            print(\"读取失败：请检查文件内容\")",
+          "purpose": "完整演示入口。TemporaryDirectory 是标准库工具，离开 with 时会删除这次临时练习目录；不会覆盖你的固定笔记文件。",
           "language": "python",
-          "filename": "examples/python-course/chapter04/notes_tool/cli.py",
-          "kind": "excerpt",
-          "purpose": "完整CLI，包含实际参数、路径调用、失败输出和成功JSON。",
-          "code": "from collections.abc import Sequence\nimport json\nfrom pathlib import Path\nimport sys\nfrom .app import read_notebook\nfrom .errors import ImportFailure\n\n\ndef main(argv: Sequence[str] | None = None) -> int:\n    arguments = list(sys.argv[1:] if argv is None else argv)\n    if len(arguments) != 1:\n        print(\"usage: python -m chapter04.notes_tool notes.jsonl\", file=sys.stderr)\n        return 2\n    path = Path(arguments[0])\n    try:\n        book = read_notebook(path)\n    except (OSError, UnicodeError, ImportFailure) as error:\n        print(f\"import failed: {path}: {error}\", file=sys.stderr)\n        return 2\n    print(json.dumps({\"count\": len(book), \"notes\": [note.to_dict() for note in book]},\n                     ensure_ascii=False))\n    return 0\n"
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "main允许传入argv，终端默认读取sys.argv[1:]，测试则可直接提供参数序列。参数数量不对写usage并返回2；文件不存在、编码错误或ImportFailure写stderr并返回2；成功才把Notebook转成JSON写stdout。JSON序列化放在导入完成后，所以坏输入没有部分成功JSON。"
+          "text": "直接运行 python3 files_demo.py 时，Python 把该文件的 __name__ 设为 \"__main__\"，于是进入演示部分；被其他文件 import 时，这部分不执行。这样别人能复用 count_notes，而不会仅仅导入它就突然写文件或打印一整屏演示结果。"
         },
         {
           "type": "paragraph",
-          "text": "这里没有except Exception包住一切。测试故意让read_notebook抛一个TypeError，确认它仍然向调用者传播；这能避免未来重构中的程序错误被静默归入“导入失败”。异常分类由责任决定：能预期、能向用户解释的环境与输入错误才适配，程序本身不满足内部契约时，应保留调试证据。"
+          "text": "演示新建一本笔记本，写入临时文件，再读取验证，之后故意把文件改成坏内容，观察异常提示。本例结束后临时文件会被清理；如果真的要长期保存，选择自己的固定路径交给 save_book，而不是使用 TemporaryDirectory。"
         }
       ]
     },
     {
       "id": "verify",
-      "title": "从模块调用验证，再走一次反例",
+      "title": "运行和练习：从能读回，到知道哪里失败",
       "paragraphs": [],
       "blocks": [
         {
           "type": "code",
+          "code": "cd examples/python-course/beginner\npython3 files_demo.py",
           "language": "bash",
-          "kind": "runnable",
-          "purpose": "从仓库根目录进入课程目录，使用3.12解释器；最后一条预期退出2。",
-          "code": "cd examples/python-course\npython3 -m chapter04.notes_tool fixtures/notes.jsonl\npython3 -m unittest -v test_chapter04\npython3 -m chapter04.notes_tool fixtures/bad.jsonl"
+          "purpose": "没有第三方依赖，示例自己创建和清理临时目录。",
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "[{'title': '把笔记保存到文件', 'done': False}]\n1\n读取失败：请检查文件内容",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "正常输出与第三章一致：count为3，n1标题为Python 对象，标签为python、basics；第二、三条顺序不变。失败命令stderr含文件路径和line 2，stdout为空。再把输入换成duplicate.jsonl，能看到带行号的重复身份错误。如果ModuleNotFoundError先发生，先检查是否处于课程目录以及包名有没有拼错，不要先修改数据校验函数。"
+          "text": "练习一：把临时文件内容换成 {}，应该报“文件最外层应该是列表”。练习二：保持列表，但把 done 改成字符串 \"false\"，应该报“done 应该是布尔值”。两个输入都可能是合法 JSON，但不是这个笔记本接受的格式。"
         },
         {
           "type": "paragraph",
-          "text": "6项独立测试覆盖真实-m子进程、普通导入无输出、注解不替代校验、异常原因链、重复身份物理行号、拥有/借用资源、程序错误不被吞掉及字符限制。CPython3.12.14实际通过；前三章17项保留不动并一起回归。这里没有浏览器或手机呈现验收，也没有运行mypy之类第三方检查器，文章状态保持review。"
+          "text": "练习三：把模块拆到目录后，仍从 beginner 目录运行 files_demo.py。若报 attempted relative import with no known parent package，不要直接执行 learning_notes/files.py；它是供包内使用的模块，应由演示入口导入。"
         },
         {
           "type": "paragraph",
-          "text": "检查理解时可以问：为什么不能在with里创建iter_records后直接返回它？因为创建尚未读取，真正推进会发生在文件关闭之后。另一个问题：为什么领域Note没有line_number？因为一条笔记可能来自文件、HTTP或数据库，物理行号属于适配器上下文。把这两点答清，就能判断资源和数据的边界是否安排正确。"
-        },
-        {
-          "type": "paragraph",
-          "text": "现在包可以被终端和其他Python代码复用，失败有位置与原因，资源有明确拥有者。下一章保留这些边界，给导入后的笔记增加受控处理任务：I/O适配器交给线程或asyncio，纯Python计算交给进程，同时限制在途任务。拆包让并发部分不必重新实现数据合法性，但不会自动替我们管理容量和取消。"
+          "text": "下一篇开始处理多个独立任务。到这里，文件、函数、类和模块已经能够组成一个完整的小程序；并发不是绕开这些基础，而是在清楚每个函数做什么以后，决定哪些操作可以一起等待。"
         }
       ]
     }

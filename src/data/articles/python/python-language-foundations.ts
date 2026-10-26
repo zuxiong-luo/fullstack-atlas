@@ -1,301 +1,490 @@
 import type {Article} from '../../articleTypes';
-const article: Article = {
+const article:Article = {
   "id": "python-language-foundations",
   "topic": "python",
-  "title": "Python 入门：语法、对象、容器、控制流与函数",
-  "description": "从名字与对象的关系建立语言模型，使用列表、字典、集合和函数写出可验证的笔记导入命令；把语法、业务校验和失败输出放在同一条数据流里。",
-  "minutes": 42,
+  "title": "Python 入门：从变量、数据类型到判断和循环",
+  "description": "从运行第一行 print 开始，逐个认识数字、字符串、布尔值、None、列表、字典、元组和集合，再写一个筛选未完成笔记的小程序。",
+  "minutes": 60,
   "tags": [
-    "Python",
-    "语言基础",
-    "对象",
-    "容器",
-    "CLI"
+    "Python 入门",
+    "变量",
+    "数据类型",
+    "列表",
+    "字典",
+    "判断",
+    "循环"
   ],
-  "scope": "Python 阶梯教程前3章，个人笔记导入工具；CPython 3.12.14、标准库、命令行本地实验。从名字与对象的关系建立语言模型，使用列表、字典、集合和函数写出可验证的笔记导入命令；把语法、业务校验和失败输出放在同一条数据流里。",
+  "scope": "面向 Python 初学者。先会读写小段程序，不要求先懂函数、类、JSON、类型注解或工程校验；本篇只使用标准语言与内置函数。",
   "prerequisites": [
-    "会使用终端，理解任意一门语言的变量、判断和函数；不要求写过Python"
+    "不要求写过 Python，也不要求掌握其他编程语言",
+    "准备一个文本编辑器和 Python 3.12；下面会说明怎样检查和运行"
   ],
   "sections": [
     {
       "id": "language-model",
-      "title": "Python 是什么：先把运行方式和语言模型分清",
+      "title": "先运行一行代码，分清代码和输出",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "Python 是一门通用编程语言。本系列使用 CPython，也就是 Python 的一种具体实现；“Python 怎么表达程序”和“CPython 怎么执行程序”是相关但不同的层次。你会在数据脚本、Web 服务和自动化工具里遇到它。这一章先建立语言基础，再用同一套规则处理真实输入，不从框架安装开始。"
+          "text": "Python 是一门编程语言，你可以用它处理数据、写小工具，后来也可以写网站后端。我们先不安装 Web 框架，也不从一个上百行的项目开始。第一步只有一件事：让电脑运行你写的一行代码。"
         },
         {
           "type": "paragraph",
-          "text": "对写过 JavaScript 或 TypeScript 的读者，最值得先调整的是两个习惯：缩进承担语法职责，名字绑定到对象。Python 也有动态类型，但不意味着程序可以随意把所有输入转成字符串。类型是否合适、空值是否允许、重复记录怎么处理，仍然要由程序明确规定。"
-        },
-        {
-          "type": "paragraph",
-          "text": "我们要做一个个人知识笔记导入工具。第一章读取一个 JSON 数组，清理标题和标签，拒绝不合法的数据以及重复身份，最后输出一份 JSON。第二章改成逐行读取和筛选，第三章再把内部字典收拢为领域对象。每个阶段保留独立入口，你不用先理解后面的类和异步才能运行这一章。"
-        },
-        {
-          "type": "paragraph",
-          "text": "示例实际运行于 CPython 3.12.14，只依赖标准库。正文引用的是 3.12 系列文档，官方页面当前维护版为 3.12.15；这里没有把文档标题当作实测解释器版本。全文不讨论 Web 框架、数据库或性能调优，先把一个小程序的数据和失败路径写清楚。"
+          "text": "本系列用 Python 3.12，实际检查的版本是 CPython 3.12.14。CPython 是常见的 Python 运行程序，初学时先把它理解成负责读懂并执行 .py 文件的工具即可。打开终端，输入下面的版本命令。若找不到命令，需要先安装 Python；若电脑有多个版本，后面的命令应选中 3.12，而不是把不同版本的库混在一起。"
         },
         {
           "type": "code",
-          "language": "json",
-          "filename": "examples/python-course/fixtures/notes.json",
-          "kind": "excerpt",
-          "purpose": "完整原始输入；三个阶段沿用相同业务数据，第1章为数组，第2/3章每行一条对象。",
-          "code": "[\n  {\"id\":\"n1\",\"title\":\"  Python 对象  \",\"tags\":[\"Python\",\" Basics \",\"python\"]},\n  {\"id\":\"n2\",\"title\":\"生成器与迭代\",\"tags\":[\"Python\",\"iterator\"]},\n  {\"id\":\"n3\",\"title\":\"HTTP 请求\",\"tags\":[\"web\"]}\n]\n"
+          "code": "python3 --version",
+          "language": "bash",
+          "purpose": "应显示 Python 3.12.x。本次验证用 3.12.14；Windows 也可用 py -3.12 选择对应版本。",
+          "kind": "runnable"
+        },
+        {
+          "type": "paragraph",
+          "text": "新建一个名叫 hello.py 的文件，注意它不是 hello.py.txt。将下一段代码写入文件并保存，再在这个文件所在目录运行 python3 hello.py。终端里应出现“你好，Python”。print 是 Python 已经提供的功能，用来把括号里的内容显示出来；引号表示其中是一段文字，不会连引号一起打印。"
+        },
+        {
+          "type": "code",
+          "code": "print(\"你好，Python\")",
+          "language": "python",
+          "purpose": "把这一行保存为 hello.py，在同目录运行 python3 hello.py。",
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "你好，Python",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "文章里的“程序输出”只用来对照结果，不要把输出也复制到 .py 文件里。若在网上看到 >>>，那是交互式解释器的提示符，也不属于代码。本系列主要使用文件运行方式，避免你一会儿在终端敲命令，一会儿又不知道该把代码放到哪里。"
         }
       ]
     },
     {
       "id": "syntax",
-      "title": "先会读一段 Python：缩进、表达式和返回值",
+      "title": "变量：先给一份数据起名字",
       "paragraphs": [],
       "blocks": [
         {
+          "type": "paragraph",
+          "text": "变量让你用一个名字保存和访问数据。name = \"小林\" 表示把文字“小林”交给名字 name；minutes = 20 表示用 minutes 保存学习时长。等号在这里是赋值，不是数学题里用来判断两边是否相等的符号。"
+        },
+        {
           "type": "code",
-          "code": "def normalize_title(value):\n    if not isinstance(value, str):\n        raise ValueError(\"title must be a string\")\n    title = value.strip()\n    if not title:\n        raise ValueError(\"title must not be empty\")\n    return title\n\nprint(normalize_title(\"  Python 对象  \"))\n# Python 对象",
-          "purpose": "独立小实验；正常输入返回清理后的字符串，改成42会抛ValueError。",
-          "kind": "runnable",
-          "language": "python"
+          "filename": "examples/python-course/beginner/values.py",
+          "code": "name = \"小林\"\nminutes = 20\nprint(name)\nprint(minutes)\nminutes = minutes + 10\nprint(minutes)",
+          "purpose": "这一组可以单独复制运行。完整 values.py 还会依次运行本篇后面的其他小例子。",
+          "language": "python",
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "小林\n20\n30",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "def 定义函数，冒号开始一个代码块，后面一致的缩进表示哪些语句属于它。一般使用四个空格，不要把编辑器的 Tab 显示宽度误当作语法规则。函数不会因为被定义就立刻执行；最后的调用才把参数交给函数。return 把对象交回调用处，执行到函数结尾却没有 return 时返回 None。"
+          "text": "按顺序看：最初 minutes 是 20，前两次 print 显示姓名和时长；执行 minutes = minutes + 10 时，先计算右边的 20 + 10，再把结果 30 交给 minutes，最后一次打印因此是 30。程序从上到下运行，不会因为后面改了变量，就把已经打印过的 20 改成 30。"
         },
         {
           "type": "paragraph",
-          "text": "isinstance(value, str) 是运行时类型检查。先检查再调用 strip，是为了让数字输入得到可解释的错误，而不是突然在方法查找时失败。strip 返回去掉两端空白后的新字符串；字符串不可变，原字符串的内容没有被原地改写。raise 表示此处无法产生有效结果，调用者必须处理失败或让异常继续传播。"
-        },
-        {
-          "type": "paragraph",
-          "text": "if not title 使用真假判断。空字符串为假，包含字符的字符串为真。要留意 Python 中空列表、空字典和数值零也是假；如果业务允许零，就不要用 if not value 代替“字段缺失”检查。JSON 的 null 被解析为 None，判断是否为这个单例时用 is None。布尔写作 True、False，不能照抄 JavaScript 的小写。"
-        },
-        {
-          "type": "table",
-          "headers": [
-            "表达式",
-            "结果或行为",
-            "容易带错的习惯"
-          ],
-          "rows": [
-            [
-              "7 / 2",
-              "3.5",
-              "/不是整数除法"
-            ],
-            [
-              "7 // 2",
-              "3",
-              "向下取整；-7 // 2是-4"
-            ],
-            [
-              "\"x\" * 3",
-              "\"xxx\"",
-              "乘法也可重复序列"
-            ],
-            [
-              "len([1, 2])",
-              "2",
-              "长度用函数，不是.length"
-            ],
-            [
-              "items.append(3)",
-              "修改原列表，返回None",
-              "不要写items = items.append(3)"
-            ]
-          ]
-        },
-        {
-          "type": "reference",
-          "title": "Python3.12控制流",
-          "url": "https://docs.python.org/3.12/tutorial/controlflow.html",
-          "note": "语言规则出处；本文项目代码与输入输出独立提供。本次实测CPython3.12.14，所核对3.12文档页面维护版为3.12.15。"
+          "text": "变量名可以写成 name、study_minutes，多个单词常用下划线连接。名字区分大小写：name 和 Name 是两个名字。= 左右留空格主要为了好读；引号、括号和后面要用的冒号需要使用英文符号。注释以 # 开始，用来给人解释代码，不会作为程序指令执行。"
         }
       ]
     },
     {
       "id": "objects",
-      "title": "名字绑定对象：重新赋值和修改内容是两件事",
+      "title": "数字：整数、小数和最常用的计算",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "20、0、-3 这样的整数属于 int，4.5、3.0 这样带小数部分的数属于 float。类型告诉 Python 这份数据是什么，以及能对它做哪些操作。想查看某个值的类型，可以调用 type。这里先认识类型的名字，不需要先学习“类”的实现。"
+        },
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/values.py",
+          "code": "print(7 + 2)\nprint(7 / 2)\nprint(7 // 2)\nprint(7 % 2)\nprint(2 ** 3)\nprint(type(20))\nprint(type(4.5))",
+          "purpose": "数字运算和类型显示；每个 print 都对应下面一行结果。",
+          "language": "python",
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "9\n3.5\n3\n1\n8\n<class 'int'>\n<class 'float'>",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "+、-、* 分别表示加、减、乘；/ 做除法，这里 7 / 2 得到 3.5。// 是向下取整除法，7 // 2 得到 3；% 取余数，7 % 2 得到 1；** 表示乘方，2 ** 3 得到 8。// 不是四舍五入，负数时也按向下取整来理解。"
+        },
+        {
+          "type": "paragraph",
+          "text": "type 的输出 <class 'int'> 可以先读成“它是整数”，<class 'float'> 读成“它是浮点数”。浮点数适合很多一般计算，但某些十进制小数不能被它精确表示。先知道这个限制就够了，第一天不必研究二进制表示；如果以后处理金额，需要另选精确规则，不能只靠显示两位小数。"
+        }
+      ]
+    },
+    {
+      "id": "strings",
+      "title": "字符串：文字也有自己的操作",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "字符串 str 用来表示文字，通常用单引号或双引号包住。\"20\" 是文字，20 是数字：看上去相近，能做的事情却不一样。字符串可以包含中文、空格和标点；不要把变量名也加上引号，否则 print(\"name\") 打印的就是 name 这几个字母。"
+        },
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/values.py",
+          "code": "message = \"  Python 入门  \"\nprint(message.strip())\nprint(\"Python\" in message)\nprint(len(\"Python\"))\nprint(\"Python\"[0])\nprint(\"Python\"[:2])",
+          "purpose": "去空格、判断是否包含文字、取长度和取一部分内容。",
+          "language": "python",
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "Python 入门\nTrue\n6\nP\nPy",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "message.strip() 得到去掉两端空白后的新字符串，原来的 message 仍然保留那些空格。写在点后面的 strip 是字符串提供的一种操作，这类操作叫方法；你现在先会调用它，第三篇再学习如何给自己的类写方法。"
+        },
+        {
+          "type": "paragraph",
+          "text": "len(\"Python\") 得到字符个数 6。[0] 取第一个字符 P，因为下标从 0 开始；[:2] 取前两个字符 Py，右边的 2 不包含在范围中。\"Python\" in message 是在问“里面是否有这段文字”，结果 True 表示有。遇到一个新写法，先把它对应到一个具体问题，比把所有字符串方法一口气记下来更实用。"
+        }
+      ]
+    },
+    {
+      "id": "boolean-none",
+      "title": "布尔值和 None：是否成立，以及有没有值",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "bool 只有 True 和 False 两个值，用来表示判断的结果或某种状态。完成与未完成可以用布尔值保存，而不是分别存成字符串 \"true\"、\"false\"。Python 的拼写是首字母大写；写 true 会被当成一个没有定义的变量名。"
+        },
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/values.py",
+          "code": "finished = False\nremark = None\nprint(finished)\nprint(20 >= 30)\nprint(not finished)\nprint(remark is None)",
+          "purpose": "比较得到布尔值；None 表示此处还没有具体值。",
+          "language": "python",
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "False\nFalse\nTrue\nTrue",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "20 >= 30 是一个比较，结果为 False。not finished 把 False 变为 True，可以读成“还没完成”。None 表示没有具体值，例如暂时没有备注；remark is None 专门检查这一点。None、0 和空字符串 \"\" 含义不同，不能因为都可能出现在“空着”的界面上，就把它们混为一种数据。"
+        },
+        {
+          "type": "paragraph",
+          "text": "后面还会用到 == 判断值是否相等，!= 判断是否不相等，以及 and、or 组合条件。比如 minutes >= 10 and not finished，要求前后两项都成立。先别担心完整的判断语句，当前只要会看一个表达式最后得到 True 还是 False。"
+        }
+      ]
+    },
+    {
+      "id": "conversion",
+      "title": "需要数字就转换，需要展示就格式化",
       "paragraphs": [],
       "blocks": [
         {
           "type": "code",
-          "code": "tags = [\"python\"]\nalias = tags\ntags.append(\"web\")\nprint(alias)          # ['python', 'web']\nprint(alias is tags)  # True\ntags = [\"other\"]\nprint(alias)          # ['python', 'web']\nprint(alias is tags)  # False",
-          "purpose": "完整小实验；分别观察原地修改和重新绑定。",
-          "kind": "runnable",
-          "language": "python"
+          "filename": "examples/python-course/beginner/values.py",
+          "code": "name = \"小林\"\nminutes = 20\nprint(\"已学 \" + str(minutes) + \" 分钟\")\nprint(f\"{name}已学 {minutes} 分钟\")\nprint(int(\"12\") + 3)",
+          "purpose": "把数字放入展示文字，以及把数字形式的字符串转为整数。",
+          "language": "python",
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "已学 20 分钟\n小林已学 20 分钟\n15",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "第一次赋值创建列表，并把名字 tags 绑定到它。alias = tags 没有复制列表，只让另一个名字指向同一个对象。append 修改那个对象，因此两条访问路径都能看到新增标签。随后 tags = [\"other\"] 创建另一个列表，再移动 tags 的绑定；alias 仍然指向旧列表。"
-        },
-        {
-          "type": "figure",
-          "src": "/figures/python-language-foundations/flow.svg",
-          "title": "名字、对象与容器的数据流",
-          "alt": "上方展示tags与alias共同指向一个列表；下方展示JSON数组经过校验得到新笔记列表。",
-          "caption": "图中的箭头是引用或数据流示意，不代表CPython实际内存地址。先看两个名字共享对象，再看导入函数为什么创建新的标签列表。"
+          "text": "str(minutes) 把数字 20 转成可拼接的文字。f 开头的字符串叫 f-string，花括号里写变量，Python 会把它的值放到对应位置。因此最后那种展示方式通常比一连串加号更容易读。"
         },
         {
           "type": "paragraph",
-          "text": "== 比较值，is 比较是否为同一个对象。两个内容相同的列表可以 == 为真、is 为假。不要根据一次整数或字符串实验中 is 的结果猜测语言规则，因为实现可能复用部分对象。对于普通业务值用 ==，对于 None 用 is None。这里讨论的是可观察的语言语义，不需要先背引用计数的实现细节。"
-        },
-        {
-          "type": "paragraph",
-          "text": "函数参数也遵循名字绑定：传入列表时，形参和调用者的名字可以关联同一个列表，函数内 append 会对外可见；给形参重新赋值则只改本次调用的局部绑定。我们因此让 normalize_note 构造新的输出容器，避免清理标签时顺手改掉调用者提供的原始记录。"
-        },
-        {
-          "type": "reference",
-          "title": "Python3.12名字与对象",
-          "url": "https://docs.python.org/3.12/tutorial/classes.html#a-word-about-names-and-objects",
-          "note": "语言规则出处；本文项目代码与输入输出独立提供。本次实测CPython3.12.14，所核对3.12文档页面维护版为3.12.15。"
+          "text": "int(\"12\") 得到整数 12，随后加 3 得到 15。这不是“只要调用 int 就能得到数字”：int(\"十二\") 会报 ValueError，因为内容不符合这种转换要求。先分清“类型不合适”和“文字内容不能转换”，第四篇会学怎样接住这类错误。"
         }
       ]
     },
     {
       "id": "containers",
-      "title": "容器承担不同职责：保留顺序、按键取值、检查唯一性",
+      "title": "列表：按顺序放多份数据",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "列表 list 保存有顺序的一组对象，适合输出笔记和标签；字典 dict 把键映射到值，适合一条笔记的字段；集合 set 适合成员判断和唯一性记录。元组 tuple 也有顺序，但不提供列表那样的增删操作，第三章会用它表达笔记的标签值。容器选型跟你要做的操作有关，不是哪个写起来更短。"
+          "text": "如果要保存三个学习主题，不必起 subjects1、subjects2、subjects3 三个变量。列表 list 可以把多项数据放在一起，用方括号和逗号表示。它保留顺序，允许重复，也允许在后来增加、删除或替换元素。"
+        },
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/collections_demo.py",
+          "code": "subjects = [\"Python\", \"函数\"]\nsubjects.append(\"类\")\nprint(subjects)\nprint(subjects[0])\nprint(subjects[-1])\nprint(subjects[:2])\nprint(len(subjects))",
+          "purpose": "append 在末尾加入一项；下标和切片仍从0开始。",
+          "language": "python",
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "['Python', '函数', '类']\nPython\n类\n['Python', '函数']\n3",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "本章输入每条记录必须恰好包含 id、title、tags 三个键。字典访问 raw[\"id\"] 表示这个键必须存在，缺失时抛 KeyError。我们先比较 set(raw) 和预期键集合，再访问字段，因此缺失和多余字段走同一条清晰的校验路径。这是教学契约；以后需要兼容可扩展字段时，可以重新定义规则，而不是把此处的严格策略当成普遍标准。"
+          "text": "append(\"类\") 在原列表末尾增加元素；[0] 取第一项，[-1] 取最后一项，[:2] 得到前两项组成的新列表。len(subjects) 得到元素个数，而不是把所有文字长度加起来。取不存在的下标会报 IndexError，代码不会自动给你一个空值。"
+        }
+      ]
+    },
+    {
+      "id": "tuple-set",
+      "title": "元组和集合：暂时先学会区分用途",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/collections_demo.py",
+          "code": "point = (10, 20)\nprint(point[0])\nlabels = {\"python\", \"web\", \"python\"}\nprint(len(labels))\nprint(\"python\" in labels)",
+          "purpose": "元组用来保存固定的一组位置；集合用于不重复的成员。",
+          "language": "python",
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "10\n2\nTrue",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "标签既要去重又要保留首次出现的顺序，所以使用列表保存结果，并用成员判断跳过已有标签。例如 [\"Python\", \" Basics \", \"python\"] 先清理成 python、basics、python，再得到 [\"python\", \"basics\"]。这里 lower 只是本工具的标签规范化政策，不是完整的 Unicode 文本归一化或跨语言搜索方案。"
+          "text": "tuple 元组常写成 (10, 20)，可以按下标读取，但不能像列表那样替换或追加元素。只有一项的元组要带逗号，例如 (10,)；(10) 只是给数字加括号。不可修改的是元组里的引用位置，不代表它里面若放了列表，那个列表也不能变化。现在可以先用它保存固定的一组值。"
         },
         {
           "type": "paragraph",
-          "text": "用列表成员判断时，每次可能扫描已有标签；单条笔记有 k 个不同标签，最坏会累计到二次比较。小规模个人标签足够直观。若标签非常多，可以额外维护 set 提升成员判断的平均效率，同时继续用 list 保留顺序。全批次的笔记 ID 则直接用 seen 集合，因为这里只需要知道是否见过，不需要输出集合顺序。"
-        },
-        {
-          "type": "reference",
-          "title": "Python3.12容器",
-          "url": "https://docs.python.org/3.12/tutorial/datastructures.html",
-          "note": "语言规则出处；本文项目代码与输入输出独立提供。本次实测CPython3.12.14，所核对3.12文档页面维护版为3.12.15。"
+          "text": "set 集合让成员不重复，示例里 python 出现两次，最终成员数量仍然是 2。集合没有供你依赖的遍历顺序，不要要求它打印成某个固定排列，也不能用 labels[0] 取第一项。空集合写 set()；{} 是下一节的空字典。"
         }
       ]
     },
     {
       "id": "normalize",
-      "title": "完整导入逻辑：先判断结构，再产生可信结果",
+      "title": "字典：用名字说明每个值是什么",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "一条笔记同时有标题和完成状态。把它写成 [\"学习 Python\", False]，读代码的人必须记住每个位置代表什么；字典 dict 可以给字段命名，例如 title、done。冒号把键和值连起来，逗号分开不同条目。"
+        },
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/collections_demo.py",
+          "code": "note = {\"title\": \"学习 Python\", \"done\": False}\nprint(note[\"title\"])\nnote[\"done\"] = True\nprint(note.get(\"tag\", \"未分类\"))\nprint(note)",
+          "purpose": "字典通过键取值、修改值，get 可以为缺少的键提供默认值。",
+          "language": "python",
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "学习 Python\n未分类\n{'title': '学习 Python', 'done': True}",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "note[\"title\"] 取得标题，note[\"done\"] = True 修改完成状态。note.get(\"tag\", \"未分类\") 在没有 tag 这个键时返回默认文字；直接写 note[\"tag\"] 则会报 KeyError。两种写法都能用，选择取决于“这个字段本来就必须有，还是允许没有”。"
+        },
+        {
+          "type": "figure",
+          "src": "/figures/python-language-foundations/flow.svg",
+          "title": "一个笔记列表里面放了什么",
+          "alt": "notes 是列表，其中两项是字典，每个字典包含 title 字符串和 done 布尔值。",
+          "caption": "先看外层是多个笔记，再看每条笔记的字段。notes[0][\"title\"] 是先取第一条字典，再从中取标题。 手机端可以在图形区域横向滑动查看。"
+        }
+      ]
+    },
+    {
+      "id": "copying",
+      "title": "先看一个赋值容易踩的坑，再继续写程序",
       "paragraphs": [],
       "blocks": [
         {
           "type": "code",
-          "code": "\"\"\"Stage 1: eager import with lists, dicts, functions and explicit validation.\"\"\"\nimport json\nimport sys\n\n\ndef normalize_note(raw):\n    if not isinstance(raw, dict):\n        raise ValueError(\"note must be an object\")\n    if set(raw) != {\"id\", \"title\", \"tags\"}:\n        raise ValueError(\"note requires exactly id, title, tags\")\n    note_id = raw[\"id\"]\n    title = raw[\"title\"]\n    tags = raw[\"tags\"]\n    if not isinstance(note_id, str) or not note_id.strip():\n        raise ValueError(\"id must be a non-empty string\")\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be a non-empty string\")\n    if not isinstance(tags, list):\n        raise ValueError(\"tags must be a list\")\n    clean_tags = []\n    for tag in tags:\n        if not isinstance(tag, str) or not tag.strip():\n            raise ValueError(\"tag must be a non-empty string\")\n        clean = tag.strip().lower()\n        if clean not in clean_tags:\n            clean_tags.append(clean)\n    return {\"id\": note_id.strip(), \"title\": title.strip(), \"tags\": clean_tags}\n\n\ndef import_notes(raw_notes):\n    if not isinstance(raw_notes, list):\n        raise ValueError(\"input must be a JSON array\")\n    notes = []\n    seen = set()\n    for raw in raw_notes:\n        note = normalize_note(raw)\n        if note[\"id\"] in seen:\n            raise ValueError(\"duplicate id: \" + note[\"id\"])\n        seen.add(note[\"id\"])\n        notes.append(note)\n    return notes\n\n\n",
-          "purpose": "项目原文：全部校验和批次导入函数；后面的CLI代码接在本段后即可组成完整文件。",
-          "kind": "excerpt",
+          "filename": "examples/python-course/beginner/collections_demo.py",
+          "code": "first = [\"Python\"]\nalias = first\nalias.append(\"函数\")\nprint(first)\nseparate = first.copy()\nseparate.append(\"类\")\nprint(first)\nprint(separate)",
+          "purpose": "alias 和 first 访问同一列表；copy 得到新的外层列表。",
           "language": "python",
-          "filename": "examples/python-course/chapter01/import_notes.py"
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "['Python', '函数']\n['Python', '函数']\n['Python', '函数', '类']",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "把第一条样本代进去看：note_id 是 n1，title 去除两端空格后为“Python 对象”；clean_tags 从空列表开始，依次加入 python、basics，第三个 python 因已存在而跳过。函数最后返回一个新字典，原输入里的空格和大写仍保留。这让我们可以在测试里同时检查“输出正确”和“输入没有被修改”。"
+          "text": "alias = first 没有复制列表，所以通过 alias 追加“函数”后，first 也能看到它。separate = first.copy() 才创建一个新的外层列表，向 separate 追加“类”不会再改变 first。先用实际结果记住“赋值不等于复制”，不用现在就背对象模型的术语。"
         },
         {
           "type": "paragraph",
-          "text": "import_notes 先要求顶层是列表，再逐个调用 normalize_note。只有清理成功后才检查 ID；因此 \" n1 \" 和 \"n1\" 被认为是同一个身份。发现重复就抛错，不偷偷覆盖前一项。seen 与 notes 的职责分开：前者回答“是否出现过”，后者决定成功时输出什么以及顺序。"
+          "text": "copy 复制的是外层。列表里如果放的是字典，复制后的两份列表仍可能访问同一份内部字典。等以后需要独立修改整棵嵌套数据时，再选择更合适的复制方式；当前例子只有字符串，足够看清这一次差别。"
+        }
+      ]
+    },
+    {
+      "id": "conditions",
+      "title": "if：根据条件决定做什么",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "现在已经能表达“时长是不是大于30”，可以用 if 根据这个结果选择代码。if 后面写条件，行尾加冒号；属于它的代码向右缩进，通常使用四个空格。elif 表示前面不成立时再判断，else 表示前面的条件都没有成立。"
+        },
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/control_flow.py",
+          "code": "minutes = 20\nif minutes >= 30:\n    print(\"今天已经完成计划\")\nelif minutes > 0:\n    print(\"已经开始，继续加油\")\nelse:\n    print(\"从五分钟开始\")",
+          "purpose": "将 minutes 改成0、20、30再运行，分别进入不同分支。",
+          "language": "python",
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "已经开始，继续加油",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "本章的 for raw in raw_notes 依次取得元素，和遍历索引不同。continue 会跳过本轮剩余语句，break 会结束当前循环；示例的标签去重用 if 表达就够了，不需要每一种语法都塞进去。先选能清楚表达规则的控制流，再考虑推导式之类的简写。"
+          "text": "minutes 是 20，第一个条件不成立，第二个 minutes > 0 成立，所以只打印第二段。这个 if / elif / else 结构选择其中一条路径，不会因为20也小于30，就自动把所有分支都跑一遍。缩进是语法，不只是排版；同一层代码必须对齐。"
+        }
+      ]
+    },
+    {
+      "id": "loops",
+      "title": "for 和 while：把重复动作交给程序",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/control_flow.py",
+          "code": "notes = [\n    {\"title\": \"学习 Python\", \"done\": False},\n    {\"title\": \"复习变量\", \"done\": True},\n]\nfor note in notes:\n    if not note[\"done\"]:\n        print(\"待完成：\" + note[\"title\"])",
+          "purpose": "for 每次取出一条笔记；只有未完成的才打印。",
+          "language": "python",
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "待完成：学习 Python",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "错误策略是整批失败。虽然循环中已经创建过一部分 notes，它们只是函数内的临时结果；异常阻止函数返回，CLI 也尚未输出成功数据。它不是数据库事务，也没有回滚外部写入的能力。这个性质来自“处理完成后才输出”，下一章一旦逐条打印就会发生变化。"
+          "text": "notes 是包含两个字典的列表，for note in notes 让 note 依次代表每一项。第一条的 done 是 False，not False 得到 True，于是显示它的标题；第二条已经完成，不进入内层 print。循环结束不代表笔记被删除，只是打印时跳过了已完成项。"
+        },
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/control_flow.py",
+          "code": "for number in range(1, 4):\n    print(number)\nremaining = 2\nwhile remaining > 0:\n    print(\"还剩\", remaining)\n    remaining = remaining - 1",
+          "purpose": "range 生成需要的数字，while 则重复检查条件。",
+          "language": "python",
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "1\n2\n3\n还剩 2\n还剩 1",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "range(1, 4) 提供 1、2、3，不包含右端点4。while remaining > 0 则每次先检查还剩多少，本例在循环内减1，所以最终会停；如果忘了更新条件依赖的值，就可能一直重复。知道具体要遍历哪组数据时，优先使用 for，通常更容易看出程序在做什么。"
         }
       ]
     },
     {
       "id": "cli",
-      "title": "把函数接到命令行：数据走stdout，失败走stderr",
+      "title": "怎样运行配套文件，不把多个目录弄混",
       "paragraphs": [],
       "blocks": [
         {
           "type": "code",
-          "code": "def main():\n    if len(sys.argv) != 2:\n        print(\"usage: python import_notes.py notes.json\", file=sys.stderr)\n        return 2\n    try:\n        with open(sys.argv[1], encoding=\"utf-8\") as source:\n            notes = import_notes(json.load(source))\n    except (OSError, UnicodeError, ValueError) as error:\n        print(\"import failed: \" + str(error), file=sys.stderr)\n        return 2\n    print(json.dumps({\"count\": len(notes), \"notes\": notes}, ensure_ascii=False))\n    return 0\n\n\nif __name__ == \"__main__\":\n    sys.exit(main())\n",
-          "purpose": "项目原文：与上一段合并即完整入口。sys.exit把main的整数返回值交给操作系统。",
-          "kind": "excerpt",
-          "language": "python",
-          "filename": "examples/python-course/chapter01/import_notes.py"
+          "code": "cd examples/python-course/beginner\npython3 values.py\npython3 collections_demo.py\npython3 control_flow.py",
+          "language": "bash",
+          "purpose": "在仓库中使用这组路径。若下载 python-course.zip，解压后进入 python-course/beginner，随后执行同样的三个 python3 命令。",
+          "kind": "runnable"
         },
         {
           "type": "paragraph",
-          "text": "import json 引入标准库解析器，import sys 用来读取命令行参数、写错误输出并设置退出码。这一章只使用模块，不展开包搜索规则。sys.argv[0] 是脚本位置，sys.argv[1] 才是数据文件；先检查参数个数，可以让漏参数变成帮助提示，而不是索引越界。"
+          "text": "三个文件把本篇的小例子按顺序放在一起，因此整文件运行会显示多组输出；正文每个代码块只对照当前小例子。你也可以每次新建一个 demo.py，只复制当前一组代码，这种练法更容易知道某一行的结果来自哪里。"
         },
         {
           "type": "paragraph",
-          "text": "with open(..., encoding=\"utf-8\") 打开文本文件，并在离开代码块时关闭它，包括块内抛异常的情况。json.load 把文件中的 JSON 解成 Python 对象；数组变 list、对象变 dict，字符串仍是 str。最后 json.dumps 把清理后的对象变回 JSON 字符串，ensure_ascii=False 让终端直接看到中文。"
-        },
-        {
-          "type": "paragraph",
-          "text": "try 内包括读文件、解析和业务检查；这里只处理可预期的文件错误、编码错误和非法数据，输出到 stderr 并返回2。成功结果写 stdout 并返回0，便于终端脚本区分。没有捕获所有 Exception：如果程序代码里出现意外的属性错误，我们更希望它暴露出来，而不是被伪装成用户输错内容。"
-        },
-        {
-          "type": "reference",
-          "title": "Python3.12文件与JSON",
-          "url": "https://docs.python.org/3.12/tutorial/inputoutput.html",
-          "note": "语言规则出处；本文项目代码与输入输出独立提供。本次实测CPython3.12.14，所核对3.12文档页面维护版为3.12.15。"
+          "text": "终端说“找不到文件”时，先看当前目录和文件名；说“找不到python3”时，先检查解释器安装；出现 Traceback 时，先看最后一行的错误类型，再根据文件名和行号回到代码。不要一看到英文就把整段程序重写。"
         }
       ]
     },
     {
       "id": "run",
-      "title": "自己运行：先验证成功，再破坏一条输入",
+      "title": "练习：先想结果，再自己改一行",
       "paragraphs": [],
       "blocks": [
         {
-          "type": "code",
-          "code": "cd examples/python-course\npython3 --version\npython3 chapter01/import_notes.py fixtures/notes.json\npython3 -m unittest -v test_course.Foundations test_course.CLI",
-          "purpose": "从仓库根目录开始；先确认python3为3.12.x，本次记录实际使用3.12.14。无第三方安装步骤。",
-          "kind": "runnable",
-          "language": "bash"
-        },
-        {
-          "type": "code",
-          "code": "{\"count\":3,\"notes\":[{\"id\":\"n1\",\"title\":\"Python 对象\",\"tags\":[\"python\",\"basics\"]},{\"id\":\"n2\",\"title\":\"生成器与迭代\",\"tags\":[\"python\",\"iterator\"]},{\"id\":\"n3\",\"title\":\"HTTP 请求\",\"tags\":[\"web\"]}]}",
-          "purpose": "成功结果；空格排版可能不同，字段和值应一致。",
-          "kind": "excerpt",
-          "language": "json"
+          "type": "paragraph",
+          "text": "练习一：把 minutes 改成30，判断例子会打印什么？答案是“今天已经完成计划”，因为第一项 >= 比较已经成立。把 >= 写成 > 后，恰好30就不会进入第一分支，这能帮助你区分“大于”和“大于等于”。"
         },
         {
           "type": "paragraph",
-          "text": "把第一条 tags 改成字符串 \"python\"，会得到 import failed: tags must be a list，退出码为2，stdout 没有成功 JSON。再把第二条 id 改成 \" n1 \"，会得到 duplicate id: n1。两个失败分别验证数据形状和规范化后的身份判断，不是只证明某条正常样本恰好能运行。"
+          "text": "练习二：在 notes 中加一条 {\"title\":\"练习列表\",\"done\":False}，会多打印什么？答案是“待完成：练习列表”。新增的是一个字典条目，它和其他条目一样经过循环与 done 检查，不必再为第三条复制一份 if。"
         },
         {
           "type": "paragraph",
-          "text": "测试还覆盖空数组、顶层类型错误、未知字段、空白标题、非法标签及共享引用行为。CLI 测试作为子进程读取真实 stdout、stderr 和退出码。本阶段 Foundations 五项、CLI 三项；课程目前总共十七项测试通过。测试没有检查“恰好写了几节”，而是检查可观察的业务行为。"
-        },
-        {
-          "type": "paragraph",
-          "text": "如果运行结果不同，先检查解释器版本和工作目录，然后确认输入文件是 JSON 数组而不是逐行 JSON。SyntaxError 往往先查冒号、缩进和引号；ValueError 看具体字段；找不到文件则检查相对路径。不要一看到异常就先换库，我们这里没有第三方库可供排查。"
+          "text": "练习三：希望给每条笔记补上默认分类，可以在循环里写 note[\"tag\"] = \"学习\"。这会修改列表中的字典，而不是只修改一个暂时无关的副本。先打印修改后的 notes，确认你确实理解了列表、字典和赋值三者的关系。"
         }
       ]
     },
     {
       "id": "boundaries",
-      "title": "这一版的边界：会运行，也要知道它什么时候不合适",
+      "title": "这一篇学到哪里，下一篇为什么需要函数",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "第一版会把整个 JSON 数组读进内存，再构造一份清理后的列表和 ID 集合。它适合小规模本地文件，不能因为代码短就声称可以处理任意大的导入。外部输入的大小限制、流式读取和持久化将在后续逐步引入；本章也没有把不可信文件作为生产服务直接开放上传。"
+          "text": "遇到 \"3\" + 2 的 TypeError，先决定是在做计算还是展示：计算可写 int(\"3\") + 2，展示可写 \"3\" + str(2)。遇到列表下标越界，检查列表长度和从0开始的下标；遇到字典 KeyError，检查键名和字段是否允许缺失。错误给出的不是一道抽象分类题，而是这行操作与数据不匹配的线索。"
         },
         {
           "type": "paragraph",
-          "text": "有一个小检查：如果 alias = notes，之后执行 notes = []，alias 会变空吗？不会，因为只是重新绑定 notes；若执行 notes.clear()，共享的原列表才会被清空。再问：为什么“先清理 ID 再去重”？因为唯一性的判断应使用业务认可的规范值，否则两个带空格差异的输入会绕过同一身份规则。"
-        },
-        {
-          "type": "paragraph",
-          "text": "你现在已经能够用 Python 解释名字与对象、选择三种容器、写验证函数并给命令行定义成功和失败。下一章不增加业务字段，而是改变处理方式：让笔记逐条进入计算，认识生成器什么时候执行、为什么只能消费一次，以及流式处理后哪些承诺必须重新讨论。"
+          "text": "现在你已经能保存数据、选择分支、重复处理。下一步如果三个地方都需要“清理标题、创建一条笔记”，一直复制同样的代码会难以修改。函数正是把一段有明确用途的操作命名，并在需要时调用。第二篇从这里继续，不会突然把你丢进文件导入管道。"
         }
       ]
     }
@@ -303,38 +492,33 @@ const article: Article = {
   "questionIds": [],
   "references": [
     {
-      "title": "Python3.12：控制流与函数",
-      "url": "https://docs.python.org/3.12/tutorial/controlflow.html"
+      "title": "Python3.12：第一段程序、数字和字符串",
+      "url": "https://docs.python.org/3.12/tutorial/introduction.html"
     },
     {
-      "title": "Python3.12：数据结构",
+      "title": "Python3.12：列表、字典与集合",
       "url": "https://docs.python.org/3.12/tutorial/datastructures.html"
     },
     {
-      "title": "Python3.12：名字与对象",
-      "url": "https://docs.python.org/3.12/tutorial/classes.html#a-word-about-names-and-objects"
-    },
-    {
-      "title": "Python3.12：文本文件与JSON",
-      "url": "https://docs.python.org/3.12/tutorial/inputoutput.html"
+      "title": "Python3.12：判断和循环",
+      "url": "https://docs.python.org/3.12/tutorial/controlflow.html"
     }
   ],
   "kind": "series",
   "status": "complete",
   "versions": [
-    "CPython 3.12.14（实际运行）",
-    "Python 3.12 系列官方文档（页面维护版 3.12.15）"
+    "CPython 3.12.14"
   ],
-  "verifiedAt": "2026-10-24",
-  "labMinutes": 25,
+  "verifiedAt": "2026-10-26",
+  "labMinutes": 30,
   "examples": [
     {
-      "label": "三阶段完整源码ZIP",
+      "label": "Python 课程与新入门示例 ZIP",
       "path": "python-course.zip"
     },
     {
-      "label": "Python课程：阶段源码、数据与运行说明",
-      "path": "python-course/README.md"
+      "label": "从这里开始：九篇顺序、文件与命令",
+      "path": "python-course/beginner/README.md"
     }
   ]
 };

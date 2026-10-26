@@ -1,328 +1,290 @@
 import type {Article} from '../../articleTypes';
-const article: Article = {
+const article:Article = {
   "id": "python-async-services",
   "topic": "python",
-  "title": "Python 异步工程：从类型边界到有界并发与取消清理",
-  "description": "先建立协程、任务和作用域的概念，再实现完整JSON校验、有界队列、固定worker、TaskGroup和总超时，用正常、失败和取消测试解释资源生命周期。",
-  "minutes": 45,
+  "title": "Python 异步入门：一步步理解 async、await 和任务",
+  "description": "从一个等待示例开始，看清协程怎样运行，再一起等待两项任务，最后练习超时、取消和分批处理。",
+  "minutes": 55,
   "tags": [
-    "Python",
     "asyncio",
-    "TaskGroup",
-    "类型",
-    "并发"
+    "async",
+    "await",
+    "Task",
+    "超时",
+    "取消"
   ],
-  "scope": "本地JSON批次实验，教学上游为可取消的asyncio.sleep和平方计算；不是HTTP服务或真实模型调用。讲解输入边界、协程任务、有界并发、作用域失败和超时清理；不宣称真实网络吞吐；标准库行为已在CPython3.12.14和3.14.3验证。",
+  "scope": "本篇是 asyncio 的入门实验，sleep 只模拟等待，不调用网络。先认识基本执行方式，TaskGroup作为后面的选读；原有队列处理器仍可下载作进阶练习。",
   "prerequisites": [
-    "理解Python函数、异常、list与dict",
-    "理解await表示等待完成；本文会补足协程与Task的区别"
+    "理解普通函数、return、列表、异常与import",
+    "读过上一篇，知道等待与计算、并发与并行的区别"
   ],
   "sections": [
     {
       "id": "s11-324665",
-      "title": "先认识工程边界：类型说明与运行时校验各做什么",
+      "title": "async 和 await：先从一个会等待的函数开始",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "类型边界，是外部数据被转换为内部可信结构的位置。Python 的类型注解向编辑器和检查工具描述预期，却不会替你验证 JSON。asyncio 则是在事件循环中协调等待和任务生命周期的工具；它负责执行安排，输入仍需单独检查。本文把两件事接起来，做一个可复现的小批次处理器。"
-        },
-        {
-          "type": "paragraph",
-          "text": "输入 {\"values\":[0,1,2,3,4]}，输出每项平方，顺序不变。可以设置两个worker并行等待教学上游；一项受控失败就让整个批次失败；超过总预算就取消剩余工作。先成功、再失败、最后讨论容量上界。你将看到完整关键代码，而不仅是一句“加一个TaskGroup”。"
-        },
-        {
-          "type": "paragraph",
-          "text": "示例使用3.12已有的asyncio.TaskGroup与asyncio.timeout，已分别在CPython3.12.14和3.14.3运行同一套9项测试。代码仅用标准库，模块元数据要求>=3.12,<3.15，没有第三方依赖。后文提供独立复跑命令；测试只证明本地实验声明的行为。"
+          "text": "async 用来定义一种可以等待异步操作的函数，await 表示等待某个可等待操作完成。它们适合协调许多等待，例如等待网络响应；不会把普通计算自动分配给更多CPU。先不创建任务组，只运行下面这个最小文件。"
         },
         {
           "type": "code",
-          "code": "from dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass Request:\n    values: tuple[int, ...]\n\nbad = Request((\"wrong\",))\nprint(bad.values)  # ('wrong',)，运行时不会因注解自动抛错",
-          "filename": "type_boundary.py",
-          "purpose": "可独立运行的反例；静态检查器可以报错，但普通Python解释器仍会构造对象。",
-          "language": "python",
-          "kind": "runnable"
-        },
-        {
-          "type": "paragraph",
-          "text": "因此我们先检查外部object，再返回Request。下面是完整输入层，包含异常类型、所有默认值和实际校验。特别留意type(v) is int：Python中bool是int的子类，若只用isinstance(v,int)，JSON的true也会通过。这不是本批次想接受的业务数值。"
-        },
-        {
-          "type": "code",
-          "code": "\"\"\"Python 3.12-compatible, deterministic local asyncio experiment; no network.\"\"\"\nfrom __future__ import annotations\nimport asyncio\nfrom dataclasses import dataclass\nimport json\nimport math\nimport sys\nfrom typing import Any\n\n\nclass InputError(ValueError):\n    pass\n\n\nclass UpstreamError(RuntimeError):\n    pass\n\n\nclass BatchFailed(RuntimeError):\n    pass\n\n\n@dataclass(frozen=True)\nclass Request:\n    values: tuple[int, ...]\n    workers: int = 2\n    queue_size: int = 2\n    timeout: float = 1.0\n    delay: float = 0.01\n    fail_on: int | None = None\n\n\ndef parse_request(raw: object) -> Request:\n    if not isinstance(raw, dict):\n        raise InputError(\"request must be an object\")\n    allowed = {\"values\", \"workers\", \"queue_size\", \"timeout\", \"delay\", \"fail_on\"}\n    if set(raw) - allowed:\n        raise InputError(\"unknown field\")\n    values = raw.get(\"values\")\n    if not isinstance(values, list) or len(values) > 10_000:\n        raise InputError(\"values must be a list of at most 10000 integers\")\n    if any(type(v) is not int or abs(v) > 1_000_000 for v in values):\n        raise InputError(\"each value must be an integer in [-1000000,1000000]\")\n    def integer(name: str, default: int, maximum: int) -> int:\n        value = raw.get(name, default)\n        if type(value) is not int or not 1 <= value <= maximum:\n            raise InputError(f\"{name} outside valid integer range\")\n        return value\n    def number(name: str, default: float, minimum: float, maximum: float) -> float:\n        value = raw.get(name, default)\n        if type(value) not in (int, float):\n            raise InputError(f\"{name} must be numeric\")\n        try:\n            parsed = float(value)\n        except OverflowError as error:\n            raise InputError(f\"{name} outside valid finite range\") from error\n        if not math.isfinite(parsed) or not minimum <= parsed <= maximum:\n            raise InputError(f\"{name} outside valid finite range\")\n        return parsed\n    fail_on = raw.get(\"fail_on\")\n    if fail_on is not None and type(fail_on) is not int:\n        raise InputError(\"fail_on must be an integer or null\")\n    return Request(tuple(values), integer(\"workers\", 2, 16),\n                   integer(\"queue_size\", 2, 64),\n                   number(\"timeout\", 1.0, 0.001, 30.0),\n                   number(\"delay\", 0.01, 0.0, 5.0), fail_on)",
-          "filename": "service.py · 输入层",
-          "purpose": "配套文件第一段，含全部输入类型与parse_request。与后面两段按顺序合并就是完整service.py。",
+          "filename": "examples/python-course/beginner/async_first.py",
+          "code": "import asyncio\n\n\nasync def say_hello():\n    print(\"开始等待\")\n    await asyncio.sleep(0.01)\n    print(\"你好，Python\")\n\n\nif __name__ == \"__main__\":\n    asyncio.run(say_hello())",
+          "purpose": "完整第一步：导入asyncio，定义异步函数，通过asyncio.run启动。",
           "language": "python",
           "kind": "excerpt"
         },
         {
-          "type": "paragraph",
-          "text": "例如 values=[3,1,2]、workers=2，返回Request(values=(3,1,2), workers=2,...)。values=[true]、workers=0、delay=NaN或未知字段都会在创建任务之前抛InputError。最大10000项与数值范围是本实验的产品约束；它们让结果内存和运算规模有可解释的上界。不要把tuple和frozen=True误当输入校验器，负责判断的是parse_request里的代码。"
+          "type": "code",
+          "code": "开始等待\n你好，Python",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
-          "type": "reference",
-          "title": "Python 3.12：类型注解不由运行时强制执行",
-          "url": "https://docs.python.org/3.12/library/typing.html"
+          "type": "paragraph",
+          "text": "async def say_hello 和前面的 def 形状接近，只是多了 async。await asyncio.sleep(0.01) 模拟一次可以被异步等待的操作；它没有真的访问网络。等待结束后，才打印“你好，Python”。asyncio.run 为这个入口建立并运行事件循环，结束后收好相应资源。"
+        },
+        {
+          "type": "paragraph",
+          "text": "调用 say_hello() 得到的是一个协程对象，不会像普通函数一样立即把函数体完整跑完。这里把它交给 asyncio.run 才开始驱动它。不要一开始就只写 say_hello() 然后疑惑为什么没有输出，也不要在普通 def 里面随意写 await。"
         }
       ]
     },
     {
       "id": "s15-398808",
-      "title": "协程、Task 与事件循环：并发发生在等待之间",
+      "title": "协程、任务和事件循环，用一次实际执行来区分",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "调用async def函数得到协程对象，它描述尚待执行的异步过程。await可以等待另一个协程；Task则把协程交给事件循环安排，让多个任务在各自等待时轮流推进。在普通单线程事件循环里，同一时刻仍是一个任务执行Python代码。多个I/O等待可以重叠，CPU代码不会因此自动分到不同核心。"
+          "text": "协程描述一段可以暂停再继续的执行过程；Task 是交给事件循环安排运行的任务；事件循环则负责在可运行的任务之间安排推进。先有一个具体问题：A在等待时，能不能先让B开始？如果你只是 await A 后再 await B，仍然要等A结束才开始B。"
         },
         {
           "type": "code",
-          "code": "import asyncio\n\nasync def square(value: int) -> int:\n    await asyncio.sleep(0.01)\n    return value * value\n\nasync def main():\n    async with asyncio.TaskGroup() as group:\n        a = group.create_task(square(2))\n        b = group.create_task(square(3))\n    print(a.result(), b.result())\n\nasyncio.run(main())  # 4 9",
-          "filename": "task_basics.py",
-          "purpose": "完整独立实验。sleep代表可让出的等待；没有网络请求，输出不代表上游性能。",
+          "filename": "examples/python-course/beginner/async_demo.py",
+          "code": "async def compare_orders():\n    events = []\n\n    async def step(name):\n        events.append(name + \"开始\")\n        await asyncio.sleep(0)\n        events.append(name + \"结束\")\n\n    await step(\"A\")\n    await step(\"B\")\n    sequential = events.copy()\n    events.clear()\n    await asyncio.gather(step(\"A\"), step(\"B\"))\n    return sequential, events",
+          "purpose": "compare_orders 在同一个小例子里对照顺序等待与一起等待。step记录开始和结束，sleep(0)主动给其他任务推进的机会。",
           "language": "python",
-          "kind": "runnable"
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "这段先创建a和b两个任务，退出TaskGroup作用域时等待它们结束。a在sleep处等待时，事件循环可以运行b。若改成连续await square(2)、await square(3)，后一个只有等前一个返回才开始；语法都有await，任务重叠却不同。"
+          "text": "第一次先 await step(\"A\")，所以顺序是A开始、A结束、B开始、B结束。第二次 gather 同时组织两个协程，A遇到等待时B也能开始，本例得到A开始、B开始、A结束、B结束。这里的事件记录帮助你看清先后，不需要拿一组不稳定的毫秒数猜测。"
         },
         {
-          "type": "paragraph",
-          "text": "实际工程中，异步HTTP/数据库客户端可以在网络等待期间让出，但一个标为async的函数中调用time.sleep或同步SDK仍会占着执行线程。阻塞I/O可以评估asyncio.to_thread，CPU密集工作要结合解释器与扩展考虑进程池。尤其不要把协程数、线程数和CPU并行度当作同一个指标。"
-        },
-        {
-          "type": "reference",
-          "title": "Python 3.12：协程、任务与创建Task",
-          "url": "https://docs.python.org/3.12/library/asyncio-task.html#creating-tasks"
+          "type": "figure",
+          "src": "figures/python-async-services/lifecycle.svg",
+          "title": "一个事件循环怎样推进两个等待任务",
+          "alt": "A开始后遇到等待，让B开始；A、B分别在等待完成后继续。普通计算仍在当前执行线程上推进。",
+          "caption": "这张图表示本例可等待步骤的交错，不表示两个CPU在并行计算。await只有在等待对象尚未完成等情况下才有让出执行的机会。 手机端可以在图形区域横向滑动查看。"
         }
       ]
     },
     {
       "id": "s12-316434",
-      "title": "把一次批次圈进作用域：完整处理核心",
+      "title": "一起等待多个结果，和显式创建任务",
       "paragraphs": [],
       "blocks": [
         {
-          "type": "paragraph",
-          "text": "TaskGroup管理的是一组相关任务的生存范围：退出作用域前等待子任务；某个子任务以普通异常失败时，取消其他任务并收集失败。本文选择“全批共同成功”的业务语义，所以某项上游错误后不会把已得到的部分结果当成功返回。若你的业务允许逐项独立失败，应当设计每项Result协议，单独捕获已知错误；那是另一种契约。"
-        },
-        {
-          "type": "figure",
-          "src": "figures/python-async-services/lifecycle.svg",
-          "title": "生产者、有限队列、固定worker都属于本批作用域",
-          "alt": "JSON经过校验，一个生产者把带索引数据放入有界队列，两个worker处理；总超时或任务失败取消作用域内剩余工作并等finally完成，结果要么共同成功要么返回分类错误。",
-          "caption": "教学结构图。图中的容量2和worker2是默认配置；图不表示CPU并行，也不表示真实外部服务已被取消。"
-        },
-        {
-          "type": "paragraph",
-          "text": "读取下面核心时，先找三处所有权：run_batch拥有队列与结果数组；produce是唯一输入提供者；固定数量consume各自取出一项并等待upstream。结果按原index放回，所以完成先后可以不同，输出顺序仍与输入一致。所有后台任务都通过同一个TaskGroup创建。"
-        },
-        {
           "type": "code",
-          "code": "@dataclass\nclass Metrics:\n    active: int = 0\n    peak_active: int = 0\n    peak_queue: int = 0\n    started: int = 0\n    finished: int = 0\n    cleaned: int = 0\n    cancelled: int = 0\n\n\nasync def upstream(value: int, request: Request, metrics: Metrics) -> int:\n    metrics.active += 1\n    metrics.started += 1\n    metrics.peak_active = max(metrics.peak_active, metrics.active)\n    try:\n        await asyncio.sleep(request.delay)\n        if value == request.fail_on:\n            raise UpstreamError(f\"controlled failure for {value}\")\n        metrics.finished += 1\n        return value * value\n    except asyncio.CancelledError:\n        metrics.cancelled += 1\n        raise\n    finally:\n        metrics.active -= 1\n        metrics.cleaned += 1\n\n\nasync def run_batch(request: Request, metrics: Metrics | None = None) -> list[int]:\n    # Trust boundary: use parse_request for JSON. Request is an internal type.\n    metrics = metrics if metrics is not None else Metrics()\n    queue: asyncio.Queue[tuple[int, int] | None] = asyncio.Queue(request.queue_size)\n    results: list[int | None] = [None] * len(request.values)\n\n    async def produce() -> None:\n        for index, value in enumerate(request.values):\n            await queue.put((index, value))\n            metrics.peak_queue = max(metrics.peak_queue, queue.qsize())\n        for _ in range(request.workers):\n            await queue.put(None)\n            metrics.peak_queue = max(metrics.peak_queue, queue.qsize())\n\n    async def consume() -> None:\n        while True:\n            item = await queue.get()\n            try:\n                if item is None:\n                    return\n                index, value = item\n                results[index] = await upstream(value, request, metrics)\n            finally:\n                queue.task_done()\n\n    async with asyncio.timeout(request.timeout):\n        try:\n            async with asyncio.TaskGroup() as group:\n                group.create_task(produce(), name=\"batch-producer\")\n                for index in range(request.workers):\n                    group.create_task(consume(), name=f\"batch-worker-{index}\")\n        except* UpstreamError as errors:\n            raise BatchFailed(f\"upstream batch failed: {len(errors.exceptions)} error(s)\") from errors\n    if any(value is None for value in results):\n        raise RuntimeError(\"incomplete results after a successful task group\")\n    return [value for value in results if value is not None]",
-          "filename": "service.py · 批次核心",
-          "purpose": "配套文件第二段，含Metrics、完整上游模拟与run_batch。没有省略取消、哨兵、finally或错误处理。",
+          "filename": "examples/python-course/beginner/async_demo.py",
+          "code": "async def read_title(number, delay=0):\n    if number < 0:\n        raise ValueError(\"编号不能为负数\")\n    await asyncio.sleep(delay)  # 模拟等待，不是网络请求\n    return f\"笔记{number}\"",
+          "purpose": "read_title 是一个可等待的函数，完成后仍通过return交回普通字符串。",
           "language": "python",
           "kind": "excerpt"
         },
         {
-          "type": "paragraph",
-          "text": "代入values=(3,1,2)、workers=2、queue_size=1：produce放入(0,3)，队列满时等待；worker取走以后生产者才能继续。两个worker分别处理不同项，await sleep让出；返回9后写results[0]，返回1后写results[1]，最后结果为[9,1,4]。末尾放两个None，每个worker取一个便结束。None是结束标记，所以输入数据用(index,value)元组，不会把业务数字0误当结束。"
+          "type": "code",
+          "code": "import asyncio\n\nasync def main():\n    values = await asyncio.gather(read_title(1), read_title(2))\n    print(values)\n\nasyncio.run(main())",
+          "language": "python",
+          "purpose": "read_title 定义放在这段代码之前；本段演示调用关系。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "['笔记1', '笔记2']",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "queue.task_done在finally中与每次get配对，包括取到哨兵和处理抛异常的情况。本文没有用queue.join来判断失败批次完成，而是让TaskGroup统一等待；失败时队列可能还有未处理项，但不会被当成成功结果返回。成功退出后仍检查results中有没有None，用于发现实现错误。"
+          "text": "gather 的返回列表按传入顺序排列，并不要求实际完成顺序也相同。若想先启动一个任务、稍后再等它，可以用 task = asyncio.create_task(read_title(1))，然后在需要结果的位置 await task。保存这个task，后面才能等待、检查或请求取消它。"
+        },
+        {
+          "type": "paragraph",
+          "text": "如果调用的是会阻塞线程的普通函数，给外面加一个 async 包装并不会改变内部行为。比如异步函数里直接 time.sleep(1)，会让当前事件循环线程也等住。已经提供async接口的操作用await；同步的慢I/O要考虑线程等方式，不要见到函数就批量加async。"
         }
       ]
     },
     {
       "id": "s16-495396",
-      "title": "限制并发，也限制等待中的任务对象",
+      "title": "任务很多时，先用最直观的分批方式",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "Semaphore约束进入临界区的数量，却不约束已经创建了多少Task。一次create_task一百万项，再让每项等待同一个信号量，仍然创建了一百万个任务及其闭包。本文用固定worker解决这个层次：后台Task始终只有1个生产者加workers个消费者，值的数量只改变工作次数。"
-        },
-        {
-          "type": "paragraph",
-          "text": "Queue(maxsize=queue_size)提供另一层边界：待处理元素最多这么多；满时生产者在put等待，直到消费者腾出位置。这种上游被下游速度约束的行为叫背压。它既约束队列存储，也让生产过程有暂停点；但不是整个程序内存的通用保证。"
-        },
-        {
-          "type": "table",
-          "headers": [
-            "资源",
-            "本文的上界或生命周期",
-            "还要注意"
-          ],
-          "rows": [
-            [
-              "后台Task",
-              "workers+1，默认3个",
-              "run_batch调用者本身另算"
-            ],
-            [
-              "队列中待处理项",
-              "queue_size，默认2个",
-              "还有worker手中正在处理的项"
-            ],
-            [
-              "上游同时活跃",
-              "最多workers，默认2个",
-              "每个worker只await一个upstream"
-            ],
-            [
-              "输入与结果",
-              "随n增长，O(n)，n<=10000",
-              "本文收完整JSON，未实现真正流式输入"
-            ],
-            [
-              "总预算",
-              "timeout覆盖排队与处理",
-              "取消清理也需要时间，不是硬实时截止"
-            ]
-          ]
-        },
-        {
-          "type": "paragraph",
-          "text": "测试使用一个受Event控制的上游：让3个worker停在等待位置，输入1000项，然后检查名字以batch-开头的Task恰好4个。放行后再断言1000个结果完成。这样验证的是任务数量的实际行为，不是把workers变量打印一次就称作限制有效。峰值队列和活跃数也分别断言<=配置值。"
-        },
-        {
-          "type": "reference",
-          "title": "Python 3.12：有界Queue与put等待",
-          "url": "https://docs.python.org/3.12/library/asyncio-queue.html"
-        }
-      ]
-    },
-    {
-      "id": "failure-cleanup",
-      "title": "失败与取消：结果还没返回，清理已经完成",
-      "paragraphs": [],
-      "blocks": [
-        {
-          "type": "paragraph",
-          "text": "现在让输入中的1受控失败。upstream先经过sleep，再抛UpstreamError。TaskGroup发现普通异常后取消仍在工作的兄弟任务；后者在可取消的等待点收到CancelledError，在except中记录取消，再重新抛出，finally减少active并增加cleaned。TaskGroup等这些退出处理完成后才把异常带出作用域。"
-        },
-        {
-          "type": "paragraph",
-          "text": "except* UpstreamError处理的是异常组内对应类型的失败。一次批次可能不止一个worker失败，所以这里用批次错误BatchFailed表达“共同成功未满足”，而不是随意取第一条异常当全部真相。未知编程错误没有被广泛except Exception吞掉，仍向调用者暴露以便定位。KeyboardInterrupt、SystemExit等系统级异常也不应当成业务上游错误。"
-        },
-        {
-          "type": "paragraph",
-          "text": "测试不靠“等10ms大概就失败了”猜取消：一个worker用Event确认兄弟已经进入等待后才抛错，另一worker在finally记录清理。run_batch抛出BatchFailed后，测试断言清理已执行并且没有batch-任务遗留。真实上游应在finally关闭响应流、释放连接或归还资源；仅写一个cancel日志不能替代实际释放。"
-        },
-        {
-          "type": "paragraph",
-          "text": "外部调用者取消run_batch时，我们保留CancelledError向上传播。它表达调用生命周期结束，不能转换成“成功空列表”或“上游报错”。尤其不要捕获BaseException再忽略；取消若被吞掉，TaskGroup和timeout依赖的协议可能失效。"
-        },
-        {
-          "type": "reference",
-          "title": "Python 3.12：Task取消与TaskGroup异常规则",
-          "url": "https://docs.python.org/3.12/library/asyncio-task.html#task-groups"
-        }
-      ]
-    },
-    {
-      "id": "timeout-boundary",
-      "title": "总超时与错误分类：完整调用边界",
-      "paragraphs": [],
-      "blocks": [
-        {
-          "type": "paragraph",
-          "text": "timeout放在TaskGroup外层，所以预算包括生产者等待、队列等待和上游处理。预算耗尽会取消当前作用域中的任务，TaskGroup继续等待子任务清理，然后timeout上下文在外层把自己的取消转成TimeoutError。调用者应在该上下文之外捕获它；我们把这层放在handle中。"
+          "text": "初学阶段可以先把五项工作每两项分一批。当前批次全部得到结果，再启动下一批。这样不需要马上学习工作队列，也能避免把所有输入一次性创建成任务。"
         },
         {
           "type": "code",
-          "code": "async def handle(raw: object) -> dict[str, Any]:\n    metrics = Metrics()\n    try:\n        request = parse_request(raw)\n        values = await run_batch(request, metrics)\n        return {\"ok\": True, \"values\": values, \"metrics\": vars(metrics)}\n    except InputError as error:\n        return {\"ok\": False, \"error\": \"input\", \"detail\": str(error)}\n    except TimeoutError:\n        return {\"ok\": False, \"error\": \"timeout\", \"metrics\": vars(metrics)}\n    except BatchFailed as error:\n        return {\"ok\": False, \"error\": \"upstream\", \"detail\": str(error), \"metrics\": vars(metrics)}\n    # External cancellation deliberately propagates to the caller.\n\n\ndef main() -> None:\n    try:\n        raw = json.load(sys.stdin)\n    except (json.JSONDecodeError, ValueError):\n        print(json.dumps({\"ok\": False, \"error\": \"input\", \"detail\": \"invalid JSON\"}))\n        return\n    print(json.dumps(asyncio.run(handle(raw)), ensure_ascii=False))\n\n\nif __name__ == \"__main__\":\n    main()",
-          "filename": "service.py · 处理入口与CLI",
-          "purpose": "配套文件第三段；与前两段合并为完整文件。JSON损坏、业务输入错、批次上游错、总超时分别处理。",
+          "filename": "examples/python-course/beginner/async_demo.py",
+          "code": "async def read_in_batches(numbers, batch_size=2):\n    if type(batch_size) is not int or batch_size < 1:\n        raise ValueError(\"每批数量必须是正整数\")\n    result = []\n    for start in range(0, len(numbers), batch_size):\n        batch = numbers[start:start + batch_size]\n        waiting = []\n        for number in batch:\n            waiting.append(read_title(number))\n        values = await asyncio.gather(*waiting)\n        result.extend(values)\n    return result",
+          "purpose": "完整分批实现。先切出一小批，建立待等待的协程列表，再等待并收集结果。",
           "language": "python",
           "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "输入错误在创建后台任务前返回error=input；上游受控错误返回error=upstream；总预算耗尽返回error=timeout。只有共同成功才返回values。metrics在清理后读取，因此返回时active应为0，cleaned与started一致。started和cancelled的精确数量受任务先后影响，不把某次输出数量写成全局保证。"
+          "text": "start 从0、2、4推进，切片每次最多取batch_size项。waiting 中存的是当前批次的协程；gather(*waiting) 的星号把列表里的各项作为多个参数传入，例如列表有两项时，效果类似 gather(first,second)。这不是把一个列表直接当作协程等待。"
         },
         {
           "type": "paragraph",
-          "text": "这里的超时是协作式预算，不是可以在任何Python指令中间强行终止的秒表。如果上游是一个同步死循环，事件循环没有机会投递取消；若真实HTTP请求已让远端扣款，本地取消也不等于退款。写操作需要幂等键、状态查询和重试策略，不能把任务管理工具当分布式回滚。"
+          "text": "结果列表仍保存了全部返回值，所以这不是无限数据的低内存方案。并且快的一项可能要等同批次较慢的一项，才开始下一批。这是简单分批的取舍；以后确实需要让空出的工作位置立刻接新任务时，再学习原有进阶示例里的固定worker和队列。信号量只限制同时进入某段工作的人数，本身不会减少已经创建的任务数量。"
+        }
+      ]
+    },
+    {
+      "id": "failure-cleanup",
+      "title": "取消：提出停止请求，再等待任务收尾",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/async_demo.py",
+          "code": "async def cancellable(events):\n    try:\n        events.append(\"开始\")\n        await asyncio.sleep(1)\n        events.append(\"完成\")\n    finally:\n        events.append(\"清理\")\n\n\nasync def cancel_example():\n    events = []\n    task = asyncio.create_task(cancellable(events))\n    await asyncio.sleep(0)  # 让任务进入等待\n    task.cancel()\n    try:\n        await task\n    except asyncio.CancelledError:\n        events.append(\"已取消\")\n    return events",
+          "purpose": "cancellable 用finally记录收尾；cancel_example启动任务后请求取消，再等待它退出。",
+          "language": "python",
+          "kind": "excerpt"
         },
         {
-          "type": "reference",
-          "title": "Python 3.12：asyncio.timeout转换与捕获边界",
-          "url": "https://docs.python.org/3.12/library/asyncio-task.html#timeouts"
+          "type": "paragraph",
+          "text": "task.cancel() 是请求取消，不是把Python代码瞬间从任何位置强制切断。在这里任务正等着 asyncio.sleep，会收到 CancelledError；finally 仍执行，所以记录先有“开始”，接着“清理”。调用方 await task，并专门接住 CancelledError，再记录“已取消”。"
+        },
+        {
+          "type": "code",
+          "code": "['开始', '清理', '已取消']",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "finally 用来放不论正常还是失败都需要执行的收尾。真正处理网络连接或临时资源时，收尾动作要放到适当位置。不要捕获取消后只打印一句话就假装成功，调用方需要知道任务没有正常完成。也不要认为本地取消能自动撤销已经完成的外部写入。"
+        }
+      ]
+    },
+    {
+      "id": "timeout-boundary",
+      "title": "超时：给这一次等待设一个期限",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/async_demo.py",
+          "code": "async def timeout_example():\n    events = []\n    try:\n        async with asyncio.timeout(0.01):\n            await cancellable(events)\n    except TimeoutError:\n        events.append(\"超时\")\n    return events",
+          "purpose": "timeout包住需要受限的一段异步等待；超时以后，在外层处理TimeoutError。",
+          "language": "python",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "['开始', '清理', '超时']",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "这次操作只允许0.01秒，而 cancellable 在等1秒，所以会走超时路径。先发生任务取消与finally清理，再由timeout在外层表现为TimeoutError。把catch写在外层，才是在处理这个超时作用域带出的结果。"
+        },
+        {
+          "type": "paragraph",
+          "text": "它仍依赖任务在可取消等待点配合。如果内部用一段很长的同步循环占着线程，事件循环没有机会及时处理超时，就不能指望到点强制抢占。这里也没有真实HTTP，因此示例证明的是本地等待、超时与清理关系，不是远端请求停止计费。"
+        }
+      ]
+    },
+    {
+      "id": "task-group",
+      "title": "选读：一组任务要共同成功时，认识TaskGroup",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/async_demo.py",
+          "code": "async def all_or_fail(numbers):\n    async with asyncio.TaskGroup() as group:\n        tasks = []\n        for number in numbers:\n            tasks.append(group.create_task(read_title(number)))\n    return [task.result() for task in tasks]",
+          "purpose": "TaskGroup把这些任务放在同一范围，正常退出后再取各自结果。",
+          "language": "python",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "async with TaskGroup 表示在这一段范围里管理相关任务。某项以普通异常失败时，它会取消尚未结束的兄弟任务，等待它们收尾，再把一组错误带出。已经完成的操作不会因此自动回滚。gather默认会把一个普通异常传给调用方，但不会因此自动取消所有其他任务，不能把两者的失败行为混为一谈。"
+        },
+        {
+          "type": "paragraph",
+          "text": "如果输入含-1，read_title会抛ValueError，TaskGroup带出的通常是ExceptionGroup。需要处理其中某类异常时可用except*。这是处理“一组错误中符合某种类型的部分”的语法，不等同于普通except；刚开始可以先完成正常路径，再回来运行这个反例。"
+        },
+        {
+          "type": "code",
+          "code": "async def try_group():\n    try:\n        await all_or_fail([1, -1])\n    except* ValueError:\n        print(\"任务组里有无效编号\")\n\nasyncio.run(try_group())",
+          "language": "python",
+          "purpose": "接在all_or_fail、read_title定义和asyncio导入之后。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "任务组里有无效编号",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         }
       ]
     },
     {
       "id": "s7-167119",
-      "title": "运行、输入与预期输出：把证据留在这里",
+      "title": "把每一步运行出来，不先背API列表",
       "paragraphs": [],
       "blocks": [
         {
           "type": "code",
-          "code": "cd examples/python-async-services\npython3 --version\npython3 -m venv .venv\n.venv/bin/python -m unittest -v\nprintf '%s' '{\"values\":[0,1,2,3,4],\"workers\":2,\"queue_size\":2}' | .venv/bin/python service.py",
-          "filename": "终端",
-          "purpose": "独立示例，无需安装第三方包；使用Python3.12时可把第一条python3替换为python3.12。后续都使用同一虚拟环境。",
+          "code": "cd examples/python-course/beginner\npython3 async_first.py\npython3 async_demo.py",
           "language": "bash",
+          "purpose": "第一个文件只演示一个等待；第二个文件逐项运行顺序对照、结果、分批、取消、超时和任务组。",
           "kind": "runnable"
         },
         {
           "type": "code",
-          "code": "{\"ok\":true,\"values\":[0,1,4,9,16],\"metrics\":{\"active\":0,\"peak_active\":2,\"peak_queue\":2,\"started\":5,\"finished\":5,\"cleaned\":5,\"cancelled\":0}}",
-          "filename": "成功示例输出",
-          "purpose": "本次CPython3.14.3实际一次输出；peak值是观测值，验收条件是<=配置，不保证所有运行恰好等于2。",
-          "language": "json",
+          "code": "笔记1\n顺序： ['A开始', 'A结束', 'B开始', 'B结束']\n一起等： ['A开始', 'B开始', 'A结束', 'B结束']\n['笔记1', '笔记2', '笔记3']\n取消： ['开始', '清理', '已取消']\n超时： ['开始', '清理', '超时']\n任务组： ['笔记1', '笔记2']",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
           "kind": "excerpt"
         },
         {
-          "type": "code",
-          "code": "printf '%s' '{\"values\":[1,2,3],\"fail_on\":1}' | .venv/bin/python service.py\nprintf '%s' '{\"values\":[1,2],\"delay\":1,\"timeout\":0.01}' | .venv/bin/python service.py\nprintf '%s' '{\"values\":[true]}' | .venv/bin/python service.py",
-          "filename": "终端 · 三种失败",
-          "purpose": "依次期待error=upstream、timeout、input。前两者返回时active=0，已经启动的处理完成finally。",
-          "language": "bash",
-          "kind": "runnable"
-        },
-        {
           "type": "paragraph",
-          "text": "本次实际运行9项unittest全部通过：注解不校验的反例、非法输入及非有限预算、顺序和容量、空输入与零结果、兄弟失败取消、总超时清理、外部取消传播、错误分类、固定后台任务数。没有安装HTTP客户端、没有调用真实服务，所以这些证据证明本地生命周期和边界规则，不是网络吞吐或模型效果。"
-        },
-        {
-          "type": "paragraph",
-          "text": "若成功输出不对，先查解释器版本和运行文件，再核对values顺序与输入类型；若超时后active不归零，检查上游是否有finally和可取消等待；若内存随输入暴涨，先看是否提前create_task全部项、是否累积输入和结果。不同问题对应不同边界，不需要从“async写错了”一个结论开始猜。"
+          "text": "第二个文件的“顺序”与“一起等”是本次规定代码和默认执行安排下的观察值。真实网络的完成顺序会变化，要检查的是程序承诺的结果顺序、出错时是否通知和资源是否收好，而不是要求所有程序都打印同样的调度轨迹。"
         }
       ]
     },
     {
       "id": "check-understanding",
-      "title": "最后用三个判断检查你的模型",
+      "title": "练习与下一篇：先确认基本模型已经清楚",
       "paragraphs": [],
       "blocks": [
         {
-          "type": "table",
-          "headers": [
-            "判断",
-            "解析"
-          ],
-          "rows": [
-            [
-              "async函数里只写同步循环，会不会因为函数名async就同时执行？",
-              "不会。调用先产生协程；执行后同步代码仍占着事件循环线程，直到返回或到达能让出的等待。"
-            ],
-            [
-              "有队列容量2，整个程序是否只保存2项数据？",
-              "不是。输入tuple和结果数组都有n项，worker还有正在处理的数据；队列只约束等待区，本例明确限制n<=10000。"
-            ],
-            [
-              "timeout返回以后，远端写入是否已经撤销？",
-              "不能这样推断。这里仅验证本地任务清理；远端已发生的副作用需要幂等协议和状态确认。"
-            ]
-          ]
+          "type": "paragraph",
+          "text": "练习一：只调用read_title(1)，没有run、await或创建Task，为什么拿不到“笔记1”？因为你得到的是尚未由这些方式驱动的协程。练习二：把batch_size改为1，结果仍应是同样三个标题，只是每批只有一项。"
         },
         {
           "type": "paragraph",
-          "text": "这份实现适合解释一个有限批次怎样拥有自己的任务、预算和结果。若改成长期服务，还要补请求体大小、连接池、独立请求配额、停止接收与优雅停机；若改成百万项流水线，还要把输入读取和结果写出也流式化。先把这次操作的边界闭合，再扩展规模，比先把并发数调大更能得到可解释的系统。"
+          "text": "练习三：在cancellable的finally里多记录一项，分别运行取消与超时；两条路径都应经过这个位置。理解了这个现象，再去设计真正的连接关闭和任务清理，才不会只写一句“保证资源释放”。"
+        },
+        {
+          "type": "paragraph",
+          "text": "下一篇会用FastAPI把笔记本开放成一个本地HTTP服务。它会用到函数、类、模块和这里的异步入口，不过我们仍然先解释一次请求和一次返回，不从依赖注入与后台任务的名词清单开始。原有队列处理器单独保留为进阶下载，想先学接口可以暂时不读。"
         }
       ]
     }
@@ -333,35 +295,37 @@ const article: Article = {
   ],
   "references": [
     {
-      "title": "Python3.12 asyncio任务与取消",
+      "title": "Python3.12：协程、Task、超时与取消",
       "url": "https://docs.python.org/3.12/library/asyncio-task.html"
     },
     {
-      "title": "Python3.12有界队列",
-      "url": "https://docs.python.org/3.12/library/asyncio-queue.html"
+      "title": "Python3.12：asyncio入门",
+      "url": "https://docs.python.org/3.12/library/asyncio.html"
     },
     {
-      "title": "Python3.12类型注解",
-      "url": "https://docs.python.org/3.12/library/typing.html"
+      "title": "Python3.12：异常分组与except*",
+      "url": "https://docs.python.org/3.12/tutorial/errors.html#raising-and-handling-multiple-unrelated-exceptions"
     }
   ],
-  "status": "review",
-  "kind": "tutorial",
+  "status": "complete",
+  "kind": "series",
   "labMinutes": 30,
   "versions": [
-    "目标兼容 CPython 3.12",
-    "实际验证 CPython 3.12.14 / 3.14.3（macOS）",
-    "仅使用标准库，无第三方依赖"
+    "CPython 3.12.14"
   ],
-  "verifiedAt": "2026-10-23",
+  "verifiedAt": "2026-10-26",
   "examples": [
     {
-      "label": "完整标准库实验与测试",
-      "path": "python-async-services.zip"
+      "label": "Python 课程与新入门示例 ZIP",
+      "path": "python-course.zip"
     },
     {
-      "label": "运行与边界说明",
-      "path": "python-async-services/README.md"
+      "label": "从这里开始：九篇顺序、文件与命令",
+      "path": "python-course/beginner/README.md"
+    },
+    {
+      "label": "选读：原有批次处理器与取消测试",
+      "path": "python-async-services.zip"
     }
   ]
 };

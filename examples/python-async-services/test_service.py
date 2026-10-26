@@ -94,8 +94,9 @@ class Concurrency(unittest.IsolatedAsyncioTestCase):
             entered.set()
             await release.wait()
             return value*value
+        # Check task count, not throughput; separate tests exercise short deadlines.
         with patch('service.upstream', controlled):
-            task = asyncio.create_task(run_batch(parse_request({"values": list(range(1000)), "workers": 3, "queue_size": 2})))
+            task = asyncio.create_task(run_batch(parse_request({"values": list(range(1000)), "workers": 3, "queue_size": 2, "timeout": 10})))
             await entered.wait()
             batch_tasks = [t for t in asyncio.all_tasks() if t.get_name().startswith('batch-')]
             self.assertEqual(len(batch_tasks), 4)

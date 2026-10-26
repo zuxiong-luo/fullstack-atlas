@@ -1,274 +1,290 @@
-import type { Article } from '../../articleTypes';
-const article: Article = {
+import type {Article} from '../../articleTypes';
+const article:Article = {
   "id": "python-fastapi",
   "topic": "python",
-  "title": "FastAPI 服务：请求校验、依赖注入、鉴权与生命周期",
-  "description": "把笔记工具接到HTTP边界，用严格请求模型、共享Bearer与lifespan管理有界导入任务，验证成功、失败、容量、关闭和真实本机请求。",
-  "minutes": 62,
-  "labMinutes": 45,
+  "title": "第一个 Python 接口：从 HTTP 请求到 FastAPI 返回结果",
+  "description": "先运行一个返回问候的接口，再把笔记本接成可读写的服务，逐步认识路由、请求体、状态码和简单请求头检查。",
+  "minutes": 55,
+  "labMinutes": 30,
   "tags": [
-    "Python",
-    "FastAPI",
-    "Pydantic",
+    "FastAPI 入门",
     "HTTP",
-    "依赖注入",
-    "生命周期"
+    "路由",
+    "请求体",
+    "状态码",
+    "依赖"
   ],
-  "scope": "笔记项目第7阶段：CPython3.12.14与固定FastAPI0.115.8栈；单进程内存HTTP服务、有限任务队列与协作取消，不承诺持久化、用户隔离或生产鉴权。",
+  "scope": "本地入门服务，笔记暂存在内存，最多100条；固定学习令牌只演示检查逻辑，不是生产账号系统。先教会请求和响应，不从后台任务框架开篇。",
   "prerequisites": [
-    "第4章Note/包边界、第5章asyncio队列；第6章独立异步工程中的超时与取消",
-    "能解释HTTP请求/响应；不需要第8章数据库或第9章交付"
+    "理解函数、字典、类、模块与异常；第六篇已介绍async/await",
+    "使用Python3.12和随包锁文件安装依赖"
   ],
   "kind": "series",
-  "status": 'complete',
+  "status": "complete",
   "versions": [
-    "CPython3.12.14实测；3.12官方文档维护版3.12.15",
-    "FastAPI0.115.8 / Pydantic2.10.6 / Starlette0.45.3",
-    "Uvicorn0.34.0 / HTTPX0.28.1；全部传递依赖见requirements.lock"
+    "CPython 3.12.14",
+    "FastAPI 0.115.8 / Pydantic 2.10.6 / Uvicorn 0.34.0"
   ],
-  "verifiedAt": "2026-10-24",
+  "verifiedAt": "2026-10-26",
   "questionIds": [],
   "examples": [
     {
-      "label": "Python课程完整源码ZIP",
+      "label": "Python 课程与新入门示例 ZIP",
       "path": "python-course.zip"
     },
     {
-      "label": "第7章安装、请求与边界",
-      "path": "python-course/chapter07/README.md"
+      "label": "从这里开始：九篇顺序、文件与命令",
+      "path": "python-course/beginner/README.md"
     }
   ],
   "references": [
     {
-      "title": "FastAPI0.115.8：请求处理与依赖解析源码",
-      "url": "https://github.com/fastapi/fastapi/blob/0.115.8/fastapi/routing.py"
+      "title": "FastAPI：第一个接口",
+      "url": "https://fastapi.tiangolo.com/tutorial/first-steps/"
     },
     {
-      "title": "FastAPI：lifespan资源寿命",
-      "url": "https://fastapi.tiangolo.com/advanced/events/"
+      "title": "FastAPI：请求体",
+      "url": "https://fastapi.tiangolo.com/tutorial/body/"
     },
     {
-      "title": "FastAPI：依赖注入",
+      "title": "FastAPI：依赖",
       "url": "https://fastapi.tiangolo.com/tutorial/dependencies/"
     },
     {
-      "title": "Pydantic2.10：strict mode",
-      "url": "https://docs.pydantic.dev/2.10/concepts/strict_mode/"
+      "title": "FastAPI：普通def与async def的处理方式",
+      "url": "https://fastapi.tiangolo.com/async/"
     },
     {
-      "title": "Python3.12：有界Queue",
-      "url": "https://docs.python.org/3.12/library/asyncio-queue.html"
+      "title": "FastAPI0.115.8源码",
+      "url": "https://github.com/fastapi/fastapi/tree/0.115.8"
     }
   ],
   "sections": [
     {
       "id": "boundary",
-      "title": "HTTP服务是一层协议边界，业务对象不必跟着请求寿命重建",
+      "title": "HTTP 接口：别人怎样调用你的程序",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "HTTP服务接收请求，解释方法、路径、头和正文，再把应用结果转换成响应。FastAPI是建立在ASGI协议之上的Python Web框架：它帮助声明路由、校验请求和组合依赖；Uvicorn这样的ASGI服务器负责连接、HTTP解析与调度。两者不是同一层，能调用一个路由函数，也不等于已经验证了真实TCP请求。"
+          "text": "前面一直在终端里调用函数。如果浏览器或另一个程序想使用你的笔记本，就需要一种约定好的通信方式。HTTP 接口接收请求，再返回响应：请求说明要访问哪个地址、做什么、带什么数据；响应说明结果或失败原因。"
         },
         {
           "type": "paragraph",
-          "text": "前五章已经把文本导入拆成Note、包边界和有界执行模型；第六章保留原有python-async-services，进一步验证超时、异常分组、取消与finally。现在把这些机制组合为笔记HTTP服务：单笔创建与列表同步给出结果，批量导入返回任务ID，后台按有限容量处理。第七章可独立启动，不依赖后两章，也不跨目录导入第六章的演示脚本。"
+          "text": "地址里的127.0.0.1表示当前电脑，4191是本例监听的端口，/notes是路径。GET常用于读取，POST常用于提交新数据。先把这几个部分看清，后面的框架代码就有了对应的事情，而不只是一组新的装饰器。"
         },
         {
           "type": "paragraph",
-          "text": "本章固定CPython3.12.14、FastAPI0.115.8、Pydantic2.10.6、Starlette0.45.3与Uvicorn0.34.0，完整传递依赖另有锁文件。官方教程是当前维护页，版本行为另追到固定tag；不把这套复现基线叫作最新版。先用内存让请求与任务寿命可见，持久化和部署仍是后续要解决的问题。"
+          "text": "FastAPI 是帮助你编写HTTP接口的Python框架，Uvicorn负责启动能够监听请求的服务。它们不是Python内置模块，需要安装。本系列固定版本，并用一个项目专用的虚拟环境，避免和其他项目混用库。第九篇会进一步解释环境与依赖。"
+        },
+        {
+          "type": "code",
+          "code": "cd examples/python-course/beginner\npython3 -m venv .venv\nsource .venv/bin/activate\npython -m pip install -r requirements.lock\npython hello_api.py",
+          "language": "bash",
+          "purpose": "Windows激活位置为 .venv\\Scripts\\activate；确认选择Python3.12。本例只监听本机4191端口。",
+          "kind": "runnable"
         }
       ]
     },
     {
       "id": "contract",
-      "title": "先写请求契约：Python注解什么时候真正变成校验",
+      "title": "先看一个只有十几行的服务",
       "paragraphs": [],
       "blocks": [
         {
-          "type": "paragraph",
-          "text": "类型注解本身不拦住错误输入。Pydantic模型在框架解析JSON时执行运行时验证，才把外部未知数据变成可使用的对象。这里strict=True拒绝title为数字时偷偷转成字符串，extra=forbid拒绝拼错或多余字段；长度与批次数量约束限制合法对象的规模。模型创建以后，仍通过domain方法转换为第4章冻结Note，避免把HTTP模型和领域对象当成同一个职责。"
-        },
-        {
           "type": "code",
+          "filename": "examples/python-course/beginner/hello_api.py",
+          "code": "from fastapi import FastAPI\nimport uvicorn\n\napp = FastAPI()\n\n\n@app.get(\"/\")\ndef hello():\n    return {\"message\": \"你好，Python\"}\n\n\nif __name__ == \"__main__\":\n    uvicorn.run(app, host=\"127.0.0.1\", port=4191)",
+          "purpose": "完整第一步：只注册GET /，返回一个字典。",
           "language": "python",
-          "filename": "examples/python-course/chapter07/models.py",
-          "kind": "excerpt",
-          "purpose": "完整HTTP输入契约；字段与集合验证先于Note构造。",
-          "code": "from typing import Annotated\nfrom pydantic import BaseModel, ConfigDict, Field, field_validator\nfrom chapter04.notes_tool.domain import Note\n\nTag = Annotated[str, Field(min_length=1, max_length=32)]\n\n\nclass NoteInput(BaseModel):\n    model_config = ConfigDict(strict=True, extra=\"forbid\", frozen=True)\n    id: str = Field(pattern=r\"^[a-z][a-z0-9_-]{0,31}$\")\n    title: str = Field(min_length=1, max_length=200)\n    tags: list[Tag] = Field(default_factory=list, max_length=8)\n\n    @field_validator(\"title\")\n    @classmethod\n    def trimmed_title(cls, value: str) -> str:\n        if not value.strip() or value != value.strip():\n            raise ValueError(\"title must be trimmed and non-empty\")\n        return value\n\n    @field_validator(\"tags\")\n    @classmethod\n    def normalized_tags(cls, values: list[str]) -> list[str]:\n        if any(not tag.strip() or tag != tag.strip().lower() for tag in values):\n            raise ValueError(\"tags must be normalized lower-case strings\")\n        if len(set(values)) != len(values):\n            raise ValueError(\"duplicate tags\")\n        return values\n\n    def domain(self) -> Note:\n        return Note(self.id, self.title, tuple(self.tags))\n\n\nclass ImportInput(BaseModel):\n    model_config = ConfigDict(strict=True, extra=\"forbid\")\n    notes: list[NoteInput] = Field(min_length=1, max_length=32)\n\n    @field_validator(\"notes\")\n    @classmethod\n    def unique_ids(cls, values: list[NoteInput]) -> list[NoteInput]:\n        if len({note.id for note in values}) != len(values):\n            raise ValueError(\"duplicate note id in batch\")\n        return values\n"
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "边界比命令行导入更窄：id只允许小写开头的短标识，标题必须已经去掉首尾空白，标签必须小写且不重复。前几章导入器会规范化脏数据；本章HTTP契约选择明确拒绝，避免不同客户端以为服务器保留了原始形式。JSON没有tuple类型，所以接收list，转换领域对象时再变成tuple。这是接口选择，不是strict模式能替你决定的产品语义。"
+          "text": "app = FastAPI() 创建应用对象。@app.get(\"/\") 写在函数前面，表示把下面的hello登记为GET /的处理函数。这种@写法叫装饰器，这里先理解它替你完成了路由登记；定义函数时不会立即处理请求，真正请求到来时才由框架调用。"
+        },
+        {
+          "type": "paragraph",
+          "text": "打开浏览器访问 http://127.0.0.1:4191/，应看到JSON数据。我们返回的是Python字典，FastAPI替它生成HTTP响应，并把数据编码为JSON。这里没有HTML页面，浏览器显示一段数据也是正常结果。"
         },
         {
           "type": "code",
-          "language": "json",
-          "filename": "examples/python-course/chapter07/fixtures/import.json",
-          "kind": "excerpt",
-          "purpose": "正常输入沿用笔记项目，两条记录均符合已声明的HTTP契约。",
-          "code": "{\"notes\":[{\"id\":\"n1\",\"title\":\"Python 对象\",\"tags\":[\"python\",\"basics\"]},{\"id\":\"n2\",\"title\":\"生成器与迭代\",\"tags\":[\"python\",\"iterator\"]}]}\n"
+          "code": "{\"message\":\"你好，Python\"}",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "校验失败返回422，含字段位置与错误说明；重复业务ID则是409或已接收任务的failed，它们不是同一种失败。前者还没形成合法请求对象，后者是合法对象与当前业务状态冲突。数据库尚未出现时也应把这两层分开，不能把所有异常都包装成输入错误。"
+          "text": "服务会持续运行等待后续请求，不会像前面print一次就退出。想停下来，在运行它的终端按Ctrl+C。开始下一段完整笔记服务前，先停止这个问候服务，避免同一端口已被占用；本例不会自动换成另一个端口。"
         }
       ]
     },
     {
       "id": "body",
-      "title": "字段上限与请求字节上限约束不同的资源",
+      "title": "请求体：用户怎样交一条新笔记",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "只有notes最多32条，还不能阻止客户端先发一份巨大JSON：框架通常要先读取正文、解码，再运行模型验证。下面的纯ASGI中间件在JSON解码之前累计原始字节，超过32768直接413；没有依赖Content-Length，因为分块请求也需要检查。它保留受限正文，再向下游重放一次，不让业务路由重复读取网络。"
+          "text": "提交标题时，客户端可以发送JSON，例如 {\"title\":\"学习接口\"}。FastAPI结合Pydantic模型描述这个输入应该是什么形状。下面的NoteInput表示必须有一个字符串title，并且长度在1到100之间。"
         },
         {
           "type": "code",
+          "filename": "examples/python-course/beginner/learning_notes/api.py",
+          "code": "class NoteInput(BaseModel):\n    title: str = Field(min_length=1, max_length=100)",
+          "purpose": "NoteInput继承BaseModel。Field提供长度要求，框架在处理请求时执行相应校验。",
           "language": "python",
-          "filename": "examples/python-course/chapter07/body_limit.py",
-          "kind": "excerpt",
-          "purpose": "完整正文边界；累计字节在模型验证之前，disconnect则不继续处理。",
-          "code": "from starlette.responses import JSONResponse\nfrom starlette.types import ASGIApp, Receive, Scope, Send\n\n\nclass BodyLimit:\n    \"\"\"Bound buffered request bytes before JSON decoding; not a server-wide quota.\"\"\"\n    def __init__(self, app: ASGIApp, limit: int = 32768) -> None:\n        self.app, self.limit = app, limit\n\n    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:\n        if scope[\"type\"] != \"http\":\n            await self.app(scope, receive, send)\n            return\n        body = bytearray()\n        while True:\n            message = await receive()\n            if message[\"type\"] == \"http.disconnect\":\n                return\n            chunk = message.get(\"body\", b\"\")\n            if len(body) + len(chunk) > self.limit:\n                await JSONResponse({\"detail\": \"body exceeds byte limit\"}, 413)(scope, receive, send)\n                return\n            body.extend(chunk)\n            if not message.get(\"more_body\", False):\n                break\n        delivered = False\n\n        async def replay() -> dict:\n            nonlocal delivered\n            if delivered:\n                return await receive()\n            delivered = True\n            return {\"type\": \"http.request\", \"body\": bytes(body), \"more_body\": False}\n\n        await self.app(scope, replay, send)\n"
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "这不是整个服务器的硬内存上限。每次receive交出的分块已由服务器分配，网络缓冲、并发请求、解码后的字符串与对象仍各占空间；一个32768字节限制不能推出进程永远只用这么多内存。本例也没有请求读取总时限或全局连接配额。公网服务还需要服务器/代理层的容量与超时策略，本章只精确交付这一层约束。"
+          "text": "class NoteInput(BaseModel) 使用了类的继承：我们描述字段，库提供读取和检查输入的功能。这与普通Python类型注解本身不做校验并不矛盾，是Pydantic这个库主动使用了类型说明。把 title 写成整数、漏掉字段或传入超长文字，应该得到明确错误，而不是直接创建一个坏笔记。"
+        },
+        {
+          "type": "paragraph",
+          "text": "只有空格的标题仍是非空字符串，所以路由里还会strip，再检查是否为空。格式长度与我们的实际内容要求是两层检查；先给出这个小例子，你就能看清为什么不能只写“用了类型注解，所以输入肯定正确”。"
         }
       ]
     },
     {
       "id": "jobs",
-      "title": "任务队列把接收成功与处理完成拆成两个时刻",
+      "title": "完整笔记服务：读取和创建各走一个函数",
       "paragraphs": [],
       "blocks": [
         {
-          "type": "paragraph",
-          "text": "202表示服务器接受了任务，不表示笔记已经提交。我们为每批生成ID，状态从queued到running，再到succeeded、failed或cancelled；客户端按ID查询。队列最多保存capacity批，固定workers各持有至多一批，每批又最多32条。因此等待区与执行区都能算清楚，不会为每个请求无限create_task。请求断开后，已接收任务仍由服务寿命拥有。"
-        },
-        {
-          "type": "figure",
-          "src": "figures/python-fastapi/lifetime.svg",
-          "title": "请求、已接收任务和服务各有寿命",
-          "alt": "请求先经字节限制、模型与鉴权进入有界队列，固定worker组装整批后提交内存；lifespan关闭拒绝新任务并取消执行、清空等待。",
-          "caption": "职责与容量示意，不表示耗时；202不能替代任务终态。"
-        },
-        {
           "type": "code",
+          "filename": "examples/python-course/beginner/learning_notes/api.py",
+          "code": "from contextlib import asynccontextmanager\nfrom fastapi import FastAPI, Depends, Header, HTTPException, Request\nfrom pydantic import BaseModel, Field\nfrom .models import Note, Notebook\n\n\nclass NoteInput(BaseModel):\n    title: str = Field(min_length=1, max_length=100)\n\n\ndef create_app(token=\"study-token\"):\n    @asynccontextmanager\n    async def lifespan(app):\n        app.state.book = Notebook()\n        yield\n        app.state.book = None\n\n    def check_token(authorization: str | None = Header(default=None)):\n        if authorization != \"Bearer \" + token:\n            raise HTTPException(status_code=401, detail=\"需要正确的学习令牌\")\n\n    app = FastAPI(lifespan=lifespan)\n\n    @app.get(\"/health\")\n    def health():\n        return {\"ok\": True}\n\n    @app.get(\"/notes\", dependencies=[Depends(check_token)])\n    async def list_notes(request: Request):\n        return request.app.state.book.to_list()\n\n    @app.post(\"/notes\", status_code=201, dependencies=[Depends(check_token)])\n    async def add_note(data: NoteInput, request: Request):\n        title = data.title.strip()\n        if not title:\n            raise HTTPException(status_code=400, detail=\"标题不能只有空格\")\n        book = request.app.state.book\n        if len(book) >= 100:\n            raise HTTPException(status_code=409, detail=\"学习笔记本最多保存100条\")\n        note = Note(title)\n        book.add(note)\n        return note.to_dict()\n\n    return app",
+          "purpose": "完整服务模块。下面会依次解释路由、状态码、检查函数以及启动和关闭。",
           "language": "python",
-          "filename": "examples/python-course/chapter07/jobs.py",
-          "kind": "excerpt",
-          "purpose": "完整内存仓库与任务所有者；队列、状态迁移、批次提交、超时与关闭都可在本文件追到。",
-          "code": "import asyncio\nfrom collections.abc import Awaitable, Callable\nfrom dataclasses import dataclass\nfrom uuid import uuid4\nfrom chapter04.notes_tool.domain import Note\n\n\nclass Conflict(Exception):\n    pass\n\n\nclass Busy(Exception):\n    pass\n\n\nclass MemoryNotes:\n    \"\"\"Event-loop-owned store: no await occurs between checking and updating.\"\"\"\n    def __init__(self, capacity: int = 512) -> None:\n        self.capacity = capacity\n        self.notes: dict[str, Note] = {}\n\n    def add_batch(self, notes: tuple[Note, ...]) -> None:\n        ids = [note.id for note in notes]\n        if len(ids) != len(set(ids)) or any(key in self.notes for key in ids):\n            raise Conflict(\"note id already exists\")\n        if len(self.notes) + len(notes) > self.capacity:\n            raise Busy(\"note capacity reached\")\n        self.notes.update((note.id, note) for note in notes)\n\n    def snapshot(self) -> list[dict[str, object]]:\n        return [note.to_dict() for note in self.notes.values()]\n\n\n@dataclass\nclass Job:\n    id: str\n    state: str = \"queued\"\n    count: int = 0\n    error: str | None = None\n\n    def snapshot(self) -> dict[str, object]:\n        return vars(self).copy()\n\n\nasync def unchanged(note: Note) -> Note:\n    # Validation is small CPU work. async alone neither parallelizes nor yields.\n    return note\n\n\nclass ImportJobs:\n    def __init__(self, store: MemoryNotes, *, workers: int = 2, capacity: int = 2,\n                 retention: int = 64, timeout: float = 2.0,\n                 prepare: Callable[[Note], Awaitable[Note]] = unchanged) -> None:\n        if (any(type(value) is not int for value in (workers, capacity, retention))\n                or not 1 <= workers <= 4 or not 1 <= capacity <= 16\n                or not workers + capacity <= retention <= 256):\n            raise ValueError(\"invalid job capacities\")\n        if not 0 < timeout <= 10:\n            raise ValueError(\"invalid job timeout\")\n        self.store, self.workers, self.retention = store, workers, retention\n        self.timeout, self.prepare = timeout, prepare\n        self.queue: asyncio.Queue[tuple[Job, tuple[Note, ...]]] = asyncio.Queue(capacity)\n        self.jobs: dict[str, Job] = {}\n        self.tasks: list[asyncio.Task[None]] = []\n        self.accepting = False\n\n    def start(self, group: asyncio.TaskGroup) -> None:\n        if self.tasks:\n            raise RuntimeError(\"jobs already started\")\n        self.accepting = True\n        self.tasks = [group.create_task(self.consume(), name=f\"notes-import-{i}\")\n                      for i in range(self.workers)]\n\n    def submit(self, notes: tuple[Note, ...]) -> Job:\n        if not self.accepting or self.queue.full():\n            raise Busy(\"import queue unavailable\")\n        if not 1 <= len(notes) <= 32:\n            raise ValueError(\"batch must contain 1..32 notes\")\n        if len(self.jobs) >= self.retention:\n            oldest = next((key for key, job in self.jobs.items()\n                           if job.state in {\"succeeded\", \"failed\", \"cancelled\"}), None)\n            if oldest is None:\n                raise Busy(\"job retention capacity reached\")\n            del self.jobs[oldest]\n        job = Job(uuid4().hex)\n        self.queue.put_nowait((job, notes))\n        self.jobs[job.id] = job\n        return job\n\n    async def consume(self) -> None:\n        while True:\n            job, notes = await self.queue.get()\n            try:\n                job.state = \"running\"\n                async with asyncio.timeout(self.timeout):\n                    prepared = tuple([await self.prepare(note) for note in notes])\n                    self.store.add_batch(prepared)\n                job.state, job.count = \"succeeded\", len(prepared)\n            except asyncio.CancelledError:\n                job.state, job.error = \"cancelled\", \"service shutdown\"\n                raise\n            except (Conflict, Busy) as error:\n                job.state, job.error = \"failed\", str(error)\n            except TimeoutError:\n                job.state, job.error = \"failed\", \"import timeout\"\n            except Exception:\n                job.state, job.error = \"failed\", \"import processing failed\"\n            finally:\n                self.queue.task_done()\n\n    async def close(self) -> None:\n        self.accepting = False\n        for task in self.tasks:\n            task.cancel()\n        await asyncio.gather(*self.tasks, return_exceptions=True)\n        while not self.queue.empty():\n            job, _ = self.queue.get_nowait()\n            job.state, job.error = \"cancelled\", \"service shutdown before execution\"\n            self.queue.task_done()\n        await self.queue.join()\n"
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "批次先把每条prepare结果组装完，再一次检查ID冲突和notes容量，最后update。单事件循环中这段检查到写入之间没有await，所以其他协程不会插入半批修改；第二条准备失败时，第一条也不会提前发布。这是当前进程内的执行约定，不是耐久数据库事务，更不覆盖多进程。直接从其他线程修改store也会破坏这个前提。"
+          "text": "GET /notes调用笔记本的to_list，返回当前列表。POST /notes接收NoteInput，把标题去空格，创建第三篇的Note，再加入Notebook；status_code=201说明这次创建成功。两个函数仍然是普通的Python逻辑，只是由HTTP请求来触发。"
         },
         {
           "type": "paragraph",
-          "text": "默认prepare只是返回已经验证的Note，没有外部I/O，也没有真正的挂起点。给它加async不会自动让出或并行；我们保留可等待接口，是为了让下一种真实I/O处理能接入同一寿命。超时只在协作让出时生效，不能强行切断Python死循环。测试用Event把prepare明确停在await，观察running、queued与第三批拒绝，才有资格证明容量。"
+          "text": "request.app.state.book 是这一个应用保存的小笔记本。这里的读写路由用async def，但内部只有很短的内存操作，没有等待外部数据库。这个写法不代表任意慢同步函数也能随便放进去；下一篇使用同步SQLite调用时，会改用普通def路由，让框架按相应方式处理。"
         },
         {
           "type": "paragraph",
-          "text": "结果记录也需要上限。当前最多保留64个任务；满时淘汰最早的终态记录，因此旧ID可能404。仍在queued/running的记录不被淘汰。notes最多512条，达到容量后失败；这些预算与队列容量是三种不同集合，不能只给queue设置maxsize就宣称所有内存都已有界。"
+          "text": "在这个单进程示例里，创建路由没有在“检查长度”和“追加笔记”之间await，达到100条后返回409。它不是一个多副本共用的全局配额，也不是对HTTP请求体读取内存的硬限制。初学时先知道这一版保存在哪里，再逐步扩展。"
         }
       ]
     },
     {
       "id": "dependencies",
-      "title": "依赖负责取得当前资源，lifespan负责拥有它",
+      "title": "依赖：把共同的检查交给框架先调用",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "依赖注入让路由声明“我需要仓库或任务服务”，由Depends从当前Request.app.state取得，不把全局变量埋进每个函数。它是一种调用与组合机制，不会自动创建数据库事务，也不保证对象每次都是新的。本例仓库和worker属于同一个应用lifespan，所有请求借用；每次启动创建一套，停止时统一收口。"
-        },
-        {
-          "type": "code",
-          "language": "python",
-          "filename": "examples/python-course/chapter07/api.py",
-          "kind": "excerpt",
-          "purpose": "完整应用工厂，包含lifespan、依赖、共享Bearer与全部HTTP路由。",
-          "code": "import asyncio\nfrom contextlib import asynccontextmanager\nfrom dataclasses import dataclass\nimport os\nimport secrets\nfrom typing import Annotated\nfrom fastapi import Depends, FastAPI, HTTPException, Request\nfrom fastapi.security import HTTPAuthorizationCredentials, HTTPBearer\nfrom .body_limit import BodyLimit\nfrom .jobs import Busy, Conflict, ImportJobs, MemoryNotes\nfrom .models import ImportInput, NoteInput\n\n\n@dataclass(frozen=True)\nclass Settings:\n    token: str\n    workers: int = 2\n    capacity: int = 2\n\n    def __post_init__(self) -> None:\n        if not isinstance(self.token, str) or not 16 <= len(self.token) <= 128:\n            raise ValueError(\"token must contain 16..128 characters\")\n        if type(self.workers) is not int or not 1 <= self.workers <= 4:\n            raise ValueError(\"workers outside 1..4\")\n        if type(self.capacity) is not int or not 1 <= self.capacity <= 16:\n            raise ValueError(\"capacity outside 1..16\")\n\n\ndef create_app(settings: Settings) -> FastAPI:\n    @asynccontextmanager\n    async def lifespan(app: FastAPI):\n        store = MemoryNotes()\n        jobs = ImportJobs(store, workers=settings.workers, capacity=settings.capacity)\n        app.state.store, app.state.jobs = store, jobs\n        async with asyncio.TaskGroup() as group:\n            jobs.start(group)\n            try:\n                yield\n            finally:\n                await jobs.close()\n\n    app = FastAPI(title=\"Atlas Notes chapter 7\", lifespan=lifespan)\n    app.add_middleware(BodyLimit, limit=32768)\n    bearer = HTTPBearer(auto_error=False)\n\n    async def authenticated(credentials: Annotated[HTTPAuthorizationCredentials | None,\n                                                   Depends(bearer)]) -> None:\n        if credentials is None or not secrets.compare_digest(\n                credentials.credentials.encode(), settings.token.encode()):\n            raise HTTPException(401, \"invalid bearer token\", headers={\"WWW-Authenticate\": \"Bearer\"})\n\n    async def store(request: Request) -> MemoryNotes:\n        return request.app.state.store\n\n    async def jobs(request: Request) -> ImportJobs:\n        return request.app.state.jobs\n\n    @app.get(\"/health\")\n    async def health(request: Request):\n        return {\"ready\": request.app.state.jobs.accepting}\n\n    @app.get(\"/notes\", dependencies=[Depends(authenticated)])\n    async def list_notes(repository: Annotated[MemoryNotes, Depends(store)]):\n        return {\"notes\": repository.snapshot()}\n\n    @app.post(\"/notes\", status_code=201, dependencies=[Depends(authenticated)])\n    async def add_note(note: NoteInput, repository: Annotated[MemoryNotes, Depends(store)]):\n        try:\n            repository.add_batch((note.domain(),))\n        except Conflict as error:\n            raise HTTPException(409, str(error)) from error\n        except Busy as error:\n            raise HTTPException(429, str(error)) from error\n        return note.model_dump()\n\n    @app.post(\"/imports\", status_code=202, dependencies=[Depends(authenticated)])\n    async def submit_import(body: ImportInput, service: Annotated[ImportJobs, Depends(jobs)]):\n        try:\n            job = service.submit(tuple(note.domain() for note in body.notes))\n        except Busy as error:\n            raise HTTPException(429, str(error), headers={\"Retry-After\": \"1\"}) from error\n        return job.snapshot()\n\n    @app.get(\"/imports/{job_id}\", dependencies=[Depends(authenticated)])\n    async def import_status(job_id: str, service: Annotated[ImportJobs, Depends(jobs)]):\n        job = service.jobs.get(job_id)\n        if job is None:\n            raise HTTPException(404, \"job not found or evicted\")\n        return job.snapshot()\n\n    return app\n\n\ndef build_app() -> FastAPI:\n    return create_app(Settings(token=os.environ.get(\"ATLAS_TOKEN\", \"\")))\n"
+          "text": "读和写都需要同样的请求头检查。若每个路由复制一份，以后很容易只改了一处。Depends(check_token)把这个函数交给框架，在进入相应路由前调用；没有括号是传函数，不是在定义路由时就执行它。"
         },
         {
           "type": "paragraph",
-          "text": "asynccontextmanager里yield之前是启动，yield之后的finally是停止。TaskGroup拥有固定worker；close先把accepting设为False，再cancel并等待worker，运行批次在CancelledError路径标cancelled并重新抛出，等待批次则逐一标取消和task_done，最后join确保计数归零。这里的关闭策略是取消未完成工作，而非承诺把所有接收任务耗时无限地跑完。"
+          "text": "Header(default=None)告诉FastAPI从请求头取得authorization，没给时用None；str | None是第四篇介绍的类型说明。check_token检查内容，不正确就抛HTTPException；这个异常会被框架转成相应的HTTP错误响应。"
         },
         {
           "type": "paragraph",
-          "text": "取消必须继续传播，不能捕获后伪造成功。prepare自己的finally应释放借用资源；任务服务不会替未知库关闭它私有的连接。如果某段代码阻塞事件循环，协作取消也无法及时推进。正常关停的测试能证明当前实现无遗留worker，不能覆盖断电、SIGKILL或进程崩溃；内存任务也不会自动恢复。"
+          "text": "这里先把“依赖注入”读成很具体的一句话：路由所需的准备或检查，由框架按声明安排调用。能看懂这一次检查在哪里执行，已经比先背依赖系统的所有作用域更有用。"
         }
       ]
     },
     {
       "id": "auth",
-      "title": "共享Bearer演示认证入口，不能替代用户权限模型",
+      "title": "学习令牌只用来观察检查成功和失败",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "HTTPBearer解析Authorization方案和凭据，本例用compare_digest比较配置中的共享token；缺失或不匹配返回401并附WWW-Authenticate。所有写笔记、读笔记和查任务接口都使用同一依赖。健康入口公开，便于观察启动是否完成。它没有用户账号、角色、笔记归属，也不是一套OAuth授权服务器或JWT验证实现。"
+          "text": "本例接受Authorization: Bearer study-token。study-token公开写在示例里，只为了让你复现请求头检查；它不是可直接部署的用户账号、密码或安全令牌系统。服务只绑定本机，没有实现注册、角色、租户或令牌轮换。"
+        },
+        {
+          "type": "code",
+          "code": "curl -i http://127.0.0.1:4191/notes\ncurl -i -H \"Authorization: Bearer study-token\" http://127.0.0.1:4191/notes",
+          "language": "bash",
+          "purpose": "第一条缺少学习令牌，应返回401；第二条是刚启动后的读取，应返回200和空列表。",
+          "kind": "runnable"
         },
         {
           "type": "paragraph",
-          "text": "token从环境配置传给工厂，长度不合法时启动直接失败，不静默启用默认口令。README里的公开字符串只供本机loopback实验，代码不记录它。请求体仍可能先被框架读取和校验，不能因为写了Depends就断言未经认证请求绝不会消耗JSON解析资源；前面的字节限制因此仍有意义。真正跨机器传输还需要TLS与独立的权限设计。"
+          "text": "浏览器地址栏只方便发普通GET，不会自动替你加这个请求头。因此直接打开/notes看到401，在这一段是预期结果；/health不需要学习令牌，可以用来确认服务在运行。先不要把401误诊为Python没有成功启动。"
+        }
+      ]
+    },
+    {
+      "id": "lifecycle",
+      "title": "启动和关闭：一本笔记本什么时候存在",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "lifespan里的yield前创建Notebook，应用开始服务后使用它；应用正常关闭时再继续执行yield后面的收尾。@asynccontextmanager是标准库提供的工具，在这里把前后两部分交给框架管理。刚学时先理解“开始前准备，结束后收好”的动作，再看具体工具名。"
+        },
+        {
+          "type": "figure",
+          "src": "figures/python-fastapi/lifetime.svg",
+          "title": "一条请求怎样经过检查并返回笔记",
+          "alt": "启动时建立内存笔记本；请求先检查请求头和输入，再进入读取或创建函数；关闭后当前内存笔记本不再保留。",
+          "caption": "图中的201表示本次内存创建成功，不表示数据已经保存到硬盘。重启丢失是当前实现的已知行为，下一篇用数据库解决。 手机端可以在图形区域横向滑动查看。"
+        },
+        {
+          "type": "paragraph",
+          "text": "重新启动服务会得到一本空笔记本。不同进程也各自有不同的内存列表，不会因为它们运行了同一份代码，就自动共享数据。现在先用单进程学习；等数据真的保存到数据库后，再学习多进程部署。"
         }
       ]
     },
     {
       "id": "run",
-      "title": "从真实入口启动，再分别观察接收、完成与失败",
+      "title": "运行完整服务，按三次请求确认发生了什么",
       "paragraphs": [],
       "blocks": [
         {
           "type": "code",
-          "language": "python",
-          "filename": "examples/python-course/chapter07/__main__.py",
-          "kind": "excerpt",
-          "purpose": "完整python -m入口；单worker保证当前内存状态只有一份。",
-          "code": "import uvicorn\n\nif __name__ == \"__main__\":\n    uvicorn.run(\"chapter07.api:build_app\", factory=True, host=\"127.0.0.1\", port=8017,\n                workers=1, timeout_graceful_shutdown=5)\n"
+          "code": "python api_demo.py",
+          "language": "bash",
+          "purpose": "在已安装依赖的beginner目录运行，先停掉占用4191的hello_api.py。另开一个终端执行下面的curl。",
+          "kind": "runnable"
         },
         {
           "type": "code",
+          "code": "curl -i -X POST http://127.0.0.1:4191/notes \\\n  -H \"Authorization: Bearer study-token\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"title\":\"  学习接口  \"}'\ncurl -s -H \"Authorization: Bearer study-token\" http://127.0.0.1:4191/notes",
           "language": "bash",
-          "filename": "终端",
-          "kind": "runnable",
-          "purpose": "在examples/python-course目录运行；所有HTTP请求只到本机。",
-          "code": "python3.12 -m venv .venv-web\n.venv-web/bin/python -m pip install -r chapter07/requirements.lock\n.venv-web/bin/python -m unittest -v test_chapter07\nATLAS_TOKEN=local-demo-token-2026 .venv-web/bin/python -m chapter07"
+          "purpose": "创建应为201，标题被去掉两端空格；随后读取应包含同一条。",
+          "kind": "runnable"
         },
         {
           "type": "code",
-          "language": "bash",
-          "filename": "终端",
-          "kind": "runnable",
-          "purpose": "在examples/python-course目录运行；所有HTTP请求只到本机。",
-          "code": "curl --noproxy '*' -sS -X POST http://127.0.0.1:8017/imports \\\n  -H 'Authorization: Bearer local-demo-token-2026' -H 'Content-Type: application/json' \\\n  --data-binary @chapter07/fixtures/import.json\n# 记录响应id，再GET /imports/<id>；不是把202当完成。\ncurl --noproxy '*' -sS http://127.0.0.1:8017/notes -H 'Authorization: Bearer local-demo-token-2026'"
+          "code": "{\"title\":\"学习接口\",\"done\":false}\n[{\"title\":\"学习接口\",\"done\":false}]",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "正常输入的终态应为succeeded、count2，列表含n1与n2。再次导入同一批，HTTP仍可202，但终态failed且笔记保持2条；这是处理时发现业务冲突。单笔POST相同ID直接409，title传123则422，无token访问列表401。排查时先记录HTTP状态与任务ID，再看任务终态，避免把一次成功提交误读成成功处理。"
+          "text": "第三次把POST正文改成 {}，应得到422；改成 {\"title\":\" \"}，应得到我们主动指定的400。200表示读取成功，201表示创建成功，401表示本例缺少正确令牌，400和422则分别来自这里的内容检查与框架输入检查。状态码要结合当前接口定义理解，不只是背数字。"
         }
       ]
     },
     {
       "id": "verify",
-      "title": "测试分层：协议内调用、真实socket和可观察的关闭",
+      "title": "练习和检查：服务能返回，也要能说清结果",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "本机CPython3.12.14实际通过8项unittest。TestClient以with启动lifespan，覆盖201/401/409、422/413、导入成功和整批失败；异步测试用Event确认运行批次与等待批次，再验证429对应的Busy边界、超时清理、终态淘汰和关闭后不可submit。准备第二条失败时仓库仍为空，证明未发布半成品。"
+          "text": "练习一：不带令牌创建笔记，随后带正确令牌读取，数量不应增加。练习二：正常创建一条，再停掉并重启服务，列表会变空；这是内存数据与文件持久化的区别，不是浏览器自动清除了你的数据。"
         },
         {
           "type": "paragraph",
-          "text": "另有真实loopback Uvicorn测试：内核分配端口，HTTPX真正连接、等待健康响应，再创建并读取笔记，停止后join服务线程。HTTPX设trust_env=False，避免本机环境代理把127.0.0.1请求带走；这曾在实际调试中表现为代理502，不能误判成应用路由失败。协议内测试与真实TCP证据各有作用，前者不会证明服务器绑定和关闭正确。"
+          "text": "练习三：为GET /health增加一个说明字段，再重新启动服务确认变化。你已经能读一个请求对应到哪个函数、函数从哪里拿数据、结果怎样返回。下一篇不再把数据只放在内存里，而是先认识SQLite的表和最基本SQL。"
         },
         {
           "type": "paragraph",
-          "text": "当前没有耐久任务、跨worker共享、HTTPS或生产负载结论。开启多个Uvicorn worker会创建多份内存，任务ID可能在另一个进程查不到；重启后笔记与任务都丢失。下一章引入数据库并明确事务和连接借用边界，才能把“这次进程里看见了两条”推进到“重新打开数据库仍能查到同一次提交”。"
+          "text": "这套示例在本机运行，本站GitHub Pages只展示文章和下载源码，没有替你启动Python后端。若网站上的文章能打开，而本机4191连接不上，先检查api_demo.py是否仍在终端运行。"
         }
       ]
     }

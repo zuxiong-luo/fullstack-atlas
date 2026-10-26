@@ -1,291 +1,435 @@
 import type {Article} from '../../articleTypes';
-const article: Article = {
+const article:Article = {
   "id": "python-functions-iteration",
   "topic": "python",
-  "title": "Python 函数与迭代：参数、作用域、闭包和生成器",
-  "description": "把笔记导入改成按需推进的JSONL管道，理解参数绑定、闭包、迭代协议、延迟异常和流式部分输出。",
-  "minutes": 44,
+  "title": "Python 函数：从 def、参数和 return 开始",
+  "description": "先写一个计算学习时长的函数，再学参数、返回值、局部变量和默认值。用小笔记程序组合起来，闭包和生成器放在最后选读。",
+  "minutes": 50,
   "tags": [
-    "Python",
-    "函数",
-    "闭包",
-    "生成器",
-    "JSONL"
+    "Python 函数",
+    "参数",
+    "return",
+    "作用域",
+    "迭代",
+    "生成器"
   ],
-  "scope": "个人笔记导入工具第2阶段；CPython 3.12、标准库，本地同步迭代，不展开异步生成器或生产上传服务。",
+  "scope": "第二篇以普通函数为主，不要求先懂文件、JSON、框架或处理管道。最后的闭包和生成器为选读，不影响学习下一篇普通类。",
   "prerequisites": [
-    "已读Python语言基础，理解列表、字典、函数及异常",
-    "会从终端运行第一章导入脚本"
+    "读过第一篇，能看懂变量、字符串、列表、字典、if和for"
   ],
   "kind": "series",
   "status": "complete",
   "versions": [
-    "CPython 3.12.14（实际运行）",
-    "Python 3.12系列官方文档（页面维护版3.12.15）"
+    "CPython 3.12.14"
   ],
-  "verifiedAt": "2026-10-24",
+  "verifiedAt": "2026-10-26",
   "labMinutes": 30,
   "questionIds": [],
   "examples": [
     {
-      "label": "三阶段完整源码ZIP",
+      "label": "Python 课程与新入门示例 ZIP",
       "path": "python-course.zip"
     },
     {
-      "label": "运行与边界说明",
-      "path": "python-course/README.md"
+      "label": "从这里开始：九篇顺序、文件与命令",
+      "path": "python-course/beginner/README.md"
     }
   ],
   "references": [
     {
-      "title": "Python3.12：函数参数及默认值",
-      "url": "https://docs.python.org/3.12/tutorial/controlflow.html#more-on-defining-functions"
+      "title": "Python3.12：定义函数、参数与默认值",
+      "url": "https://docs.python.org/3.12/tutorial/controlflow.html#defining-functions"
     },
     {
-      "title": "Python3.12：作用域、迭代器与生成器",
-      "url": "https://docs.python.org/3.12/tutorial/classes.html"
+      "title": "Python3.12：作用域与名称",
+      "url": "https://docs.python.org/3.12/tutorial/classes.html#python-scopes-and-namespaces"
     },
     {
-      "title": "Python3.12：生成器迭代器方法",
-      "url": "https://docs.python.org/3.12/reference/expressions.html#generator-iterator-methods"
-    },
-    {
-      "title": "Python3.12：文件读取",
-      "url": "https://docs.python.org/3.12/tutorial/inputoutput.html#reading-and-writing-files"
+      "title": "Python3.12：迭代器与生成器",
+      "url": "https://docs.python.org/3.12/tutorial/classes.html#generators"
     }
   ],
   "sections": [
     {
       "id": "functions-as-parts",
-      "title": "函数与迭代：把计算规则和推进时机分开",
+      "title": "函数是什么：给一段操作起名字",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "函数把一组操作封装成可以调用的对象；迭代则约定怎样逐个取得值。这两件事结合起来，就能让读取、校验和筛选各自负责一段处理，并在下游需要下一项时才继续运行。生成器是实现这种按需迭代的一种方式，函数体中的 yield 会交出一个值，同时保存暂停位置。它不需要新线程，也不会自动让同步代码并行。"
-        },
-        {
-          "type": "paragraph",
-          "text": "上一章把整个 JSON 数组读入，再一次性得到结果。这次仍然导入 id、title、tags 三个字段，但文件改成 JSONL：每个非空行是一条完整 JSON 对象。这样一条记录的解析不需要等待整个数组结束。目标也变得更具体：只输出含指定标签的笔记，并在所有已消费记录中检查 ID 唯一性。"
-        },
-        {
-          "type": "paragraph",
-          "text": "这一章会交付 chapter02/import_notes.py。你会知道为什么创建生成器时不读文件、为什么错误可能到下一次 next 才出现，以及为什么流式导入失败时 stdout 里可能已经有数据。适用环境是标准库与 CPython 3.12，本次实际运行3.12.14；所核对的3.12官方文档目前显示3.12.15。我们先处理同步命令行，不把生成器等同于网络流控或异步任务。"
+          "text": "函数是可以反复调用的一段代码。比如你有多个地方都要计算“原来学了多少分钟，再增加多少分钟”，每次复制一段加法很容易改漏。把这段操作定义成 add_minutes，以后只要提供不同数字，就能重复使用它。"
         },
         {
           "type": "code",
-          "language": "jsonl",
-          "filename": "examples/python-course/fixtures/notes.jsonl",
-          "kind": "excerpt",
-          "purpose": "完整原始输入；三个阶段沿用相同业务数据，第1章为数组，第2/3章每行一条对象。",
-          "code": "{\"id\":\"n1\",\"title\":\"  Python 对象  \",\"tags\":[\"Python\",\" Basics \",\"python\"]}\n{\"id\":\"n2\",\"title\":\"生成器与迭代\",\"tags\":[\"Python\",\"iterator\"]}\n{\"id\":\"n3\",\"title\":\"HTTP 请求\",\"tags\":[\"web\"]}\n"
+          "filename": "examples/python-course/beginner/functions_demo.py",
+          "code": "def add_minutes(current, extra):\n    total = current + extra\n    return total",
+          "purpose": "先看函数定义，下一段给出调用。定义时函数体不会立刻运行。",
+          "language": "python",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "print(add_minutes(20, 10))",
+          "language": "python",
+          "purpose": "和上一段函数定义放在同一个文件里，写在定义之后。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "30",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "def 表示定义函数，后面是你起的函数名。括号里的 current、extra 是参数，表示调用时需要提供的数据；冒号后的缩进部分是函数体。add_minutes(20, 10) 才是一次调用，它把20交给 current，把10交给 extra，计算出30，再通过 return 交回调用处。"
+        },
+        {
+          "type": "figure",
+          "src": "/figures/python-functions-iteration/flow.svg",
+          "title": "一次函数调用怎样返回结果",
+          "alt": "调用 add_minutes(20,10)，参数 current 和 extra 分别得到20和10，函数计算 total=30，再把结果返回调用处。",
+          "caption": "看清调用发生前的输入，以及 return 之后的结果。函数名、参数名和实际传入的值不是同一种东西。 手机端可以在图形区域横向滑动查看。"
         }
       ]
     },
     {
       "id": "parameters",
-      "title": "参数决定调用契约，默认值有自己的生命周期",
+      "title": "参数：按位置传，或者写清名字",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "函数定义中的参数是局部名字；调用时提供的实参对象按位置或名字与它们绑定。iter_notes(lines, *, max_chars=4096) 的星号表示后面的参数只能按名字传入：iter_notes(source, max_chars=1000) 可读，iter_notes(source, 1000) 则抛 TypeError。文件源与字符限制含义不同，用关键字表达限制可以减少位置写错的机会。"
+          "text": "调用中的20、10叫实参，函数定义里的 current、extra 叫形参。先记住它们的对应关系，不必为了两个名字停下来背定义。你可以按位置写 add_minutes(20,10)，也可以按名字写 add_minutes(current=20,extra=10)。写名字时先后次序可以不同，但名字必须和定义对应。"
+        },
+        {
+          "type": "code",
+          "code": "print(add_minutes(current=20, extra=10))\nprint(add_minutes(extra=5, current=20))",
+          "language": "python",
+          "purpose": "接在 add_minutes 定义后运行。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "30\n25",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "默认值在执行函数定义时求值一次，每次缺省调用都会使用那个对象。因此把 bucket=[] 写进定义，再在函数里 append，第二次调用会接着看到第一次留下的内容。想每次新建容器，可以用 None 作缺省标记，并在函数体里创建列表。本项目的4096是不可变整数，不存在跨调用累积列表的问题；select_unique 的 seen 则放在函数体内，每个生成器实例都有自己的状态。"
+          "text": "少给一个必需参数会得到 TypeError；拼成 extrra 也不是一个新参数，而是写错名字。括号可以留给没有参数的函数，但是否允许空着由定义决定。不要把 print(add_minutes) 和 print(add_minutes(20,10)) 混在一起：前者显示函数这个对象，后者先调用，再显示计算结果。"
+        }
+      ]
+    },
+    {
+      "id": "return-values",
+      "title": "return 和 print 分别做什么",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "print 把内容显示到终端，return 把结果交给调用处，二者的用途不同。只打印结果的函数不一定能让其他计算继续使用这个结果。如果函数执行到最后没有 return，就会返回 None。"
+        },
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/functions_demo.py",
+          "code": "def show_title(title):\n    print(title)",
+          "purpose": "show_title 只负责显示，没有显式返回值。",
+          "language": "python",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "value = show_title(\"学习函数\")\nprint(value)",
+          "language": "python",
+          "purpose": "和 show_title 定义放在同一个文件里。第一行函数内部打印标题，第二次打印才显示返回值。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "学习函数\nNone",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "类型注解与参数形式也不能代替数据验证。max_chars 检查使用 type(...) is int，同时排除 True；因为 bool 是 int 的子类，只用 isinstance(True, int) 会接受它。这个选择是本项目对配置值的严格约定，不是要求所有 Python API 都拒绝整数子类。生成器还有一个时机细节：参数绑定在调用时完成，但函数体内检查要等首次推进才执行。"
+          "text": "回到 add_minutes，它返回数字，所以可以把结果保存到 total_minutes，也能继续传给另一个函数。return 一旦执行，这次函数调用就结束，后面同一条执行路径的语句不会继续跑。初学时先让一个函数做好一件事，返回一个明确结果，比把计算和所有打印都搅在一起更容易检查。"
+        }
+      ]
+    },
+    {
+      "id": "scope",
+      "title": "局部变量：函数里面的名字有自己的范围",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "add_minutes 里的 total 是局部变量，通常只在这次函数调用中使用。调用者即使也有名叫 total 的变量，也不是函数里自动共享的同一个名字。你可以通过 return 把值交出来，再由调用者决定用什么名字保存。"
         },
         {
-          "type": "reference",
-          "title": "Python3.12参数与默认值",
-          "url": "https://docs.python.org/3.12/tutorial/controlflow.html#more-on-defining-functions",
-          "note": "语言规则出处；本文项目代码与输入输出独立提供。本次实测CPython3.12.14，所核对3.12文档页面维护版为3.12.15。"
+          "type": "code",
+          "code": "total = 100\nanswer = add_minutes(20, 10)\nprint(total)\nprint(answer)",
+          "language": "python",
+          "purpose": "接在函数定义后运行；函数内的局部 total 不会把外面的 total 改成30。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "100\n30",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "这不等于传给函数的数据都会被复制。给函数一个列表，它如果调用 append 修改这个列表，调用方也会看到变化，和第一篇的 alias 例子相同。名字的范围与数据是否被修改是两个问题：前者决定在哪能找到名字，后者决定那个对象的内容有没有变化。"
         }
       ]
     },
     {
       "id": "normalize",
-      "title": "先保留可信数据的形状，再改变读取方式",
+      "title": "从小函数组合出一条笔记",
       "paragraphs": [],
       "blocks": [
         {
           "type": "code",
+          "filename": "examples/python-course/beginner/functions_demo.py",
+          "code": "def clean_title(title):\n    return title.strip()\n\n\ndef make_note(title, done=False):\n    return {\"title\": clean_title(title), \"done\": done}",
+          "purpose": "clean_title 返回清理后的标题；make_note 使用它，再组成字典。",
           "language": "python",
-          "filename": "examples/python-course/chapter02/import_notes.py",
-          "kind": "excerpt",
-          "purpose": "项目原文连续开头：导入和完整标准化函数。本文依次展示整个入口文件，非关键脚手架未省略。",
-          "code": "\"\"\"Stage 2: stream JSONL; leave ownership of the open file to the caller.\"\"\"\nimport json\nimport sys\n\n\ndef normalize_note(raw):\n    if not isinstance(raw, dict) or set(raw) != {\"id\", \"title\", \"tags\"}:\n        raise ValueError(\"note requires exactly id, title, tags\")\n    if any(not isinstance(raw[key], str) or not raw[key].strip()\n           for key in (\"id\", \"title\")):\n        raise ValueError(\"id and title must be non-empty strings\")\n    tags = raw[\"tags\"]\n    if not isinstance(tags, list):\n        raise ValueError(\"tags must be a list\")\n    result = []\n    for tag in tags:\n        if not isinstance(tag, str) or not tag.strip():\n            raise ValueError(\"tag must be a non-empty string\")\n        normalized = tag.strip().lower()\n        if normalized not in result:\n            result.append(normalized)\n    return {\"id\": raw[\"id\"].strip(), \"title\": raw[\"title\"].strip(), \"tags\": result}\n\n\n"
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "note = make_note(\"  学习函数  \")\nprint(note)\nprint(make_note(\"复习变量\", done=True))",
+          "language": "python",
+          "purpose": "将两个定义和这段调用放在同一个文件中。done 没有传入时采用默认值 False。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "{'title': '学习函数', 'done': False}\n{'title': '复习变量', 'done': True}",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "文件中的第一条输入是 n1、带两端空格的标题“Python 对象”，以及 Python、 Basics 、python 三个标签。normalize_note 先检查键集合，之后才访问 id 和 title；两个字段必须是非空字符串，tags 必须是列表。标签依次去空格、转小写和保序去重，结果为 python、basics。输出仍是新字典，上一章“清理不修改原输入”的约定继续成立。"
-        },
-        {
-          "type": "paragraph",
-          "text": "any 接受一个可迭代对象，找到首个真值就停止。这里用生成器表达式逐个检查 id 和 title，短路的 or 保证数字不会被调用 strip。你不必为了使用生成器表达式就把一切压成一行；标签清理仍保留循环，因为类型错误、规范化和去重是三个需要分别看清的判断。"
+          "text": "make_note 的参数 done=False 表示调用者没提供 done 时，使用 False。它不是给所有传入值强行改成 False；显式传 True 仍会保存 True。函数内部先调用 clean_title，得到去空格后的字符串，再返回一个新的字典。读程序时可以顺着这个过程一层层看，不需要先给它取“数据管道”的名字。"
         }
       ]
     },
     {
-      "id": "lazy",
-      "title": "迭代协议：next 推进，yield 保存现场",
+      "id": "defaults",
+      "title": "默认参数里为什么不直接写一个空列表",
       "paragraphs": [],
       "blocks": [
         {
-          "type": "code",
-          "language": "python",
-          "filename": "examples/python-course/chapter02/import_notes.py",
-          "kind": "excerpt",
-          "purpose": "项目原文连续中段：行号、校验、异常链与yield。只负责产出记录，不打开或关闭文件。",
-          "code": "def iter_notes(lines, *, max_chars=4096):\n    if type(max_chars) is not int or max_chars < 1:\n        raise ValueError(\"max_chars must be a positive integer\")\n    for line_number, line in enumerate(lines, start=1):\n        if len(line) > max_chars:\n            raise ValueError(f\"line {line_number}: exceeds {max_chars} characters\")\n        if not line.strip():\n            continue\n        try:\n            note = normalize_note(json.loads(line))\n        except ValueError as error:\n            raise ValueError(f\"line {line_number}: {error}\") from error\n        yield note\n\n\n"
-        },
-        {
           "type": "paragraph",
-          "text": "可迭代对象能交出迭代器；迭代器记住当前进度，next 请求下一项，结束时抛 StopIteration。for 把这套过程包起来，所以你通常不用亲自捕获结束信号。列表可以多次各取一个新迭代器；生成器对象本身就是一个迭代器，消费到尾后再遍历不会从头重来。想重读文件，需要重新打开或明确移动文件位置，再新建处理链。"
+          "text": "默认参数很方便，但列表有一个需要亲自看结果的细节。函数定义时创建的默认列表会被后续调用继续使用，并不是每次调用都自动新建。下面故意给出一段不符合“每次要新列表”想法的写法。"
         },
-        {
-          "type": "paragraph",
-          "text": "调用 iter_notes(source) 时，得到的是生成器对象，循环尚未执行。第一次 next 才检查 max_chars 并读取首行；解析成功后 yield note 交回控制权，局部变量 line_number 和暂停位置保留着。第二次 next 从 yield 后面继续，读取下一行。若下一行格式有错，这一次推进才抛异常；未处理异常离开生成器后，它已结束，再推进只会报告迭代结束。"
-        },
-        {
-          "type": "paragraph",
-          "text": "enumerate 从1开始给物理行编号。空行跳过，但仍占行号，报错位置因此对应编辑器里的真实行。json.loads 抛出的 JSONDecodeError 属于 ValueError，业务校验也使用 ValueError；包装后统一带 line 2 这样的上下文。raise ... from error 保留原始异常链，既给使用者定位，也让调试者能追踪真正的解析原因。"
-        },
-        {
-          "type": "paragraph",
-          "text": "这里的 len(line)>max_chars 发生在完整文本行已经被迭代器读入之后，计算的是 Unicode 字符数，并包括行尾换行。它是记录校验，不是读取字节数或峰值内存的硬上限。一个没有换行的巨大输入仍可能先占用大量内存；要对不可信上传做硬限制，应在更靠近字节读取的边界实施有界读取，本章没有实现那个服务边界。"
-        },
-        {
-          "type": "reference",
-          "title": "Python3.12迭代器与生成器",
-          "url": "https://docs.python.org/3.12/tutorial/classes.html#iterators",
-          "note": "语言规则出处；本文项目代码与输入输出独立提供。本次实测CPython3.12.14，所核对3.12文档页面维护版为3.12.15。"
-        }
-      ]
-    },
-    {
-      "id": "closure",
-      "title": "闭包保存筛选规则，管道仍然检查所有身份",
-      "paragraphs": [],
-      "blocks": [
         {
           "type": "code",
+          "filename": "examples/python-course/beginner/functions_demo.py",
+          "code": "def bad_labels(label, labels=[]):\n    labels.append(label)\n    return labels",
+          "purpose": "反例：默认列表会保留上一次调用的修改。",
           "language": "python",
-          "filename": "examples/python-course/chapter02/import_notes.py",
-          "kind": "excerpt",
-          "purpose": "项目原文连续中段：闭包工厂和唯一性筛选。",
-          "code": "def make_selector(required_tag):\n    normalized_tag = required_tag.strip().lower()\n    if not normalized_tag:\n        raise ValueError(\"required_tag must not be empty\")\n\n    def matches(note):\n        return normalized_tag in note[\"tags\"]\n\n    return matches\n\n\ndef select_unique(notes, predicate):\n    seen = set()\n    for note in notes:\n        if note[\"id\"] in seen:\n            raise ValueError(\"duplicate id: \" + note[\"id\"])\n        seen.add(note[\"id\"])\n        if predicate(note):\n            yield note\n\n\n"
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "print(bad_labels(\"python\"))\nprint(bad_labels(\"web\"))",
+          "language": "python",
+          "purpose": "在一个刚运行的文件里，接到 bad_labels 定义之后调用。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "['python']\n['python', 'web']",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "函数也是对象，可以作为参数传入，或者作为返回值交出去。make_selector 先把命令行标签“ PYTHON ”清理成 python，再返回 matches 函数。后者读取外层函数的 normalized_tag，这个外层绑定随着返回函数继续存在，构成闭包。它保存的是可访问的绑定，不是自动为每个外层对象做一份深拷贝。此处绑定的是清理后的字符串，工厂返回后没有再修改它。"
+          "text": "如果你的意思是“没传列表时，每次新建一个”，可以用 None 作为默认值，再在函数体里创建。这个例子也再次用到第一篇的 None：它表示调用者没有提供一份具体列表。"
+        },
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/functions_demo.py",
+          "code": "def add_label(label, labels=None):\n    if labels is None:\n        labels = []\n    labels.append(label)\n    return labels",
+          "purpose": "修正：只在没有传入列表时创建一个新的列表。",
+          "language": "python",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "print(add_label(\"python\"))\nprint(add_label(\"web\"))",
+          "language": "python",
+          "purpose": "接在修正版函数定义后运行。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "['python']\n['web']",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "作用域决定名字从哪里找。matches 的 note 是局部参数，normalized_tag 来自外层函数；json 则来自模块。若在内层给同名变量赋值，通常会建立局部绑定，而不是自动改外层；确实要重新绑定外层名字才考虑 nonlocal。本例不需要改变规则，保持闭包只读能让每次筛选更容易预测。"
-        },
-        {
-          "type": "paragraph",
-          "text": "循环生成 lambda 时要格外小心。测试里 callbacks = [lambda: index for index in range(3)] 最后得到三个2，因为调用发生在循环结束后，函数访问的是同一个已变成2的绑定。lambda index=index: index 利用定义时求值的默认参数保存本轮对象，结果才是0、1、2。默认参数在前一节是共享可变值的风险，在这里却可以有意保存不可变数值；关键在求值时间和对象能否被修改。"
-        },
-        {
-          "type": "paragraph",
-          "text": "select_unique 接受上游记录和 predicate。每次先查 seen，再加入身份，最后决定是否 yield。顺序很重要：即使筛选条件对所有记录都返回 False，输入中两个规范化后相同的 ID 仍然报错。如果先筛掉不匹配项再查重，业务契约就变成“仅输出记录唯一”，那是另一种语义。本工具选择更严格的“已消费输入唯一”。若下游提前停止消费，未读取的尾部自然尚未验证。"
-        },
-        {
-          "type": "reference",
-          "title": "Python3.12作用域与名字",
-          "url": "https://docs.python.org/3.12/tutorial/classes.html#python-scopes-and-namespaces",
-          "note": "语言规则出处；本文项目代码与输入输出独立提供。本次实测CPython3.12.14，所核对3.12文档页面维护版为3.12.15。"
+          "text": "若调用者明确传了一个已有列表，add_label 仍会修改它，这是当前函数写下的行为。如果想返回新列表又不改原来的，应在函数里复制后再追加。先说清函数是否会修改输入，调用时就不容易被意外影响。"
         }
       ]
     },
     {
       "id": "pipeline",
-      "title": "从消费者向上游推进：一条输入经过哪些步骤",
+      "title": "把函数和循环放在一起，完成一个小任务",
       "paragraphs": [],
       "blocks": [
         {
-          "type": "figure",
-          "src": "/figures/python-functions-iteration/flow.svg",
-          "title": "一次next怎样穿过导入管道",
-          "alt": "消费者请求下一项，select_unique向iter_notes取值，iter_notes从文件读取并校验；匹配记录返回消费者，失败传播并结束。",
-          "caption": "同步调用关系与数据流示意。请求方向和产出方向分别标注；处理并未在三个线程中同时运行。"
+          "type": "code",
+          "filename": "examples/python-course/beginner/functions_demo.py",
+          "code": "def unfinished_titles(notes):\n    result = []\n    for note in notes:\n        if not note[\"done\"]:\n            result.append(note[\"title\"])\n    return result",
+          "purpose": "逐条检查 done，把未完成笔记的标题装进结果列表，最后一次性返回。",
+          "language": "python",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "notes = [\n    make_note(\"  学习函数  \"),\n    make_note(\"复习变量\", done=True),\n]\nprint(unfinished_titles(notes))",
+          "language": "python",
+          "purpose": "接在前面 make_note、clean_title 和 unfinished_titles 的定义之后。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "['学习函数']",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "假设消费者要下一条 Python 笔记。select_unique 向 iter_notes 请求一条，后者从文件得到 n1 并标准化；seen 最初为空，加入 n1，matches 返回 True，于是 n1 一层层交到消费者。下次请求得到 n2，也会产出。再下次读到 n3，seen 加入 n3，但标签 web 不匹配；这次内部循环继续取值直到遇到匹配项或文件结束。因此一次 next 不一定只读一行。"
+          "text": "带着两条输入看：result 最初是空列表，第一条没完成，追加“学习函数”；第二条已完成，跳过；for 结束后 return result。不要把最后的 return 放进循环，否则看完第一条就会离开函数，后面的笔记根本没有检查。"
         },
         {
           "type": "paragraph",
-          "text": "管道省掉的是“先保存所有记录再筛选”的结果列表，不是所有状态。seen 随唯一 ID 数量增长，占 O(u) 空间；每条记录还有标签处理和当前行占用。下游若调用 list(selected)，又会把选中结果全部收集。比较内存时要把数据源、状态、单条大小和消费者一起算，不能只看到 yield 就声称总内存恒定。"
+          "text": "这就是当前阶段需要掌握的组合：小函数各自返回结果，普通循环处理多份数据。只有当你真的遇到重复规则、按需读取或传入不同处理方式时，才需要后面更灵活的写法，不必现在把每个 for 都改成多层函数。"
         }
       ]
     },
     {
       "id": "cli",
-      "title": "资源的拥有者要覆盖真正发生的消费",
+      "title": "先运行完整练习，再决定要不要读选读部分",
       "paragraphs": [],
       "blocks": [
         {
           "type": "code",
+          "code": "cd examples/python-course/beginner\npython3 functions_demo.py",
+          "language": "bash",
+          "purpose": "仅下载ZIP时进入 python-course/beginner。这个文件演示本篇函数；不读取外部数据，也不要求先安装第三方库。",
+          "kind": "runnable"
+        },
+        {
+          "type": "paragraph",
+          "text": "文件先打印30，接着是未完成标题列表、两个相互独立的标签列表，再演示后面的函数传递与生成器。你可以只复制前面的小函数练习，不必一次背完整文件。下载文件末尾的 if __name__ == \"__main__\" 用来区分直接运行和被别处导入，第四篇会解释；当前先把函数定义和调用写进自己的 demo.py 就能完成主线。"
+        }
+      ]
+    },
+    {
+      "id": "lazy",
+      "title": "选读：for 之外，还有逐次取值的生成器",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "普通函数通常运行到 return 才把结果交出来。有时你希望一次只给一个值，下次需要时再继续，这时可以使用 yield。包含 yield 的函数会产生生成器；它记住当前执行到哪里，next 向它要下一个值。这个功能不会创建新线程，也不是 async。"
+        },
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/functions_demo.py",
+          "code": "def count_to(limit):\n    number = 1\n    while number <= limit:\n        yield number\n        number = number + 1",
+          "purpose": "最小生成器：每次 yield 一个数字，然后在下一次请求时继续。",
           "language": "python",
-          "filename": "examples/python-course/chapter02/import_notes.py",
-          "kind": "excerpt",
-          "purpose": "项目原文连续结尾：闭包建立、文件拥有权、流式输出与退出码。与前面三段拼接即完整文件。",
-          "code": "def main():\n    if len(sys.argv) != 3:\n        print(\"usage: python import_notes.py notes.jsonl required-tag\", file=sys.stderr)\n        return 2\n    try:\n        matches = make_selector(sys.argv[2])\n        with open(sys.argv[1], encoding=\"utf-8\") as source:\n            selected = select_unique(iter_notes(source), matches)\n            for note in selected:\n                print(json.dumps(note, ensure_ascii=False))\n    except (OSError, UnicodeError, ValueError) as error:\n        print(\"stream failed: \" + str(error), file=sys.stderr)\n        return 2\n    return 0\n\n\nif __name__ == \"__main__\":\n    sys.exit(main())\n"
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "numbers = count_to(3)\nprint(next(numbers))\nprint(list(numbers))\nprint(list(numbers))",
+          "language": "python",
+          "purpose": "接在 count_to 定义之后，观察同一个生成器被逐步用完。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "1\n[2, 3]\n[]",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "CLI 在 with 内创建并消费整条处理链，文件在最后一次读取之前保持打开。若把 selected 返回给 with 外的代码，生成器虽然还在，但文件已经关闭，随后推进会失败。懒计算把读取时间推迟了，资源生命周期也必须覆盖那个更晚的时间点。当前函数只借用 lines，不负责关闭它；打开文件的 main 保持所有权，职责因此清楚。"
+          "text": "第一次 next 取到1，生成器停在 yield；list 继续取剩下的2、3直到结束；再取已经耗尽的同一个生成器，只得到空列表。创建 count_to(3) 本身并不会立刻跑完函数体。你可以先把它当作一种逐次给值的方法，文件逐行读取会在下一篇之后再用。"
+        }
+      ]
+    },
+    {
+      "id": "closure",
+      "title": "选读：把一个函数交给另一个函数",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "函数可以像其他对象一样交给变量、作为参数或作为返回结果。传 clean_title 表示传函数本身；传 clean_title(\" 标题 \") 表示先调用它，再传入返回的字符串。两种写法看起来只差括号，交出去的东西完全不同。"
+        },
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/functions_demo.py",
+          "code": "def format_title(title, transform):\n    return transform(title)\n\n\ndef make_prefix(prefix):\n    def attach(title):\n        return prefix + title\n    return attach",
+          "purpose": "format_title 接收一个负责转换标题的函数；make_prefix 返回带有特定前缀的新函数。",
+          "language": "python",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "print(format_title(\"  标题  \", clean_title))\nadd_prefix = make_prefix(\"笔记：\")\nprint(add_prefix(\"函数\"))",
+          "language": "python",
+          "purpose": "接在相关函数定义后。此段不影响前面的创建与筛选笔记主线。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "标题\n笔记：函数",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "try 必须包含 for 的实际消费。只包住 selected = ... 捕获不到后续坏行，因为那时生成器还没读取内容。make_selector 是普通函数，所以空标签在建立筛选器时立即失败；iter_notes 里的参数值检查则要推进才执行。两种看起来相似的函数调用，执行时机因 yield 而不同。"
-        },
-        {
-          "type": "paragraph",
-          "text": "每产出一条就 print 一行 JSON，适合下游逐条处理，也改变了第一章的失败承诺。bad.jsonl 第一行有效、第二行损坏时，stdout 已经写出 n1，随后 stderr 出现 stream failed: line 2，退出码为2。stdout 已写出的内容不会撤回。重定向生成的文件因此不能单凭“非空”判断成功，脚本还必须检查退出码；需要整批交付时，可先写临时文件并在成功后替换目标，但那属于额外的交付策略。"
-        },
-        {
-          "type": "reference",
-          "title": "Python3.12读取文件",
-          "url": "https://docs.python.org/3.12/tutorial/inputoutput.html#reading-and-writing-files",
-          "note": "语言规则出处；本文项目代码与输入输出独立提供。本次实测CPython3.12.14，所核对3.12文档页面维护版为3.12.15。"
+          "text": "make_prefix 里面的 attach 使用外层的 prefix。make_prefix 结束后，返回的函数仍能使用那份外层名字，这种现象叫闭包。这里保存的是可以访问的外层绑定，不是给所有外部数据自动做一份深拷贝。先看懂这个十来行的小例子就够了，不需要现在设计复杂函数工厂。"
         }
       ]
     },
     {
       "id": "verification",
-      "title": "运行、反例与下一次设计选择",
+      "title": "练习与解析：一个参数、一个返回值和一个循环",
       "paragraphs": [],
       "blocks": [
         {
-          "type": "code",
-          "language": "bash",
-          "kind": "runnable",
-          "purpose": "从仓库根目录执行；python3须为3.12.x。最后一条预期失败，请观察退出码和两个输出流。",
-          "code": "cd examples/python-course\npython3 chapter02/import_notes.py fixtures/notes.jsonl python\npython3 -m unittest -v test_course.Iteration test_course.CLI\npython3 chapter02/import_notes.py fixtures/bad.jsonl python"
+          "type": "paragraph",
+          "text": "练习一：把 add_minutes 的 return 删除，会怎样？函数仍能计算 total，但调用方收到 None；print(add_minutes(20,10)) 会显示 None。这能检查你是否区分了“函数里面算过”与“调用方拿到了结果”。"
         },
         {
           "type": "paragraph",
-          "text": "正常命令应输出两行，分别是 n1/Python 对象/python、basics 和 n2/生成器与迭代/python、iterator，不再包 count 和 notes 数组。第三条笔记没有输出。失败命令先输出 n1，再报告第二行错误；完整测试会通过子进程分别断言 stdout、stderr 和返回码，避免把终端混在一起的显示误认为程序只输出了一种内容。"
+          "text": "练习二：写一个只返回已完成标题的函数。参考 unfinished_titles，唯一需要改变的筛选条件是 if note[\"done\"]，不是复制一套新的笔记数据。练习三：在循环内遇到未完成项时先 append，再继续检查下一项，最后才 return；用三条输入验证没有提前结束。"
         },
         {
           "type": "paragraph",
-          "text": "Iteration 的五项测试覆盖延迟执行、异常后耗尽、空行、字符限制、标签闭包、未匹配记录也查重、默认值和关键字参数。课程总计17项 unittest 已在 CPython3.12.14 通过。若结果不同，先检查输入是否真的是每行一个 JSON 对象、工作目录和解释器，再查是否在调试时已经 next 过同一生成器；打印 list(stream) 本身也会消费它。"
-        },
-        {
-          "type": "paragraph",
-          "text": "留下两个能独立回答的检查：创建 iter_notes([], max_chars=0) 会立刻报错吗？不会，参数形式有效，值检查到首次推进才执行。对同一条生成器做两次 list 为什么第二次为空？第一次已经取得所有值，第二次拿到的是同一个耗尽进度。它们分别验证执行时间和迭代器身份，不靠背术语判断。"
-        },
-        {
-          "type": "paragraph",
-          "text": "这一版适合按条消费并能处理部分失败的工具。若调用者需要反复遍历笔记、按身份管理成员，或者希望完成校验后再统一输出，就需要另外的结构。下一章把记录建模为不可变 Note，把成员关系交给可变 Notebook；读取仍可逐行进行，但最终保留整个集合，并明确付出相应内存成本。"
+          "text": "当你能自己写出这三个函数，已经可以进入类与对象。闭包和生成器以后遇到时再回来读也没关系。下一篇会把标题、完成状态和相关操作放进一个 Note 类，重点仍然是一行行看数据怎样变化，不从复杂的 dataclass 校验开始。"
         }
       ]
     }

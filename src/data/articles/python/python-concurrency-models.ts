@@ -1,380 +1,332 @@
 import type {Article} from '../../articleTypes';
-const article: Article = {
+const article:Article = {
   "id": "python-concurrency-models",
   "topic": "python",
-  "title": "Python 并发选择：线程、进程、asyncio 与 GIL",
-  "description": "为笔记处理选择执行模型：用有界线程窗口调用阻塞I/O、spawn进程执行纯Python计算、固定async worker消费有界队列，并验证失败与清理。",
-  "minutes": 58,
+  "title": "Python 并发入门：先看顺序执行，再认识线程和进程",
+  "description": "把多个任务先顺序执行，再交给线程池和进程池。看懂任务、结果和错误以后，才解释并发、并行及 GIL。",
+  "minutes": 45,
   "tags": [
-    "Python",
+    "Python 并发",
     "线程",
     "进程",
-    "asyncio",
-    "GIL",
-    "有界并发"
+    "线程池",
+    "GIL"
   ],
-  "scope": "CPython3.12.14标准GIL构建，个人笔记工具第5阶段；本地真实TCP I/O与纯Python计算，按行为验证并发/容量/取消，不做性能排名，不实现生产任务服务。",
+  "scope": "使用少量固定任务学习执行方式。等待由 sleep 模拟，没有网络性能或吞吐排名；不实现大规模任务调度器。",
   "prerequisites": [
-    "理解第4章包边界、类型、异常与with资源管理",
-    "理解生成器与Note模型；无需先学Web或后续异步框架"
+    "已经掌握普通函数、列表、import、with和基本异常处理"
   ],
   "kind": "series",
   "status": "complete",
   "versions": [
-    "CPython3.12.14（实际运行，标准GIL构建）",
-    "Python3.12官方文档（页面维护版3.12.15）",
-    "可选free-threaded构建以Python3.13官方说明为版本边界，未实测"
+    "CPython 3.12.14"
   ],
-  "verifiedAt": "2026-10-24",
-  "labMinutes": 45,
+  "verifiedAt": "2026-10-26",
+  "labMinutes": 30,
   "questionIds": [],
   "examples": [
     {
-      "label": "Python课程源码ZIP",
+      "label": "Python 课程与新入门示例 ZIP",
       "path": "python-course.zip"
     },
     {
-      "label": "本章三种模型运行与限制",
-      "path": "python-course/chapter05/README.md"
+      "label": "从这里开始：九篇顺序、文件与命令",
+      "path": "python-course/beginner/README.md"
     }
   ],
   "references": [
     {
-      "title": "Python3.12：线程与GIL",
-      "url": "https://docs.python.org/3.12/library/threading.html"
-    },
-    {
-      "title": "Python3.12：Executor、Future与关闭",
+      "title": "Python3.12：线程池、进程池与Future",
       "url": "https://docs.python.org/3.12/library/concurrent.futures.html"
     },
     {
-      "title": "Python3.12：进程启动与可序列化要求",
-      "url": "https://docs.python.org/3.12/library/multiprocessing.html#contexts-and-start-methods"
+      "title": "Python3.12：进程启动与安全导入入口",
+      "url": "https://docs.python.org/3.12/library/multiprocessing.html#safe-importing-of-main-module"
     },
     {
-      "title": "Python3.12：asyncio任务、取消与TaskGroup",
-      "url": "https://docs.python.org/3.12/library/asyncio-task.html"
-    },
-    {
-      "title": "Python3.12：有界Queue",
-      "url": "https://docs.python.org/3.12/library/asyncio-queue.html"
-    },
-    {
-      "title": "Python3.12：Streams资源关闭",
-      "url": "https://docs.python.org/3.12/library/asyncio-stream.html"
-    },
-    {
-      "title": "Python3.13：可选free-threaded构建说明",
-      "url": "https://docs.python.org/3.13/howto/free-threading-python.html"
+      "title": "Python3.12：线程与GIL说明",
+      "url": "https://docs.python.org/3.12/library/threading.html"
     }
   ],
   "sections": [
     {
       "id": "models",
-      "title": "并发是安排多个进展，选择要先看工作在等什么",
+      "title": "先分清：顺序、并发、并行分别在说什么",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "并发表示多个任务在重叠的生命周期内取得进展；并行表示某一时刻确实有多个执行单元同时计算。线程、进程和asyncio都能组织并发，但共享状态、切换方式和隔离成本不同。选择它们之前，先拆清楚工作：时间主要花在等待外部I/O，还是持续执行CPU计算？任务之间能否共享对象，失败时需要结束哪些资源？"
+          "text": "顺序执行是做完第一件事，再做第二件事。并发是在一段时间里推进多件事，例如一件事等待时，先推进另一件事；并行是同一时刻真的有多份计算在不同执行资源上运行。它们不是三个从低级到高级的等级，而是不同的组织方式。"
         },
         {
           "type": "paragraph",
-          "text": "这一章沿用笔记输入，不另造大型服务。导入校验后，对每条笔记做两类任务：I/O路径把id与标题发给本机回显端点并确认完整响应；CPU路径执行固定轮数的纯Python整数校验和。前者分别用阻塞socket加线程、asyncio Streams，后者用spawn进程。它们是不同工作负载，结果不能拿来当三种模型的耗时排名。"
+          "text": "如果一个任务只是计算数字，能否同时计算很重要；如果它大部分时间在等外部响应，能否把等待重叠起来更重要。先看函数到底在做计算还是等待，再选工具，比先背“Python用线程还是进程”更有用。"
         },
         {
-          "type": "paragraph",
-          "text": "实际环境固定为CPython3.12.14标准GIL构建与标准库，核对3.12官方文档当前维护版3.12.15。I/O夹具只绑定127.0.0.1的临时端口，不联系外部网站；CPU结果确定，不使用“睡一会儿”制造提速数字。目标是交付能解释容量、失败和清理的执行路径，为下一章更完整的异步工程铺路。"
-        },
-        {
-          "type": "code",
-          "language": "jsonl",
-          "filename": "examples/python-course/fixtures/notes.jsonl",
-          "kind": "excerpt",
-          "purpose": "完整输入仍是同一组笔记，所有模式先校验字段与唯一性，再处理这些记录。",
-          "code": "{\"id\":\"n1\",\"title\":\"  Python 对象  \",\"tags\":[\"Python\",\" Basics \",\"python\"]}\n{\"id\":\"n2\",\"title\":\"生成器与迭代\",\"tags\":[\"Python\",\"iterator\"]}\n{\"id\":\"n3\",\"title\":\"HTTP 请求\",\"tags\":[\"web\"]}\n"
-        }
-      ]
-    },
-    {
-      "id": "gil",
-      "title": "GIL约束哪一层，为什么不等于不能并发",
-      "paragraphs": [],
-      "blocks": [
-        {
-          "type": "paragraph",
-          "text": "GIL是CPython运行时保护解释器内部状态的一把全局解释器锁。对本章的标准3.12构建，同一解释器内通常只有一个线程在执行Python代码；阻塞I/O会在适当位置释放它，某些原生扩展也会释放它。因此多个线程仍能在不同I/O等待之间重叠进展，纯Python紧循环则通常不能靠多线程获得多核执行收益。GIL也不替应用保护“读取余额、判断、再写回”这种复合业务不变量。"
-        },
-        {
-          "type": "paragraph",
-          "text": "进程各有自己的解释器和内存，可以绕开同一解释器的GIL限制，但要付出启动、序列化与进程间传输成本。asyncio则主要在一个事件循环线程里推进协程；它在可挂起的await位置让出控制。如果把纯Python校验和直接放进async函数，并且中间没有让出，事件循环仍会被占住。async关键字改变调用模型，不会把CPU循环自动搬到别的核。"
-        },
-        {
-          "type": "paragraph",
-          "text": "这不是对所有“Python版本”的永久结论。CPython3.13引入了可选的free-threaded构建，是否可无GIL运行要看具体构建、运行配置和扩展支持。本章不使用那种构建，也不把3.12的线程限制无条件套过去。反过来，升级大版本同样不自动代表当前进程的GIL已关闭，必须按所用版本的官方检测方式核对。"
-        },
-        {
-          "type": "reference",
-          "title": "官方依据：3.12线程与GIL",
-          "url": "https://docs.python.org/3.12/library/threading.html"
-        },
-        {
-          "type": "reference",
-          "title": "版本边界：3.13可选free-threaded构建",
-          "url": "https://docs.python.org/3.13/howto/free-threading-python.html"
+          "type": "figure",
+          "src": "/figures/python-concurrency-models/capacity.svg",
+          "title": "同样三件事，可以怎样安排",
+          "alt": "上方顺序一次只处理一项；下方两个工作位置同时推进，第三项等前一个位置空出再执行。",
+          "caption": "这是执行安排的示意图，不是性能实测。每项的等待时间由示例人为设置，不能据图推出生产环境提速比例。 手机端可以在图形区域横向滑动查看。"
         }
       ]
     },
     {
       "id": "jobs",
-      "title": "先约束任务输入，再谈执行器的数量",
+      "title": "这里的一次任务，就是一次普通函数调用",
       "paragraphs": [],
       "blocks": [
         {
           "type": "code",
+          "code": "import time\nimport multiprocessing\nfrom concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor",
           "language": "python",
-          "filename": "examples/python-course/chapter05/work.py",
-          "kind": "excerpt",
-          "purpose": "完整工作负载：借用第4章转换层；限定记录数、校验唯一性，明确TCP负载与纯Python计算。",
-          "code": "from pathlib import Path\nfrom chapter04.notes_tool.codec import iter_records\nfrom chapter04.notes_tool.domain import Note\nfrom chapter04.notes_tool.errors import ImportFailure\n\n\ndef load_jobs(path: Path, *, max_notes: int = 128) -> tuple[Note, ...]:\n    if type(max_notes) is not int or not 1 <= max_notes <= 128:\n        raise ValueError(\"max_notes must be an integer in 1..128\")\n    notes: list[Note] = []\n    seen: set[str] = set()\n    with path.open(encoding=\"utf-8\") as source:\n        for line_number, note in iter_records(source):\n            if len(notes) == max_notes:\n                raise ImportFailure(line_number, f\"exceeds {max_notes} notes\")\n            if note.id in seen:\n                raise ImportFailure(line_number, \"duplicate id: \" + note.id)\n            seen.add(note.id)\n            notes.append(note)\n    return tuple(notes)\n\n\ndef payload(note: Note) -> bytes:\n    # Escaped JSON keeps the line protocol independent of title newlines.\n    import json\n    return json.dumps({\"id\": note.id, \"title\": note.title}, ensure_ascii=True).encode(\"ascii\")\n\n\ndef cpu_checksum(note: Note, rounds: int = 2000) -> dict[str, object]:\n    if type(rounds) is not int or not 1 <= rounds <= 10000:\n        raise ValueError(\"rounds must be an integer in 1..10000\")\n    value = 0\n    data = payload(note)\n    for _ in range(rounds):\n        for byte in data:\n            value = (value * 131 + byte) % 1000000007\n    return {\"id\": note.id, \"checksum\": value}\n"
+          "purpose": "本篇例子需要这三条标准库导入。把它们放在同一个练习文件顶部，后面的函数就能使用 time、线程池和进程池。",
+          "kind": "runnable"
         },
         {
           "type": "paragraph",
-          "text": "load_jobs最多接收128条笔记，边读边检查数量与唯一性，完成后才启动处理阶段。max_notes可以调小，不能大于128；非法布尔值也被拒绝。这使CLI保留的输入和结果都有明确数量上限。单条输入仍沿用第4章4096字符检查，那发生在完整文本行读入后，并不是底层读取内存硬上限，所以这里仍不是公开上传服务。"
+          "text": "time提供这里的sleep；concurrent.futures提供线程池与进程池；multiprocessing用于选择进程启动方式。它们都是标准库，不需要pip安装。先准备好这些名字，再看任务函数。"
+        },
+        {
+          "type": "code",
+          "filename": "examples/python-course/beginner/concurrency_demo.py",
+          "code": "def read_title(number):\n    if number < 0:\n        raise ValueError(\"编号不能为负数\")\n    time.sleep(0.01)  # 模拟等待；本例没有访问网络\n    return f\"笔记{number}\"\n\n\ndef square(number):\n    return number * number",
+          "purpose": "read_title 模拟等待后返回标题；square 做一个小计算。两个函数先按普通函数理解。",
+          "language": "python",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "payload用ensure_ascii=True生成单行ASCII JSON，标题里的换行会被转义，不会破坏逐行TCP帧。cpu_checksum每轮对这些字节做整数乘加取模，2000轮是固定教学工作量，不是密码学摘要或安全校验算法。函数定义在模块顶层，参数是可序列化的Note，结果是普通字典，适合交给spawn子进程重建调用。"
+          "text": "read_title(1) 在等待0.01秒后返回“笔记1”，并没有访问真实网络。time.sleep 让当前执行它的线程等待。square(3) 返回9，用来演示进程怎样接收输入并返回结果。我们不拿这样小的计算测试哪个方案更快，因为创建进程的成本可能比计算本身还大。"
+        },
+        {
+          "type": "code",
+          "code": "result = []\nfor number in [1, 2, 3]:\n    result.append(read_title(number))\nprint(result)",
+          "language": "python",
+          "purpose": "接在 read_title 定义之后。这是完全顺序的写法，结果返回后才开始下一次调用。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "['笔记1', '笔记2', '笔记3']",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "这个顺序版本也是重要的对照。改成并发以后，任务实际开始和结束顺序可以变化，但如果业务仍要求结果按原输入排列，就需要检查最终返回顺序，而不是只看终端里好像打印得更快。"
         }
       ]
     },
     {
       "id": "window",
-      "title": "线程与进程先共用一条有界提交路径",
+      "title": "线程池：给几个工作线程分配任务",
       "paragraphs": [],
       "blocks": [
         {
           "type": "code",
+          "filename": "examples/python-course/beginner/concurrency_demo.py",
+          "code": "def threaded_titles(numbers):\n    with ThreadPoolExecutor(max_workers=2) as pool:\n        return list(pool.map(read_title, numbers))",
+          "purpose": "完整线程池函数。ThreadPoolExecutor 负责管理工作线程，map 把每个输入交给 read_title。",
           "language": "python",
-          "filename": "examples/python-course/chapter05/pools.py",
-          "kind": "excerpt",
-          "purpose": "完整线程/进程执行器和窗口算法。capacity限制已提交但未收集的future，包括运行中的任务；结果按输入索引还原顺序。",
-          "code": "from collections.abc import Callable, Iterable\nfrom concurrent.futures import FIRST_COMPLETED, Executor, Future, wait\nfrom concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor\nimport multiprocessing\nfrom typing import TypeVar\n\nT = TypeVar(\"T\")\nR = TypeVar(\"R\")\n\n\ndef check_capacity(workers: int, capacity: int) -> None:\n    if type(workers) is not int or not 1 <= workers <= 8:\n        raise ValueError(\"workers must be an integer in 1..8\")\n    if type(capacity) is not int or not 1 <= capacity <= 32:\n        raise ValueError(\"capacity must be an integer in 1..32\")\n\n\ndef windowed(executor: Executor, function: Callable[[T], R], items: Iterable[T],\n             *, capacity: int) -> list[R]:\n    # capacity bounds submitted, not-yet-collected futures, including running ones.\n    iterator = enumerate(items)\n    pending: dict[Future[R], int] = {}\n    results: dict[int, R] = {}\n    exhausted = False\n    try:\n        while pending or not exhausted:\n            while len(pending) < capacity and not exhausted:\n                try:\n                    index, item = next(iterator)\n                except StopIteration:\n                    exhausted = True\n                else:\n                    pending[executor.submit(function, item)] = index\n            if pending:\n                completed, _ = wait(pending, return_when=FIRST_COMPLETED)\n                for future in completed:\n                    index = pending.pop(future)\n                    results[index] = future.result()\n        return [results[index] for index in sorted(results)]\n    finally:\n        for future in pending:\n            future.cancel()\n\n\ndef thread_map(function: Callable[[T], R], items: Iterable[T], *, workers: int = 2,\n               capacity: int = 2) -> list[R]:\n    check_capacity(workers, capacity)\n    with ThreadPoolExecutor(max_workers=workers, thread_name_prefix=\"notes-worker\") as executor:\n        return windowed(executor, function, items, capacity=capacity)\n\n\ndef process_map(function: Callable[[T], R], items: Iterable[T], *, workers: int = 2,\n                capacity: int = 2) -> list[R]:\n    check_capacity(workers, capacity)\n    context = multiprocessing.get_context(\"spawn\")\n    with ProcessPoolExecutor(max_workers=workers, mp_context=context) as executor:\n        return windowed(executor, function, items, capacity=capacity)\n"
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "Future是一次已提交计算的结果句柄，它可能尚未开始、正在运行、成功或失败。submit马上交回句柄，result在完成后返回结果或重新抛出工作函数的异常。线程池的max_workers限制执行线程，不代表任意数量submit都没有代价；3.12的Executor.map还会立即收集输入。我们因此自己维护pending窗口，而不一口气为全部输入建立future。"
+          "text": "线程是在同一个进程中推进工作的执行单位。这里 max_workers=2，表示最多两个工作线程执行这些调用；三条输入中剩下的一条等有线程空出再处理。with 结束前，线程池会按这里的正常使用方式等待任务结束并收好资源。"
         },
         {
           "type": "paragraph",
-          "text": "带入capacity=2：先提交n1和n2，pending有两个成员；等至少一个完成后取result、移出pending，再补n3。每次补入前都检查窗口长度，所以未收集future始终不超过2。完成顺序可能颠倒，结果字典用原始索引保存，最终按索引排序，输出仍是n1、n2、n3。容量小于workers时，并发程度自然受更小窗口约束，不是线程越多就一定忙得起来。"
-        },
-        {
-          "type": "paragraph",
-          "text": "如果future.result失败，finally尝试取消其余pending，外层with等待执行器结束并回收线程或进程。cancel只能阻止尚未开始的工作，不能强制终止已经运行的任意函数；with退出也可能等待正在执行的工作完成。因此CPU轮数和I/O等待都另有限制，这不是一个具有硬终止期限的任务沙箱。通用映射函数仍聚合全部结果，CLI的128条输入上限与窗口容量承担不同层次的边界。"
-        },
-        {
-          "type": "reference",
-          "title": "官方依据：Future、map收集与shutdown/cancel语义",
-          "url": "https://docs.python.org/3.12/library/concurrent.futures.html"
-        }
-      ]
-    },
-    {
-      "id": "spawn",
-      "title": "spawn重新启动解释器，入口必须能被安全导入",
-      "paragraphs": [],
-      "blocks": [
-        {
-          "type": "code",
-          "language": "python",
-          "filename": "examples/python-course/chapter05/__main__.py",
-          "kind": "excerpt",
-          "purpose": "完整-m入口：导入只建立定义，主入口保护后才创建执行器。",
-          "code": "from .cli import main\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "process_map明确选择multiprocessing.get_context(\"spawn\")，不依赖操作系统的默认启动方式。spawn启动新的解释器，工作函数与参数必须能被子进程找到并序列化；局部lambda、打开的文件对象或依赖父进程临时全局状态的函数，都不适合作为这里的直接参数。子进程收到的是重建的数据，不是与父进程共享同一个可变Notebook。"
-        },
-        {
-          "type": "paragraph",
-          "text": "如果在模块顶层创建进程池，子解释器导入模块时又可能尝试创建更多进程。把实际运行放到if __name__ == \"__main__\"保护后，子进程可以安全导入定义，主进程才开始调度。测试使用两个进程共享的Barrier代理，让两项工作都到达屏障才能继续，得到两个不同PID且均不同于父进程；这证明独立子进程确实参与，没有用总耗时猜测。它没有测量CPU核心上的实际重叠比例或生产加速比。"
-        },
-        {
-          "type": "reference",
-          "title": "官方依据：spawn与安全导入主模块",
-          "url": "https://docs.python.org/3.12/library/multiprocessing.html#the-spawn-and-forkserver-start-methods"
+          "text": "pool.map(read_title,numbers) 表示对每个数字调用 read_title。函数名不带括号，是把这项操作交给线程池；不是先调用一次，再把字符串结果交出去。list 把结果取出来组成列表。这个基本写法只适合当前少量数据，max_workers 本身不限制你提交多少个任务对象。"
         }
       ]
     },
     {
       "id": "io",
-      "title": "同一真实I/O：阻塞调用交线程，可等待调用交事件循环",
+      "title": "返回顺序与实际完成顺序，要分开理解",
       "paragraphs": [],
       "blocks": [
         {
           "type": "code",
+          "code": "print(threaded_titles([3, 1, 2]))",
           "language": "python",
-          "filename": "examples/python-course/chapter05/io_lab.py",
-          "kind": "excerpt",
-          "purpose": "完整本地回显夹具与两种客户端：端口、帧容量、超时、socket与StreamWriter清理均在此。",
-          "code": "import asyncio\nfrom contextlib import contextmanager\nimport socket\nimport socketserver\nimport threading\nfrom collections.abc import Iterator\nfrom chapter04.notes_tool.domain import Note\nfrom .work import payload\n\nMAX_FRAME = 65536  # Byte capacity for each request/response, including its newline.\nAddress = tuple[str, int]\n\n\nclass EchoHandler(socketserver.StreamRequestHandler):\n    def handle(self) -> None:\n        self.request.settimeout(3)\n        data = self.rfile.readline(MAX_FRAME + 1)\n        if len(data) > MAX_FRAME or not data.endswith(b\"\\n\"):\n            return\n        self.wfile.write(data)\n\n\nclass EchoServer(socketserver.ThreadingTCPServer):\n    block_on_close = True\n    daemon_threads = False\n\n\n@contextmanager\ndef echo_service() -> Iterator[Address]:\n    # Port zero allocates a fresh loopback port; no external endpoint is contacted.\n    server = EchoServer((\"127.0.0.1\", 0), EchoHandler)\n    thread = threading.Thread(target=server.serve_forever, name=\"notes-echo\")\n    thread.start()\n    try:\n        yield server.server_address\n    finally:\n        server.shutdown()\n        server.server_close()\n        thread.join()\n\n\ndef blocking_echo(address: Address, note: Note) -> dict[str, object]:\n    data = payload(note) + b\"\\n\"\n    if len(data) > MAX_FRAME:\n        raise ValueError(\"request exceeds frame capacity\")\n    with socket.create_connection(address, timeout=3) as connection:\n        connection.sendall(data)\n        with connection.makefile(\"rb\") as source:\n            received = source.readline(MAX_FRAME + 1)\n    if received != data:\n        raise ValueError(\"incomplete echo response\")\n    return {\"id\": note.id, \"bytes\": len(received) - 1}\n\n\nasync def async_echo(address: Address, note: Note) -> dict[str, object]:\n    data = payload(note) + b\"\\n\"\n    if len(data) > MAX_FRAME:\n        raise ValueError(\"request exceeds frame capacity\")\n    async with asyncio.timeout(3):\n        reader, writer = await asyncio.open_connection(*address, limit=MAX_FRAME + 1)\n        try:\n            writer.write(data)\n            await writer.drain()\n            received = await reader.readline()\n            if received != data:\n                raise ValueError(\"incomplete echo response\")\n            return {\"id\": note.id, \"bytes\": len(received) - 1}\n        finally:\n            writer.close()\n            await writer.wait_closed()\n"
+          "purpose": "接在前面函数定义及文件顶部导入之后。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "['笔记3', '笔记1', '笔记2']",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "echo_service是受控的本地依赖：构造服务时绑定临时端口，用后台服务线程处理连接，退出时shutdown、server_close并join。它不是面向公网的通用服务器。线程客户端在with socket范围内sendall并读取完整一行；socket的3秒超时限制阻塞操作，响应不完全就失败，退出时文件包装与socket都关闭。"
+          "text": "map 的结果按输入顺序提供，所以输入是3、1、2，结果也是对应的顺序。这不说明任务一定按3、1、2结束。若改用其他接收方式，例如按完成先后取结果，需要另外保留编号，才能放回原位置。当前先会用一种清楚的返回规则，不急着把所有 Future API 都学完。"
         },
         {
           "type": "paragraph",
-          "text": "async_echo用open_connection建立可等待的连接，writer.drain等待写缓冲达到可继续条件，reader.readline等待响应。等待期间，事件循环可以推进其他已就绪的协程；如果某个await的对象已经就绪，也可能直接继续，所以不能把每一个await都理解成必然切换。finally关闭writer并等待关闭完成，让正常、异常与取消路径共用清理。"
-        },
-        {
-          "type": "paragraph",
-          "text": "请求和响应帧限制为65536字节，包含行尾换行；它与输入记录的Unicode字符校验不是同一种单位。asyncio.timeout(3)给整个异步请求设置取消式超时；阻塞socket的timeout是单个阻塞操作的等待限制，两者不能冒充完全相同的端到端期限。它们都不是停止任意Python计算的硬抢占机制。"
-        },
-        {
-          "type": "reference",
-          "title": "官方依据：StreamReader、StreamWriter与关闭连接",
-          "url": "https://docs.python.org/3.12/library/asyncio-stream.html"
+          "text": "线程共享同一进程里的对象。当前 read_title 不去修改全局列表，而是返回自己的结果，由调用方统一收集，比较容易理解。若多个线程要改同一个可变对象，就要考虑谁先改、修改能否交错，以及是否需要锁；“这次没出错”不能说明任何共享修改都安全。"
         }
       ]
     },
     {
-      "id": "async",
-      "title": "固定worker消费有界队列，失败由任务组收口",
+      "id": "spawn",
+      "title": "进程池：用独立的 Python 进程做计算",
       "paragraphs": [],
       "blocks": [
         {
           "type": "code",
+          "filename": "examples/python-course/beginner/concurrency_demo.py",
+          "code": "def process_squares(numbers):\n    context = multiprocessing.get_context(\"spawn\")\n    with ProcessPoolExecutor(max_workers=2, mp_context=context) as pool:\n        return list(pool.map(square, numbers))",
+          "purpose": "完整进程池函数。spawn 启动新的解释器进程，square 是文件顶层定义的普通函数。",
           "language": "python",
-          "filename": "examples/python-course/chapter05/async_jobs.py",
-          "kind": "excerpt",
-          "purpose": "完整有界异步映射：一个生产者、固定workers个消费者、Queue容量和TaskGroup生命周期。",
-          "code": "import asyncio\nfrom collections.abc import Awaitable, Callable, Iterable\nfrom typing import TypeVar\nfrom .pools import check_capacity\n\nT = TypeVar(\"T\")\nR = TypeVar(\"R\")\n\n\nasync def async_map(function: Callable[[T], Awaitable[R]], items: Iterable[T], *,\n                    workers: int = 2, capacity: int = 2) -> list[R]:\n    check_capacity(workers, capacity)\n    queue: asyncio.Queue[tuple[int, T] | None] = asyncio.Queue(maxsize=capacity)\n    results: dict[int, R] = {}\n\n    async def produce() -> None:\n        for index, item in enumerate(items):\n            await queue.put((index, item))\n        for _ in range(workers):\n            await queue.put(None)\n\n    async def consume() -> None:\n        while True:\n            entry = await queue.get()\n            try:\n                if entry is None:\n                    return\n                index, item = entry\n                results[index] = await function(item)\n            finally:\n                queue.task_done()\n\n    async with asyncio.TaskGroup() as group:\n        group.create_task(produce(), name=\"notes-producer\")\n        for index in range(workers):\n            group.create_task(consume(), name=f\"notes-consumer-{index}\")\n    return [results[index] for index in sorted(results)]\n"
+          "kind": "excerpt"
         },
         {
-          "type": "figure",
-          "src": "/figures/python-concurrency-models/capacity.svg",
-          "title": "两种容量含义与三种执行模型",
-          "alt": "线程/进程窗口限制运行及排队future总量；asyncio生产者向有界队列put，固定worker取任务，队列满则生产者等待；进程拥有独立解释器，async任务共享事件循环。",
-          "caption": "容量结构示意，不是性能图。线程/进程capacity包含运行中，asyncio capacity只包含排队项，两者不可直接比较为相同总在途数。"
+          "type": "code",
+          "code": "print(process_squares([1, 2, 3]))",
+          "language": "python",
+          "purpose": "放入完整脚本的 __main__ 入口中运行；不要把这一行放在每次导入都会执行的位置。",
+          "kind": "excerpt"
         },
         {
-          "type": "paragraph",
-          "text": "直接为每条笔记create_task，再给工作函数套信号量，只限制了同时进入工作区的数量，任务对象本身仍可能很多。这里始终只创建一个生产者和固定数量消费者。Queue(maxsize=capacity)满时，生产者await put暂停，直到某个消费者get腾出位置，这才把接纳压力传回上游。None是结束标记，每个消费者各拿一个；输入类型本身不会是None。"
-        },
-        {
-          "type": "paragraph",
-          "text": "asyncio的capacity只限制队列内等待项。总在途还包括workers个正在处理的项，以及生产者在一次put前已经取出的至多一项；输出结果又另行保留。因此workers=2、capacity=1时，不能声称整个程序只持有一项任务。测试通过两个工作协程进入Event门闩后暂不放行，观察源迭代最多推进4项，而不是运行几毫秒后猜队列“应该没有太多”。"
+          "type": "code",
+          "code": "[1, 4, 9]",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
         },
         {
           "type": "paragraph",
-          "text": "TaskGroup把生产者与消费者放进同一生命周期。某个消费者抛常规异常，任务组取消其他成员并等待退出，最后抛ExceptionGroup；外层取消则沿协作取消路径传播。consume的finally为已经get的项调用task_done，工作函数自己的finally释放资源。失败时队列里可以还有未消费条目，这个局部队列被整体放弃，代码没有再queue.join，否则可能等待那些已无消费者的条目。"
+          "text": "不同进程有自己的内存和解释器，不能把父进程的普通列表当成大家都能直接修改的共享列表。输入、任务信息和结果需要经过进程之间的传递；因此进程的创建和通信有成本，不适合为了三次简单加法就默认使用。"
         },
         {
           "type": "paragraph",
-          "text": "取消通常在可挂起的await处注入CancelledError；不要把它吞掉后继续装作成功。CPU紧循环不会因为写在TaskGroup里就自动响应取消，阻塞socket也不能直接放在事件循环线程执行。这个入门实现先把模型和边界讲清，下一章会把请求预算、服务生命周期和更多异常组合继续展开。"
-        },
-        {
-          "type": "reference",
-          "title": "官方依据：有界Queue与put等待",
-          "url": "https://docs.python.org/3.12/library/asyncio-queue.html"
-        },
-        {
-          "type": "reference",
-          "title": "官方依据：TaskGroup与取消",
-          "url": "https://docs.python.org/3.12/library/asyncio-task.html#task-groups"
+          "text": "本例把 square 定义在文件顶层，并使用第四篇介绍的 __main__ 运行开关。spawn 启动新进程时会重新导入相关代码；没有这个开关，导入时又启动进程池，就可能反复创建子进程。初学者请从保存好的 .py 文件运行完整示例，不要先在交互窗口里零散试进程池。"
         }
       ]
     },
     {
-      "id": "cli",
-      "title": "把选择落实为可运行入口与明确的失败",
-      "paragraphs": [],
-      "blocks": [
-        {
-          "type": "code",
-          "language": "python",
-          "filename": "examples/python-course/chapter05/cli.py",
-          "kind": "excerpt",
-          "purpose": "完整命令入口：参数、受控I/O依赖、三种分支、结果和已知异常组处理。",
-          "code": "import argparse\nimport asyncio\nfrom functools import partial\nimport json\nfrom pathlib import Path\nfrom .async_jobs import async_map\nfrom .io_lab import async_echo, blocking_echo, echo_service\nfrom .pools import process_map, thread_map\nfrom .work import cpu_checksum, load_jobs\nfrom chapter04.notes_tool.errors import ImportFailure\n\n\ndef main() -> int:\n    parser = argparse.ArgumentParser(description=\"Bounded note processing; no speed benchmark\")\n    parser.add_argument(\"mode\", choices=(\"threads\", \"processes\", \"asyncio\"))\n    parser.add_argument(\"path\", type=Path)\n    parser.add_argument(\"--workers\", type=int, default=2)\n    parser.add_argument(\"--capacity\", type=int, default=2)\n    parser.add_argument(\"--max-notes\", type=int, default=128)\n    arguments = parser.parse_args()\n    try:\n        jobs = load_jobs(arguments.path, max_notes=arguments.max_notes)\n        options = {\"workers\": arguments.workers, \"capacity\": arguments.capacity}\n        if arguments.mode == \"processes\":\n            results = process_map(cpu_checksum, jobs, **options)\n        else:\n            with echo_service() as address:\n                if arguments.mode == \"threads\":\n                    results = thread_map(partial(blocking_echo, address), jobs, **options)\n                else:\n                    results = asyncio.run(async_map(partial(async_echo, address), jobs, **options))\n    except ExceptionGroup as errors:\n        _, unexpected = errors.split((OSError, ValueError))\n        if unexpected is not None:\n            raise\n        parser.exit(2, f\"processing failed: {errors}\\n\")\n    except (OSError, UnicodeError, ValueError, ImportFailure) as error:\n        parser.exit(2, f\"processing failed: {error}\\n\")\n    print(json.dumps({\"mode\": arguments.mode, \"count\": len(results), \"results\": results},\n                     ensure_ascii=False))\n    return 0\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "processes分支把纯Python校验和交进程；threads和asyncio分支都在同一个本地回显依赖上做I/O。线程调度的是普通阻塞函数，asyncio调度返回可等待结果的函数。CLI仅在全部工作成功后打印JSON，坏输入在启动处理前失败。已知OSError或ValueError组可以转成退出2，若异常组中含未知程序错误则继续抛出，保留第4章“不吞程序缺陷”的边界。"
-        },
-        {
-          "type": "code",
-          "language": "bash",
-          "kind": "runnable",
-          "purpose": "从仓库根目录进入课程目录，使用CPython3.12；无需第三方安装或外部端口配置。",
-          "code": "cd examples/python-course\npython3 -m chapter05 threads fixtures/notes.jsonl\npython3 -m chapter05 asyncio fixtures/notes.jsonl\npython3 -m chapter05 processes fixtures/notes.jsonl\npython3 -m unittest -v test_chapter05\npython3 -m chapter05 threads fixtures/notes.jsonl --max-notes 1"
-        },
-        {
-          "type": "paragraph",
-          "text": "线程与asyncio正常返回count=3，results依次是n1/44字节、n2/61字节、n3/42字节；数字来自ASCII转义后的id/title JSON，不是原始中文字符数。进程分支校验和依次为340859824、285734593、375736074，与串行调用同一函数结果一致。最后一条容量失败返回2、stdout为空，stderr含exceeds 1 notes。把文件换成bad.jsonl则报告line 2。"
-        }
-      ]
-    },
-    {
-      "id": "evidence",
-      "title": "证据回答重叠、隔离与清理，计时不替代这些判断",
+      "id": "gil",
+      "title": "现在再认识 GIL，不把它当一句万能结论",
       "paragraphs": [],
       "blocks": [
         {
           "type": "paragraph",
-          "text": "第5章10项独立测试使用Thread Barrier证明两个工作线程同时到达受控点，并在放行前验证只提交两项；使用spawn Manager Barrier证明两个不同子进程实际参与，并在结束后检查无新增活动子进程。async Event证明固定工作协程重叠、排队容量受控；失败和外部取消后，没有残留命名任务。真实Streams取消实验让本地服务先确认收到请求，再取消客户端，服务观察到EOF，证明连接确实关闭。"
-        },
-        {
-          "type": "code",
-          "language": "python",
-          "filename": "examples/python-course/test_chapter05.py",
-          "kind": "excerpt",
-          "purpose": "项目测试原文：顶层可导入的进程探针，与下面unittest一起证明两个PID到达同一屏障，不比较耗时。",
-          "code": "def process_probe(value, barrier):\n    barrier.wait(timeout=5)\n    return os.getpid(), value * 2\n\n\n"
-        },
-        {
-          "type": "code",
-          "language": "python",
-          "filename": "examples/python-course/test_chapter05.py",
-          "kind": "excerpt",
-          "purpose": "项目unittest方法连续原文；在ConcurrencyChoices类和文件现有imports上下文中运行，包含进程正常与失败后的回收断言。",
-          "code": "    def test_spawn_processes_are_distinct_and_joined(self):\n        before = {child.pid for child in multiprocessing.active_children()}\n        context = multiprocessing.get_context(\"spawn\")\n        with context.Manager() as manager:\n            barrier = manager.Barrier(2)\n            result = process_map(partial(process_probe, barrier=barrier), [1, 2])\n            self.assertEqual(len({pid for pid, _ in result}), 2)\n            self.assertNotIn(os.getpid(), {pid for pid, _ in result})\n            self.assertEqual([value for _, value in result], [2, 4])\n        self.assertEqual({child.pid for child in multiprocessing.active_children()}, before)\n        with self.assertRaisesRegex(ValueError, \"worker rejected\"):\n            process_map(process_failure, [1, 2])\n        self.assertEqual({child.pid for child in multiprocessing.active_children()}, before)\n\n"
+          "text": "在本篇使用的常规 CPython3.12里，同一个进程通常同一时刻只有一个线程执行 Python 字节码，这与 GIL 有关。因此，把主要由 Python 代码组成的重计算拆给几个线程，通常不能简单地让多个核心一起计算；独立进程则各自执行。"
         },
         {
           "type": "paragraph",
-          "text": "CPython3.12.14上新增10项与前面23项共33项通过，包括三种真实-m子进程、正常结果、输入坏行与容量失败、线程/进程工作失败、循环与socket清理。测试里的5秒门闩期限用于避免错误实现挂住，并不是性能指标；本章没有报告提速倍数、吞吐或尾延迟，也没有验证free-threaded构建、Windows/Linux和生产网络。"
+          "text": "这不等于线程没用。等待 I/O 时，或者某些底层库执行并释放相关限制时，其他线程仍有推进机会。你需要看实际工作种类和所用库，而不是只看到“有GIL”就否定全部多线程，也不要把本篇结论不加区分地套到其他Python实现或构建。"
         },
         {
           "type": "table",
           "headers": [
-            "工作与约束",
-            "本章选择",
-            "仍需支付的代价"
+            "现在遇到的工作",
+            "可以先考虑",
+            "本篇例子"
           ],
           "rows": [
             [
-              "已有阻塞I/O API，少量并发",
-              "有界线程窗口",
-              "共享状态需要同步；正在运行线程不能靠Future.cancel强停"
+              "少量很快的计算",
+              "顺序执行",
+              "普通for即可"
             ],
             [
-              "纯Python CPU计算，需要独立解释器",
-              "spawn进程窗口",
-              "启动/序列化/传输与进程内存；任务要能安全导入"
+              "多个主要在等待的同步调用",
+              "少量线程",
+              "threaded_titles"
             ],
             [
-              "可等待I/O API，需要大量受控等待",
-              "固定async worker + 有界Queue",
-              "代码必须合作让出并处理取消；阻塞函数会占住循环"
+              "独立且较重的Python计算",
+              "评估进程",
+              "process_squares演示传递方式"
+            ],
+            [
+              "本来就提供async接口的等待",
+              "下一篇asyncio",
+              "不是把所有函数加async就能变快"
             ]
           ]
         },
         {
           "type": "paragraph",
-          "text": "回到开头，选择的依据是工作在哪里等待、状态由谁拥有、失败怎样收口，以及容量限制放在哪层。线程不是因为有GIL就没有用途，asyncio也不是因为语法新就适合CPU循环；进程的独立性则不是免费共享内存。这一版给出可运行选择和可观测边界，下一篇既有异步工程提供独立的有界并发与取消实验；后续服务章节再把这些机制整合进笔记工程。本章不要求你先会后续框架。"
+          "text": "最终仍要测自己的任务。本篇没有真实网络、没有大数据，也不发布耗时排名；它先帮你弄清选择背后的原因和程序怎样运行。"
+        }
+      ]
+    },
+    {
+      "id": "async",
+      "title": "失败发生在线程里，调用方怎样知道",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "code",
+          "code": "with ThreadPoolExecutor(max_workers=2) as pool:\n    future = pool.submit(read_title, -1)\n    try:\n        future.result()\n    except ValueError as error:\n        print(\"任务失败：\", error)",
+          "language": "python",
+          "purpose": "本例完整文件已经包含所需导入和 read_title。submit 返回代表将来结果的 Future，result 取结果或带出错误。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "code",
+          "code": "任务失败： 编号不能为负数",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "submit 先返回 Future，工作线程随后执行函数；result 会等待并取到结果。如果函数抛异常，result 会把异常带到调用方。这和“另一个线程失败了，主程序就自动知道全部细节”不同，调用方仍然需要检查结果。"
+        },
+        {
+          "type": "paragraph",
+          "text": "给等待设置超时，通常只表示不再继续等这个结果，并不代表能强制杀掉已经运行的线程。下一篇会学协作式取消，先知道这个区别，避免将“界面不等了”误当成“工作已经停止”。"
+        }
+      ]
+    },
+    {
+      "id": "cli",
+      "title": "运行完整示例，先观察结果是否一致",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "code",
+          "code": "cd examples/python-course/beginner\npython3 concurrency_demo.py",
+          "language": "bash",
+          "purpose": "必须从真实文件运行，默认使用两个线程或两个进程，没有第三方依赖。",
+          "kind": "runnable"
+        },
+        {
+          "type": "code",
+          "code": "顺序： ['笔记1', '笔记2', '笔记3']\n线程： ['笔记1', '笔记2', '笔记3']\n进程： [1, 4, 9]\n任务失败： 编号不能为负数",
+          "language": "text",
+          "purpose": "程序输出，供你和终端结果逐行对照。",
+          "kind": "excerpt"
+        },
+        {
+          "type": "paragraph",
+          "text": "三个正常结果和一个受控错误都应出现。若进程启动报错，先检查是否直接运行文件、是否保留 __main__ 判断、任务函数是否仍在文件顶层。不要第一步就修改机器上的全局进程启动设置。"
+        }
+      ]
+    },
+    {
+      "id": "evidence",
+      "title": "练习：先知道要保持什么，再改执行方式",
+      "paragraphs": [],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "练习一：把输入改为 [3,1,2]，线程 map 的返回值应保持这个输入对应的顺序。练习二：把 max_workers 改为1，结果内容仍然相同，只是允许同时推进的工作位置变少。不要仅凭一次打印看不出差别就认定线程池没有生效。"
+        },
+        {
+          "type": "paragraph",
+          "text": "练习三：为 square 加一个参数检查，给负数抛 ValueError，再从主进程读取结果，观察错误怎样回来。你已经学会函数、异常和模块，进程没有让这些基本规则消失，只是改变了任务执行的位置。"
+        },
+        {
+          "type": "paragraph",
+          "text": "到这里，线程和进程已经有了具体用途。下一篇认识第三种方式：在一个事件循环里，让多个可等待操作交替推进。我们仍然先从一个等待和两条任务开始，不一上来就写工作队列。"
         }
       ]
     }

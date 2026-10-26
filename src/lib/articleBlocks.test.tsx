@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import {articles,findArticles} from '../data/articles';
 import {sectionBlocks} from '../data/articleTypes';
 import {PublicArticle} from '../components/Articles';
+import ArticleBlocks from '../components/ArticleBlocks';
+import {pythonChapters} from '../data/series';
 import {browserExamples} from '../data/browserExamples';
 import Playground from '../components/Playground';
 it('renders interleaved prose, local figures and executable entries with stable identities',()=>{
@@ -36,4 +38,17 @@ it('keeps the chapter contents but removes the old A–G series navigation',()=>
  expect(html).not.toContain('按 A');
  expect(html).not.toContain('React · 从基础到深入');
  expect(html).toContain('section-concept');
+});
+
+it('keeps beginner output separate from executable code and links all Python chapters in order',()=>{
+ const output=renderToStaticMarkup(<ArticleBlocks blocks={[{type:'code',language:'text',kind:'excerpt',purpose:'程序输出，供你和终端结果逐行对照。',code:'30'}]}/>);
+ expect(output).toContain('程序输出');expect(output).not.toContain('项目节选');
+ const visible=findArticles('', 'python');
+ expect(visible.map(a=>a.id)).toEqual(pythonChapters.map(c=>c.id));
+ for(let i=0;i<visible.length;i++){
+  const html=renderToStaticMarkup(<PublicArticle article={visible[i]} unlocked={false}/>);
+  expect(html).toContain('Python 从零开始');
+  if(i>0)expect(html).toContain('href="#article/'+visible[i-1].id+'"');
+  if(i<visible.length-1)expect(html).toContain('href="#article/'+visible[i+1].id+'"');
+ }
 });

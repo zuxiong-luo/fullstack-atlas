@@ -42,7 +42,7 @@ export const articleTopics=[
 {id:'nextjs',name:'Next.js 全栈',description:'理解服务端组件、渲染与缓存边界。'},
 {id:'nodejs',name:'Node.js 工程',description:'事件循环、流、背压和服务容量。'},
 {id:'nestjs',name:'NestJS 工程',description:'从请求生命周期与依赖注入，到事务、权限、可靠性和服务交付。'},
-{id:'python',name:'Python 工程',description:'类型边界、异步任务与服务生命周期。'},
+{id:'python',name:'Python 工程',description:'从变量、数据类型、函数和类开始，逐步写出能保存数据的小接口。'},
 {id:'algorithms',name:'算法与数据结构',description:'用不变量、复杂度和反例推导正确性。'},
 {id:'webgl',name:'WebGL 与图形',description:'从坐标变换到 GPU 流水线与帧预算。'},
 {id:'ai',name:'AI / Agent 工程',description:'从模型调用到工具、RAG、评测与可靠部署。'}

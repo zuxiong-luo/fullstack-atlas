@@ -16,6 +16,8 @@ import 'prismjs/components/prism-c';
 import 'prismjs/components/prism-cpp';
 import 'prismjs/components/prism-glsl';
 import 'prismjs/components/prism-docker';
+// React owns these nodes; Prism's automatic DOM rewrite would invalidate them on navigation.
+Prism.manual = true;
 function renderTokens(tokens: (string|Prism.Token)[]):ReactNode[]{
  return tokens.map((t,i)=>typeof t==='string'?t:<span key={i} className={'token '+t.type}>{typeof t.content==='string'?t.content:renderTokens(Array.isArray(t.content)?t.content:[t.content])}</span>);
 }

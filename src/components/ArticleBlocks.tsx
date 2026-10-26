@@ -6,7 +6,7 @@ const asset=(path:string)=>`${import.meta.env.BASE_URL}${path.replace(/^\//,'')}
 function CodeBlock({block:b}:{block:Extract<ArticleBlock,{type:'code'}>}){
  const [message,setMessage]=useState('复制');
  async function copy(){try{await navigator.clipboard.writeText(b.code);setMessage('已复制')}catch{setMessage('复制失败，请手动选择代码')}}
- return <div className="article-code"><div className="code-caption"><span>{b.filename||b.language} · {{runnable:'可直接运行',excerpt:'项目节选',pseudocode:'原理伪代码'}[b.kind]}</span><button onClick={copy} aria-label={'复制代码 '+(b.filename||b.purpose)}>{message}</button></div><p className="code-purpose">{b.purpose}</p><pre tabIndex={0} aria-label={b.purpose}><HighlightedCode code={b.code} language={b.filename?.includes(".old.js")?"flow":b.language}/></pre></div>
+ return <div className="article-code"><div className="code-caption"><span>{b.language==='text'&&b.purpose.startsWith('程序输出')?'程序输出':<>{b.filename||b.language} · {{runnable:'可直接运行',excerpt:'项目节选',pseudocode:'原理伪代码'}[b.kind]}</>}</span><button onClick={copy} aria-label={'复制代码 '+(b.filename||b.purpose)}>{message}</button></div><p className="code-purpose">{b.purpose}</p><pre tabIndex={0} aria-label={b.purpose}><HighlightedCode code={b.code} language={b.filename?.includes(".old.js")?"flow":b.language}/></pre></div>
 }
 function SourceReference({block:b,shown=false}:{block:Extract<ArticleBlock,{type:'reference'}>;shown?:boolean}){
  const location=sourceLocation(b.url);

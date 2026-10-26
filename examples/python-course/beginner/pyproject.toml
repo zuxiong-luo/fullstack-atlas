@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools==75.8.0", "wheel==0.45.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "atlas-notes-beginner"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = ["fastapi==0.115.8", "pydantic==2.10.6", "uvicorn==0.34.0"]
+
+[project.scripts]
+learning-notes = "learning_notes.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["learning_notes*"]
