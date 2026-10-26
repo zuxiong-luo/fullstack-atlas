@@ -1,3 +1,5 @@
+import {agentChapters,aiCourseChapters} from './series';
+
 /** Approved reading order. Planned chapters are metadata, never public article placeholders. */
 export type CurriculumChapter = {
   id: string;
@@ -13,6 +15,10 @@ export type TopicCurriculum = {
 };
 const chapter = (id:string,title:string,outcome:string,phase:0|1|2|3,example=id):CurriculumChapter => ({id,title,outcome,phase,example});
 export const topicCurricula:TopicCurriculum[] = [
+  {topic:'ai',prerequisites:['已有 Web / 后端编程经验','先读应用入门，再进入原八章工程系列；实作篇可按需阅读'],chapters:[
+    ...aiCourseChapters.map(c=>chapter(c.id,c.stage,c.outcome,3,c.id==='ai-streaming-delivery'?'ai-engineering-stream':'ai-engineering-course')),
+    ...agentChapters.map(c=>chapter(c.id,c.stage,c.outcome,0,'agent-workshop'))
+  ]},
   {topic:'identity',prerequisites:['HTTP 请求与响应','JavaScript 与浏览器基础'],chapters:[
     chapter('https-tls','HTTPS 与 TLS：从证书信任到加密通信','验证证书、主机名与握手边界，定位信任失败。',1),
     chapter('sessions-lifecycle','登录态与会话：Cookie、Session、JWT，以及续期和退出','实现会话建立、轮换、到期与撤销，解释令牌取舍。',1),

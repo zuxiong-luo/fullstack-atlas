@@ -1,0 +1,5 @@
+[
+ {"tenant":"acme","id":"access","source":"help/access.txt","text":"账号没有权限时，先由主管确认所需角色，再向管理员提交工单。不要把密码发送给客服。\n审批通过后，管理员才可以调整权限。"},
+ {"tenant":"acme","id":"invoice","source":"help/invoice.txt","text":"发票申请需要订单编号。财务审核后开票，未审核时不能承诺开票日期。"},
+ {"tenant":"other","id":"private","source":"internal/private.txt","text":"账号权限：另一家企业的管理员电话是一个不应跨租户返回的示例数据。"}
+]
