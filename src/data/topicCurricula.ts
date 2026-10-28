@@ -1,3 +1,4 @@
+import {pythonCoursePlan} from './pythonCoursePlan';
 import {agentChapters,aiCourseChapters} from './series';
 
 /** Approved reading order. Planned chapters are metadata, never public article placeholders. */
@@ -94,17 +95,7 @@ export const topicCurricula:TopicCurriculum[] = [
     chapter('nestjs-reliability','可靠交互：超时、取消、后台任务与幂等入口','传播请求预算，区分取消、幂等和持久任务的承诺。',3),
     chapter('nestjs-testing-delivery','测试与交付：配置、健康检查、日志和优雅关闭','通过真实 E2E、依赖失效和 SIGTERM 验证交付边界。',3),
   ]},
-  {topic:'python',prerequisites:['不要求 Python 或其他语言经验','按变量、函数、类的顺序读；后续篇建立在前篇练习上'],chapters:[
-    chapter('python-language-foundations','Python 入门：从变量、数据类型到判断和循环','能独立运行小程序，读取和修改常见类型，用判断循环处理笔记。',1,'python-course'),
-    chapter('python-functions-iteration','Python 函数：从 def、参数和 return 开始','会定义和调用函数，解释参数、返回值与局部变量。',1,'python-course'),
-    chapter('python-object-model','Python 类与对象：从一条笔记认识 self 和方法','会创建实例，说明self、属性、方法与笔记本组合。',1,'python-course'),
-    chapter('python-modules-boundaries','Python 文件与模块：读写、JSON、异常和 import','会导入模块、读写文件、处理异常，并组织一个小包。',1,'python-course'),
-    chapter('python-concurrency-models','Python 并发入门：先看顺序执行，再认识线程和进程','会区分顺序、线程和进程，收集结果并发现任务错误。',1,'python-course'),
-    chapter('python-async-services','Python 异步入门：一步步理解 async、await 和任务','从一个await开始，理解任务、等待、超时和取消清理。',0,'python-course'),
-    chapter('python-fastapi','第一个 Python 接口：从 HTTP 请求到 FastAPI 返回结果','会读取HTTP请求、校验标题，返回正常和错误响应。',2,'python-course'),
-    chapter('python-data-access','用 Python 保存数据：从 SQLite 和 SQL 到提交与回滚','用SQL保存笔记，证明提交、回滚与重新打开文件的结果。',2,'python-course'),
-    chapter('python-delivery','把 Python 项目运行起来：虚拟环境、依赖、测试与打包','会创建环境、安装依赖、运行测试，并在源码外调用已安装包。',2,'python-course'),
-  ]},
+  {topic:'python',prerequisites:['熟悉 JavaScript / TypeScript 和 Node.js','已有 NestJS、HTTP 与数据库开发经验；新版目录尚未发布正文'],chapters:pythonCoursePlan.map(c=>chapter(c.id,c.title,c.outcome,3,'python-node-course'))},
   {topic:'algorithms',prerequisites:['JavaScript / TypeScript 数组与函数'],chapters:[
     chapter('algorithms-invariants','算法怎样推导：二分边界、窗口、BFS 与动态规划','用不变量和反例建立算法推导方法。',0),
     chapter('linear-data-structures','线性结构：数组、链表、栈与队列的操作代价','按操作序列比较结构和摊还成本。',1),

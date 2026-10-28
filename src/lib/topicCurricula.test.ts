@@ -6,12 +6,18 @@ import {sectionBlocks} from '../data/articleTypes';
 import {topicCurricula} from '../data/topicCurricula';
 import baseline from '../../docs/validation/article-identities-baseline.json';
 import preNestBaseline from '../../docs/validation/pre-nest-supplement-identities.json';
+import {isRetiredPythonArticle} from '../data/pythonCoursePlan';
 
 it('preserves every original article route, anchor and training relationship',()=>{
   const ids=articles.map(a=>a.id);
   expect(new Set(ids).size).toBe(ids.length);
   for(const original of baseline){
     const current=articles.find(a=>a.id===original.id);
+    if(isRetiredPythonArticle(original.id)){
+      expect(original.topic).toBe('python');
+      expect(current).toBeUndefined();
+      continue;
+    }
     expect(current,original.id).toBeDefined();
     expect(current!.topic,original.id).toBe(original.topic);
     expect(current!.questionIds,original.id).toEqual(original.questionIds);
@@ -68,6 +74,11 @@ it('keeps new chapter inline implementation excerpts synchronized with downloada
 it('keeps every published pre-Nest article, anchor and training reference stable during the supplement',()=>{
   for(const previous of preNestBaseline){
     const current=articles.find(a=>a.id===previous.id);
+    if(isRetiredPythonArticle(previous.id)){
+      expect(previous.topic).toBe('python');
+      expect(current).toBeUndefined();
+      continue;
+    }
     expect(current,previous.id).toBeDefined();
     expect(current!.topic,previous.id).toBe(previous.topic);
     expect(current!.questionIds,previous.id).toEqual(previous.questionIds);
