@@ -7,7 +7,7 @@ export const retiredPythonArticleIds: readonly string[] = [
 export const isRetiredPythonArticle = (id:string) => retiredPythonArticleIds.includes(id);
 export const pythonRewritePlanUrl = 'https://github.com/zuxiong-luo/fullstack-atlas/blob/main/docs/PYTHON_NODE_REWRITE_PLAN.md';
 
-/** A plan only: these entries must not be registered as published articles or searchable prose. */
+/** Reading order. Only entries with actual manuscripts in the public catalog are published. */
 export const pythonCoursePlan = [
   {id:'python-node-syntax', title:'从 JavaScript 到 Python：常用语法、容器与容易带错的习惯', outcome:'对照解构、切片、真值、相等比较与可变引用，读懂日常Python代码。', stage:'语言差异'},
   {id:'python-node-functions', title:'Python 函数与参数：默认值、关键字参数、解包和装饰器', outcome:'用JS/TS对照解释 /、*、*args、**kwargs、默认值求值时机与函数包装。', stage:'语言差异'},

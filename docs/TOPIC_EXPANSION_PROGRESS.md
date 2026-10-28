@@ -192,3 +192,5 @@ WebGL后三篇已随f3494f2发布，线上98篇/三个新增ZIP核验通过，�
 2026-10-27：Python既有九篇按初学者顺序重写，不改变文章数量和稳定ID。新入口为examples/python-course/beginner，原导入工程保留作进阶选读。后续以docs/PYTHON_BEGINNER_REWRITE.md与docs/validation/python-beginner-rewrite.md为准，早期“从JS经验出发”的题目与验收记录作为历史保留。
 
 2026-10-28：按作者要求撤下旧Python九篇；这九篇不再计入当前文章数量。新版面向Node.js/TypeScript开发者的14篇目录已规划，全部待编写，见PYTHON_NODE_REWRITE_PLAN.md。历史发布数量与验收记录保留为当时事实。
+
+2026-10-28：新版标杆《FastAPI 做什么：定位、能力边界，以及它和 NestJS 的差异》完成，ID为`python-fastapi-overview`。当前Python新版已写1篇，另外13篇待编写；全站109篇。两套真实服务共用14组输入，下载ZIP在干净环境重新安装测试通过，站点67项测试通过，桌面与393像素手机视口已检查。详见`docs/validation/python-fastapi-overview.md`。

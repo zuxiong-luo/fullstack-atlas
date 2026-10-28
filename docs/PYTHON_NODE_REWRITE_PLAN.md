@@ -1,6 +1,6 @@
 # Python 与 FastAPI：面向 Node.js 开发者的重写规划
 
-2026-10-28。状态：**旧版九篇撤稿，新版十四篇待编写**。本文是目录与验收约定，不是已完成的教程。替代 `PYTHON_BEGINNER_REWRITE.md`；旧验证记录仅证明当时的程序行为，不代表文字适合当前读者。
+2026-10-28。状态：**旧版九篇撤稿；新版第9篇标杆已交付，其余13篇待编写**。本文是目录与验收约定，不是已完成的教程。替代 `PYTHON_BEGINNER_REWRITE.md`；旧验证记录仅证明当时的程序行为，不代表文字适合当前读者。
 
 ## 读者与目标
 
@@ -191,7 +191,7 @@ ID：`python-fastapi-delivery`。
 - 语言实验先固定Python/CPython构建与Node版本；框架实验锁定FastAPI、Starlette、Pydantic、Uvicorn及驱动版本。现有Python3.12与Node22环境可作为候选，不把旧示例验证结果沿用为新工程证据。
 - 正文自足：关键代码、结果、失败分支在本篇；出处链接用于追溯。图形用在请求链、绑定过程、调度和资源生命周期，不为每篇凑同一种图。
 - 同一个服务领域逐步演进，但语言差异实验可以独立运行，不能要求读者先看懂整套应用。
-- 状态统一为待编写/编写中/待审校/验证受阻/已完成。本轮十四篇全部为待编写，不把目录计为文章。
+- 状态统一为待编写/编写中/待审校/验证受阻/已完成。第9篇已有正文与独立示例，其余13篇为待编写；不把目录计为文章。
 
 ## 撤稿范围与历史
 
@@ -212,3 +212,7 @@ ID：`python-fastapi-delivery`。
 - [SQLAlchemy2 asyncio](https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html)
 
 以上是编写时的一手核对入口，不表示十四篇示例已经实现或测试。
+
+## 第9篇先行交付（2026-10-28）
+
+正文ID为python-fastapi-overview，配套examples/python-node-course/09-fastapi-overview，包含真实FastAPI和NestJS对照、共享HTTP输入及独立验证。版本与实测范围见docs/validation/python-fastapi-overview.md。其他13篇保持待编写，不因目录存在而变成已发布文章。

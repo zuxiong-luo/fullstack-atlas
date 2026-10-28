@@ -10,6 +10,7 @@ on:
       - 'examples/node-performance-memory/**'
       - 'examples/python-course/**'
       - 'examples/python-async-services/**'
+      - 'examples/python-node-course/**'
       - '.github/workflows/article-examples.yml'
   workflow_dispatch:
 permissions:
@@ -18,6 +19,28 @@ concurrency:
   group: article-examples-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  fastapi-overview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12.14'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.12.0'
+          package-manager-cache: false
+      - name: Locked Python environment
+        run: |
+          python -m venv examples/python-node-course/.venv
+          examples/python-node-course/.venv/bin/python -m pip install -r examples/python-node-course/requirements.lock
+      - run: npm ci --ignore-scripts
+        working-directory: examples/python-node-course
+      - run: npm test
+        working-directory: examples/python-node-course
+      - name: FastAPI and real cross-runtime HTTP contracts
+        run: examples/python-node-course/.venv/bin/python -m unittest discover -s examples/python-node-course/09-fastapi-overview -v
   node:
     runs-on: ubuntu-24.04
     timeout-minutes: 10

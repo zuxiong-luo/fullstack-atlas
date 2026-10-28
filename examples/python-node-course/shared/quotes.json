@@ -1,0 +1,16 @@
+[
+ {"name":"standard-default","body":{"seconds":30},"status":200,"expected":{"seconds":30,"quality":"standard","credits":60}},
+ {"name":"hd","body":{"seconds":30,"quality":"hd"},"status":200,"expected":{"seconds":30,"quality":"hd","credits":120}},
+ {"name":"standard-upper","body":{"seconds":120},"status":200,"expected":{"seconds":120,"quality":"standard","credits":240}},
+ {"name":"business-limit","body":{"seconds":61,"quality":"hd"},"status":409,"expected":{"detail":{"code":"HD_LIMIT","message":"HD报价最多支持60秒"}}},
+ {"name":"string-number","body":{"seconds":"30"},"status":422},
+ {"name":"boolean-number","body":{"seconds":true},"status":422},
+ {"name":"fraction","body":{"seconds":30.5},"status":422},
+ {"name":"missing","body":{},"status":422},
+ {"name":"lower-limit","body":{"seconds":0},"status":422},
+ {"name":"upper-limit","body":{"seconds":121},"status":422},
+ {"name":"unknown-quality","body":{"seconds":30,"quality":"4k"},"status":422},
+ {"name":"null-quality","body":{"seconds":30,"quality":null},"status":422},
+ {"name":"extra-field","body":{"seconds":30,"admin":true},"status":422},
+ {"name":"json-number-representation","raw":"{\"seconds\":30.0}","status":422,"nestjsStatus":200,"nestjsExpected":{"seconds":30,"quality":"standard","credits":60}}
+]

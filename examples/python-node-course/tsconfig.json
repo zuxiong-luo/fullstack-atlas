@@ -1,0 +1,1 @@
+{"compilerOptions":{"target":"ES2022","module":"CommonJS","rootDir":"09-fastapi-overview","outDir":"dist","experimentalDecorators":true,"emitDecoratorMetadata":true,"strict":true,"esModuleInterop":true,"skipLibCheck":true},"include":["09-fastapi-overview/*.ts"]}
