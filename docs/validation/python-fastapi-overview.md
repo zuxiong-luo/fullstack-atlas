@@ -40,3 +40,14 @@
 NestJS10.x教学对照安装时存在7项依赖告警（4 moderate、3 high），已在示例验证记录说明，没有声称生产安全审核通过。未验证Windows、容器、生产负载或付费模型。新增Linux CI任务独立安装并运行相同用例，实际运行结论以对应发布工作流为准。
 
 发布时需检查Pages实际资源、两张SVG、下载ZIP逐文件内容与离线清单，不以git push成功替代线上验收。
+
+## 实际发布结果
+
+实现提交：`f782bff0d8428ac40c39c5d26792133172b7622b`。
+
+- [Pages发布40631620148](https://github.com/zuxiong-luo/fullstack-atlas/actions/runs/40631620148)：build与deploy成功。
+- [示例CI 40631620156](https://github.com/zuxiong-luo/fullstack-atlas/actions/runs/40631620156)：新增fastapi-overview任务在Ubuntu24.04通过；既有Python和5组Node回归也通过。
+- 线上主脚本`assets/index-B5KJNVvd.js`、样式`assets/index-CPoJcVX6.css`、sw.js及两张SVG与本地构建逐字节相同。
+- 下载ZIP共25个条目（含目录），文件集合和每个文件内容均与已验收下载包一致。
+- 线上离线清单版本`2f90c79ddcb870de`，1548个资源，文件集合与本地相同，包含新增SVG及python-node-course下载。
+- [线上文章](https://zuxiong-luo.github.io/fullstack-atlas/#article/python-fastapi-overview)。线上浏览器导航超时，本次不宣称做过线上交互复验；本地同构建页面已完成上述桌面和手机视口检查，线上采用实际资源内容核对。
